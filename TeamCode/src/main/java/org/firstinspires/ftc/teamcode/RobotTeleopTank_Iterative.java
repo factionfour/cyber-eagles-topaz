@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
@@ -54,8 +55,10 @@ import com.qualcomm.robotcore.util.Range;
 public class RobotTeleopTank_Iterative extends OpMode{
 
     /* Declare OpMode members. */
-    public DcMotor  leftDrive   = null;
-    public DcMotor  rightDrive  = null;
+    public DcMotor  frontleftDrive   = null;
+    public DcMotor  backleftDrive  = null;
+    public DcMotor  backrightDrive  = null;
+    public DcMotor  frontrightDrive = null;
     //public DcMotor  leftArm     = null;
     //public Servo    leftClaw    = null;
     //public Servo    rightClaw   = null;
@@ -73,15 +76,19 @@ public class RobotTeleopTank_Iterative extends OpMode{
     @Override
     public void init() {
         // Define and Initialize Motors
-        leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+        frontleftDrive  = hardwareMap.get(DcMotor.class, "front_left_drive");
+        frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
+        backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
+        backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
         //leftArm    = hardwareMap.get(DcMotor.class, "left_arm");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left and right sticks forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontleftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
+        backrightDrive.setDirection(DcMotor.Direction.REVERSE);
+        backleftDrive.setDirection(DcMotor.Direction.FORWARD);
 
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
         // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -116,15 +123,32 @@ public class RobotTeleopTank_Iterative extends OpMode{
      */
     @Override
     public void loop() {
-        double left;
-        double right;
+        double front;
+        double turn;
+        double strafe;
 
         // Run wheels in tank mode (note: The joystick goes negative when pushed forward, so negate it)
-        left = -gamepad1.left_stick_y;
-        right = -gamepad1.right_stick_y;
+        front = gamepad1.left_stick_y;
+        turn = gamepad1.right_stick_x;
+        strafe = gamepad1.left_stick_x;
 
-        leftDrive.setPower(left);
-        rightDrive.setPower(right * 0.5);
+
+        frontleftDrive.setPower(front);
+        frontrightDrive.setPower(front);
+        backleftDrive.setPower(front);
+        backrightDrive.setPower(front);
+
+        frontleftDrive.setPower(-turn);
+        frontrightDrive.setPower(turn);
+        backleftDrive.setPower(-turn);
+        backrightDrive.setPower(turn);
+
+        frontleftDrive.setPower(-strafe);
+        frontrightDrive.setPower(strafe);
+        backleftDrive.setPower(strafe);
+        backrightDrive.setPower(-strafe);
+
+
 
         // Use gamepad left & right Bumpers to open and close the claw
         if (gamepad1.right_bumper)
@@ -147,8 +171,8 @@ public class RobotTeleopTank_Iterative extends OpMode{
 
         // Send telemetry message to signify robot running;
         telemetry.addData("claw",  "Offset = %.2f", clawOffset);
-        telemetry.addData("left",  "%.2f", left);
-        telemetry.addData("right", "%.2f", right);
+        telemetry.addData("front",  "%.2f", front);
+        telemetry.addData("turn", "%.2f", turn);
     }
 
     /*
