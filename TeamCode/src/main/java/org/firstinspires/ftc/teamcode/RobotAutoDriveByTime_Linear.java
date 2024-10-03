@@ -30,10 +30,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+//import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+//import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -97,10 +97,10 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
         // Step through each leg of the path, ensuring that the OpMode has not been stopped along the way.
 
         // Step 1:  Drive forward for 3 seconds
-//        public driveForward(3000);
+        driveForward(3000);
 
 
-        frontrightDrive.setPower(FORWARD_SPEED);
+        /*frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
         backrightDrive.setPower(FORWARD_SPEED);
@@ -109,7 +109,7 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.seconds());
             telemetry.update();
         }
-
+*/
 //         Step 2:  Spin right for 1.3 seconds
         frontleftDrive.setPower(TURN_SPEED);
         frontrightDrive.setPower(-TURN_SPEED);
@@ -139,5 +139,17 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);
+    }
+
+    public void driveForward(int milliseconds) {
+        frontrightDrive.setPower(FORWARD_SPEED);
+        frontleftDrive.setPower(FORWARD_SPEED);
+        backleftDrive.setPower(FORWARD_SPEED);
+        backrightDrive.setPower(FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
     }
 }
