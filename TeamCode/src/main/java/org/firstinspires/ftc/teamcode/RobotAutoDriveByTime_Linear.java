@@ -141,7 +141,7 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
         sleep(1000);
     }
 
-    public void driveForward(int milliseconds) {
+    public void driveForward(int milliseconds, int sleepMS) {
         frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
@@ -151,10 +151,14 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
             telemetry.update();
         }
-
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
     }
 
-    public void driveBackward(int milliseconds) {
+    public void driveBackward(int milliseconds, int sleepMS) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(-FORWARD_SPEED);
         backleftDrive.setPower(-FORWARD_SPEED);
@@ -164,33 +168,14 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
             telemetry.update();
         }
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
     }
 
-    public void strafeLeft(int milliseconds) {
-        frontrightDrive.setPower(-FORWARD_SPEED);
-        frontleftDrive.setPower(FORWARD_SPEED);
-        backleftDrive.setPower(FORWARD_SPEED);
-        backrightDrive.setPower(-FORWARD_SPEED);
-        runtime.reset();
-        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
-            telemetry.update();
-        }
-    }
-
-    public void strafeRight(int milliseconds) {
-        frontrightDrive.setPower(FORWARD_SPEED);
-        frontleftDrive.setPower(-FORWARD_SPEED);
-        backleftDrive.setPower(-FORWARD_SPEED);
-        backrightDrive.setPower(FORWARD_SPEED);
-        runtime.reset();
-        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
-            telemetry.update();
-        }
-    }
-
-    public void turnLeft(int milliseconds) {
+    public void strafeLeft(int milliseconds, int sleepMS) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
@@ -200,9 +185,14 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
             telemetry.update();
         }
-
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
     }
-    public void turnRight(int milliseconds) {
+
+    public void strafeRight(int milliseconds, int sleepMS) {
         frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(-FORWARD_SPEED);
         backleftDrive.setPower(-FORWARD_SPEED);
@@ -212,6 +202,44 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
             telemetry.update();
         }
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
+    }
+
+    public void turnLeft(int milliseconds, int sleepMS) {
+        frontrightDrive.setPower(-FORWARD_SPEED);
+        frontleftDrive.setPower(FORWARD_SPEED);
+        backleftDrive.setPower(FORWARD_SPEED);
+        backrightDrive.setPower(-FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
+    }
+    public void turnRight(int milliseconds, int sleepMS) {
+        frontrightDrive.setPower(FORWARD_SPEED);
+        frontleftDrive.setPower(-FORWARD_SPEED);
+        backleftDrive.setPower(-FORWARD_SPEED);
+        backrightDrive.setPower(FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+        sleep(sleepMS);
     }
 
 }
