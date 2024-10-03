@@ -154,6 +154,18 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
 
     }
 
+    public void driveBackward(int milliseconds) {
+        frontrightDrive.setPower(-FORWARD_SPEED);
+        frontleftDrive.setPower(-FORWARD_SPEED);
+        backleftDrive.setPower(-FORWARD_SPEED);
+        backrightDrive.setPower(-FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+    }
+
     public void strafeLeft(int milliseconds) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
