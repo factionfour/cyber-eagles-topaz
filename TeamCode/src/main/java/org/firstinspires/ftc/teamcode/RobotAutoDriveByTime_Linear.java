@@ -151,5 +151,55 @@ public class RobotAutoDriveByTime_Linear extends LinearOpMode {
             telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
             telemetry.update();
         }
+
     }
+
+    public void strafeLeft(int milliseconds) {
+        frontrightDrive.setPower(-FORWARD_SPEED);
+        frontleftDrive.setPower(FORWARD_SPEED);
+        backleftDrive.setPower(FORWARD_SPEED);
+        backrightDrive.setPower(-FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+    }
+
+    public void strafeRight(int milliseconds) {
+        frontrightDrive.setPower(FORWARD_SPEED);
+        frontleftDrive.setPower(-FORWARD_SPEED);
+        backleftDrive.setPower(-FORWARD_SPEED);
+        backrightDrive.setPower(FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+    }
+
+    public void turnLeft(int milliseconds) {
+        frontrightDrive.setPower(-FORWARD_SPEED);
+        frontleftDrive.setPower(FORWARD_SPEED);
+        backleftDrive.setPower(FORWARD_SPEED);
+        backrightDrive.setPower(-FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+
+    }
+    public void turnRight(int milliseconds) {
+        frontrightDrive.setPower(FORWARD_SPEED);
+        frontleftDrive.setPower(-FORWARD_SPEED);
+        backleftDrive.setPower(-FORWARD_SPEED);
+        backrightDrive.setPower(FORWARD_SPEED);
+        runtime.reset();
+        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
+            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            telemetry.update();
+        }
+    }
+
 }
