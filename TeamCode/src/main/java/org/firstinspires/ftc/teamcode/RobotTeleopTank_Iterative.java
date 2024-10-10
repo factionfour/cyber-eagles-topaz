@@ -154,6 +154,22 @@ public class RobotTeleopTank_Iterative extends OpMode{
         else if (gamepad1.left_bumper)
             clawOffset -= CLAW_SPEED;
 
+        if (gamepad1.b) {
+            servo1.setPosition(0.5);
+        }
+
+        if (gamepad1.a) {
+            servo1.setPosition(-1);
+        }
+
+        if (gamepad1.y) {
+            servo1.setPosition(1);
+        }
+
+        if (gamepad1.x) {
+            servo1.setPosition(-0.5);
+        }
+
 //        // Use gamepad left & right Bumpers to open and close the claw
 //        if (gamepad1.right_bumper)
 //            servo1.setPosition(1);//clawOffset += CLAW_SPEED;
