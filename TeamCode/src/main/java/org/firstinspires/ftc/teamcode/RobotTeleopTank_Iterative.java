@@ -59,16 +59,17 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public DcMotor  backleftDrive  = null;
     public DcMotor  backrightDrive  = null;
     public DcMotor  frontrightDrive = null;
+    public DcMotor  arm = null;
     //public DcMotor  leftArm     = null;
     public Servo    servo1    = null;
-    public Servo    servo2    = null;
+//    public Servo    servo2    = null;
     //public Servo    rightClaw   = null;
 
     double clawOffset = 0;
 
     public static final double MID_SERVO   =  0.5 ;
     public static final double CLAW_SPEED  = 0.02 ;        // sets rate to move servo
-    public static final double ARM_UP_POWER    =  0.50 ;   // Run arm motor up at 50% power
+    public static final double ARM_UP_POWER    =  0.25 ;   // Run arm motor up at 50% power
     public static final double ARM_DOWN_POWER  = -0.25 ;   // Run arm motor down at -25% power
 
     /*
@@ -81,7 +82,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
-        //leftArm    = hardwareMap.get(DcMotor.class, "left_arm");
+        arm = hardwareMap.get(DcMotor.class, "arm_one");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left and right sticks forward MUST make robot go forward. So adjust these two lines based on your first test drive.
@@ -90,12 +91,12 @@ public class RobotTeleopTank_Iterative extends OpMode{
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
-
+        //arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         servo1  = hardwareMap.get(Servo.class, "servo_one");
         servo1.setPosition(MID_SERVO);
 
-        servo2  = hardwareMap.get(Servo.class, "servo_two");
-        servo2.setPosition(MID_SERVO);
+//        servo2  = hardwareMap.get(Servo.class, "servo_two");
+//        servo2.setPosition(MID_SERVO);
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
         // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -132,7 +133,6 @@ public class RobotTeleopTank_Iterative extends OpMode{
         double front;
         double turn;
         double strafe;
-
         // Run wheels in tank mode (note: The joystick goes negative when pushed forward, so negate it)
         front = gamepad1.left_stick_y;
         turn = gamepad1.right_stick_x;
@@ -165,7 +165,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         else if (gamepad1.left_trigger > 0)
             clawOffset -= CLAW_SPEED;
 
-        servo2.setPosition(clawOffset);
+//        servo2.setPosition(clawOffset);
 
         if (gamepad1.b) {
             servo1.setPosition(0.5);
@@ -184,21 +184,21 @@ public class RobotTeleopTank_Iterative extends OpMode{
         }
 
 //        second servo dpad buttons
-        if (gamepad1.dpad_right) {
-            servo2.setPosition(0.5);
-        }
-
-        if (gamepad1.dpad_down) {
-            servo2.setPosition(-1);
-        }
-
-        if (gamepad1.dpad_up) {
-            servo2.setPosition(1);
-        }
-
-        if (gamepad1.dpad_left) {
-            servo2.setPosition(-0.5);
-        }
+//        if (gamepad1.dpad_right) {
+//            servo2.setPosition(0.5);
+//        }
+//
+//        if (gamepad1.dpad_down) {
+//            servo2.setPosition(-1);
+//        }
+//
+//        if (gamepad1.dpad_up) {
+//            servo2.setPosition(1);
+//        }
+//
+//        if (gamepad1.dpad_left) {
+//            servo2.setPosition(-0.5);
+//        }
 
 
 //        // Use gamepad left & right Bumpers to open and close the claw
@@ -215,13 +215,20 @@ public class RobotTeleopTank_Iterative extends OpMode{
 
 
 
-        // Use gamepad buttons to move the arm up (Y) and down (A)
+//         Use gamepad buttons to move the arm up (Y) and down (A)
+//        armOffset = Range.clip(armOffset, -1.0, 1.0);
+//
 //        if (gamepad1.y)
-//            leftArm.setPower(ARM_UP_POWER);
+//            arm.setTargetPosition(armOffset);
 //        else if (gamepad1.a)
-//            leftArm.setPower(ARM_DOWN_POWER);
+//            arm.setTargetPosition(armOffset);
 //        else
-//            leftArm.setPower(0.0);
+//            arm.setPower(0.0);
+//
+//        if (gamepad1.left_bumper)
+//            armOffset += ARM_SPEED;
+//        else if (gamepad1.left_trigger > 0)
+//            armOffset -= ARM_SPEED;
 
         // Send telemetry message to signify robot running;
         telemetry.addData("claw",  "Offset = %.2f", clawOffset);
