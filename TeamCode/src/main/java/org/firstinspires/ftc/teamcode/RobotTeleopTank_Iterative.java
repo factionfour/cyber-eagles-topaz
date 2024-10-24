@@ -60,7 +60,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public DcMotor  backrightDrive  = null;
     public DcMotor  frontrightDrive = null;
     public DcMotor  arm = null;
-    //public DcMotor  leftArm     = null;
+    public DcMotor  leftArm     = null;
     public Servo    servo1    = null;
 //    public Servo    servo2    = null;
     //public Servo    rightClaw   = null;
@@ -82,7 +82,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
-        arm = hardwareMap.get(DcMotor.class, "arm_one");
+//        arm = hardwareMap.get(DcMotor.class, "arm_one");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left and right sticks forward MUST make robot go forward. So adjust these two lines based on your first test drive.
@@ -91,19 +91,19 @@ public class RobotTeleopTank_Iterative extends OpMode{
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
-        //arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        servo1  = hardwareMap.get(Servo.class, "servo_one");
-        servo1.setPosition(MID_SERVO);
+        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        servo1  = hardwareMap.get(Servo.class, "servo_one");
+//        servo1.setPosition(MID_SERVO);
 
 //        servo2  = hardwareMap.get(Servo.class, "servo_two");
 //        servo2.setPosition(MID_SERVO);
-        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
-        // leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//         If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
+//         leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//         rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Define and initialize ALL installed servos.
-        //leftClaw  = hardwareMap.get(Servo.class, "left_hand");
-        //rightClaw = hardwareMap.get(Servo.class, "right_hand");
+//        leftClaw  = hardwareMap.get(Servo.class, "left_hand");
+//        rightClaw = hardwareMap.get(Servo.class, "right_hand");
         //leftClaw.setPosition(MID_SERVO);
 //        rightClaw.setPosition(MID_SERVO);
 
@@ -153,35 +153,35 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backleftDrive.setPower(strafe);
         backrightDrive.setPower(-strafe);
 
-        if (gamepad1.right_bumper)
-            clawOffset += CLAW_SPEED;
-        else if (gamepad1.right_trigger > 0)
-            clawOffset -= CLAW_SPEED;
-
-        servo1.setPosition(clawOffset);
-
-        if (gamepad1.left_bumper)
-            clawOffset += CLAW_SPEED;
-        else if (gamepad1.left_trigger > 0)
-            clawOffset -= CLAW_SPEED;
-
-//        servo2.setPosition(clawOffset);
-
-        if (gamepad1.b) {
-            servo1.setPosition(0.5);
-        }
-
-        if (gamepad1.a) {
-            servo1.setPosition(-1);
-        }
-
-        if (gamepad1.y) {
-            servo1.setPosition(1);
-        }
-
-        if (gamepad1.x) {
-            servo1.setPosition(-0.5);
-        }
+//        if (gamepad1.right_bumper)
+//            clawOffset += CLAW_SPEED;
+//        else if (gamepad1.right_trigger > 0)
+//            clawOffset -= CLAW_SPEED;
+//
+//        servo1.setPosition(clawOffset);
+//
+//        if (gamepad1.left_bumper)
+//            clawOffset += CLAW_SPEED;
+//        else if (gamepad1.left_trigger > 0)
+//            clawOffset -= CLAW_SPEED;
+//
+////        servo2.setPosition(clawOffset);
+//
+//        if (gamepad1.b) {
+//            servo1.setPosition(0.5);
+//        }
+//
+//        if (gamepad1.a) {
+//            servo1.setPosition(-1);
+//        }
+//
+//        if (gamepad1.y) {
+//            servo1.setPosition(1);
+//        }
+//
+//        if (gamepad1.x) {
+//            servo1.setPosition(-0.5);
+//        }
 
 //        second servo dpad buttons
 //        if (gamepad1.dpad_right) {
@@ -206,22 +206,22 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //            servo1.setPosition(1);//clawOffset += CLAW_SPEED;
 //        else if (gamepad1.left_bumper)
 //            servo1.setPosition();
-//            //clawOffset -= CLAW_SPEED;
+            //clawOffset -= CLAW_SPEED;
 
         // Move both servos to new position.  Assume servos are mirror image of each other.
         clawOffset = Range.clip(clawOffset, -1.0, 1.0);
-//        leftClaw.setPosition(MID_SERVO + clawOffset);
+//        arm.setTargetPosition(MID_SERVO + clawOffset);
 //        rightClaw.setPosition(MID_SERVO - clawOffset);
 
 
 
 //         Use gamepad buttons to move the arm up (Y) and down (A)
 //        armOffset = Range.clip(armOffset, -1.0, 1.0);
-//
+////
 //        if (gamepad1.y)
-//            arm.setTargetPosition(armOffset);
+//            arm.setTargetPosition(clawOffset);
 //        else if (gamepad1.a)
-//            arm.setTargetPosition(armOffset);
+//            arm.setTargetPosition(clawOffset);
 //        else
 //            arm.setPower(0.0);
 //
