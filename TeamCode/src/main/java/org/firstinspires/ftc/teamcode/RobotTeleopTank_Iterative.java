@@ -59,6 +59,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public DcMotor  backleftDrive  = null;
     public DcMotor  backrightDrive  = null;
     public DcMotor  frontrightDrive = null;
+    public DcMotor  armExtendo = null;
     public DcMotor  arm = null;
     //public DcMotor  leftArm     = null;
     public Servo    servo1    = null;
@@ -71,7 +72,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public static final double CLAW_SPEED  = 0.02 ;        // sets rate to move servo
     public static final double ARM_UP_POWER    =  0.25 ;   // Run arm motor up at 50% power
     public static final double ARM_DOWN_POWER  = -0.25 ;   // Run arm motor down at -25% power
-
+    public static final double EXTENDO_POWER = 0.25;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -83,7 +84,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
         arm = hardwareMap.get(DcMotor.class, "arm_one");
-
+        armExtendo = hardwareMap.get(DcMotor.class, "arm_extendo");
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left and right sticks forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -94,7 +95,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         servo1  = hardwareMap.get(Servo.class, "servo_one");
         servo1.setPosition(MID_SERVO);
-
+        armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 //        servo2  = hardwareMap.get(Servo.class, "servo_two");
 //        servo2.setPosition(MID_SERVO);
         // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
@@ -108,6 +109,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //        rightClaw.setPosition(MID_SERVO);
 
         // Send telemetry message to signify robot waiting;
+       armExtendo.setTargetPosition(0);
         telemetry.addData(">", "Robot Ready.  Press START.");    //
     }
 
@@ -116,6 +118,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
      */
     @Override
     public void init_loop() {
+
     }
 
     /*
@@ -181,6 +184,10 @@ public class RobotTeleopTank_Iterative extends OpMode{
 
         if (gamepad1.x) {
             servo1.setPosition(-0.5);
+        }
+
+        if (gamepad1.dpad_down) {
+            armExtendo.setTargetPosition(30);
         }
 
 //        second servo dpad buttons
