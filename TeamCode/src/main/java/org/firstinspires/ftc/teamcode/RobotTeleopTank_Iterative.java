@@ -53,7 +53,7 @@ import com.qualcomm.robotcore.util.Range;
 @TeleOp(name="Robot: Teleop Tank", group="Robot")
 
 public class RobotTeleopTank_Iterative extends OpMode{
-
+// define each motor and servo
     /* Declare OpMode members. */
     public DcMotor  frontleftDrive   = null;
     public DcMotor  backleftDrive  = null;
@@ -61,13 +61,14 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public DcMotor  frontrightDrive = null;
     public DcMotor  armExtendo = null;
     public DcMotor  arm = null;
-    //public DcMotor  leftArm     = null;
-    public Servo    servo1    = null;
+     //public DcMotor  leftArm     = null;
+    public Servo    servoclamp1    = null;
+    public Servo    servoclamp2    = null;
 //    public Servo    servo2    = null;
     //public Servo    rightClaw   = null;
 
     double clawOffset = 0;
-
+    // create public static speeds for each
     public static final double MID_SERVO   =  0.5 ;
     public static final double CLAW_SPEED  = 0.02 ;        // sets rate to move servo
     public static final double ARM_UP_POWER    =  0.25 ;   // Run arm motor up at 50% power
@@ -93,8 +94,10 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        servo1  = hardwareMap.get(Servo.class, "servo_one");
-        servo1.setPosition(MID_SERVO);
+        servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
+        servoclamp1.setPosition(MID_SERVO);
+        servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
+        servoclamp2.setPosition(MID_SERVO);
         armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 //        servo2  = hardwareMap.get(Servo.class, "servo_two");
 //        servo2.setPosition(MID_SERVO);
@@ -136,10 +139,15 @@ public class RobotTeleopTank_Iterative extends OpMode{
         double front;
         double turn;
         double strafe;
+        boolean suckin;
+        boolean suckout;
+
         // Run wheels in tank mode (note: The joystick goes negative when pushed forward, so negate it)
         front = gamepad1.left_stick_y;
         turn = gamepad1.right_stick_x;
         strafe = gamepad1.left_stick_x;
+        suckin = gamepad1.dpad_down;
+        suckout = gamepad1.dpad_up;
 
         frontleftDrive.setPower(front);
         frontrightDrive.setPower(front);
@@ -156,39 +164,39 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backleftDrive.setPower(strafe);
         backrightDrive.setPower(-strafe);
 
-        if (gamepad1.right_bumper)
+        // changes the position to go down
+        if (gamepad1.dpad_down)
             clawOffset += CLAW_SPEED;
-        else if (gamepad1.right_trigger > 0)
+        else if (gamepad1.dpad_up)
             clawOffset -= CLAW_SPEED;
 
-        servo1.setPosition(clawOffset);
+        servoclamp1.setPosition(clawOffset);
 
-        if (gamepad1.left_bumper)
-            clawOffset += CLAW_SPEED;
-        else if (gamepad1.left_trigger > 0)
-            clawOffset -= CLAW_SPEED;
+        servoclamp2.setPosition(-clawOffset);
+
+
 
 //        servo2.setPosition(clawOffset);
 
-        if (gamepad1.b) {
-            servo1.setPosition(0.5);
-        }
-
-        if (gamepad1.a) {
-            servo1.setPosition(-1);
-        }
-
-        if (gamepad1.y) {
-            servo1.setPosition(1);
-        }
-
-        if (gamepad1.x) {
-            servo1.setPosition(-0.5);
-        }
-
-        if (gamepad1.dpad_down) {
-            armExtendo.setTargetPosition(30);
-        }
+//        if (gamepad1.b) {
+//            servo1.setPosition(0.5);
+//        }
+//
+//        if (gamepad1.a) {
+//            servo1.setPosition(-1);
+//        }
+//
+//        if (gamepad1.y) {
+//            servo1.setPosition(1);
+//        }
+//
+//        if (gamepad1.x) {
+//            servo1.setPosition(-0.5);
+//        }
+//
+//        if (gamepad1.dpad_down) {
+//            armExtendo.setTargetPosition(30);
+//        }
 
 //        second servo dpad buttons
 //        if (gamepad1.dpad_right) {
