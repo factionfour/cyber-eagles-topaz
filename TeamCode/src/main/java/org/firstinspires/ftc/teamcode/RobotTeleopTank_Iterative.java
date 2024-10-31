@@ -66,7 +66,9 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public Servo    servoclamp2    = null;
 //    public Servo    servo2    = null;
     //public Servo    rightClaw   = null;
-
+    int armOffset180 = 250;
+    int armOffset0 = 0;
+    int armOffset = 0;
     double clawOffset = 0;
     // create public static speeds for each
     public static final double MID_SERVO   =  0.5 ;
@@ -74,6 +76,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
     public static final double ARM_UP_POWER    =  0.25 ;   // Run arm motor up at 50% power
     public static final double ARM_DOWN_POWER  = -0.25 ;   // Run arm motor down at -25% power
     public static final double EXTENDO_POWER = 0.25;
+    public static  final  double ARM_SPEED = 0.25;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -93,7 +96,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
-        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
         servoclamp1.setPosition(MID_SERVO);
         servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
@@ -165,15 +168,14 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive.setPower(-strafe);
 
         // changes the position to go down
-        if (gamepad1.dpad_down)
+        if (gamepad1.dpad_left)
             clawOffset += CLAW_SPEED;
-        else if (gamepad1.dpad_up)
+        else if (gamepad1.dpad_right)
             clawOffset -= CLAW_SPEED;
 
         servoclamp1.setPosition(clawOffset);
 
         servoclamp2.setPosition(-clawOffset);
-
 
 
 //        servo2.setPosition(clawOffset);
@@ -229,26 +231,39 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //        rightClaw.setPosition(MID_SERVO - clawOffset);
 
 
-
 //         Use gamepad buttons to move the arm up (Y) and down (A)
-//        armOffset = Range.clip(armOffset, -1.0, 1.0);
-//
-//        if (gamepad1.y)
-//            arm.setTargetPosition(armOffset);
-//        else if (gamepad1.a)
-//            arm.setTargetPosition(armOffset);
-//        else
-//            arm.setPower(0.0);
-//
-//        if (gamepad1.left_bumper)
-//            armOffset += ARM_SPEED;
-//        else if (gamepad1.left_trigger > 0)
-//            armOffset -= ARM_SPEED;
+        //     armOffset = Range.clip(armOffset, -1.0, 1.0);
+
+        if (gamepad1.y){
+            arm.setPower(ARM_SPEED);
+            arm.setTargetPosition(armOffset180);
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);}
+        else if (gamepad1.a){
+            arm.setPower(ARM_SPEED);
+            arm.setTargetPosition(armOffset0);
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);}
+            else{
+                arm.setPower(0.0);}
+
+        armOffset = (int) Range.clip(armOffset, 0.0, 500.0);
+
+        if (gamepad1.dpad_down) {
+            armOffset += ARM_SPEED;
+        arm.setTargetPosition(armOffset);}
+        else if (gamepad1.dpad_up){
+            armOffset -=ARM_SPEED ;
+            arm.setTargetPosition(armOffset);}
+
+   //     if (gamepad1.left_bumper)
+  //          armOffset += ARM_SPEED;
+  //      else if (gamepad1.left_trigger > 0)
+ //           armOffset -= ARM_SPEED;
 
         // Send telemetry message to signify robot running;
         telemetry.addData("claw",  "Offset = %.2f", clawOffset);
         telemetry.addData("front",  "%.2f", front);
         telemetry.addData("turn", "%.2f", turn);
+        telemetry.addData("arm",arm.getCurrentPosition());
     }
 
     /*
