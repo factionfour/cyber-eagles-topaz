@@ -97,10 +97,10 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
-        servoclamp1.setPosition(MID_SERVO);
-        servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
-        servoclamp2.setPosition(MID_SERVO);
+   //     servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
+  //      servoclamp1.setPosition(MID_SERVO);
+  //      servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
+  //      servoclamp2.setPosition(MID_SERVO);
         armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 //        servo2  = hardwareMap.get(Servo.class, "servo_two");
 //        servo2.setPosition(MID_SERVO);
@@ -142,15 +142,12 @@ public class RobotTeleopTank_Iterative extends OpMode{
         double front;
         double turn;
         double strafe;
-        boolean suckin;
-        boolean suckout;
+
 
         // Run wheels in tank mode (note: The joystick goes negative when pushed forward, so negate it)
         front = gamepad1.left_stick_y;
         turn = gamepad1.right_stick_x;
         strafe = gamepad1.left_stick_x;
-        suckin = gamepad1.dpad_down;
-        suckout = gamepad1.dpad_up;
 
         frontleftDrive.setPower(front);
         frontrightDrive.setPower(front);
@@ -168,18 +165,20 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive.setPower(-strafe);
 
         // changes the position to go down
+        //this is to open and close the claw
+        //START
         if (gamepad1.dpad_left)
             clawOffset += CLAW_SPEED;
         else if (gamepad1.dpad_right)
             clawOffset -= CLAW_SPEED;
 
-        servoclamp1.setPosition(clawOffset);
-
-        servoclamp2.setPosition(-clawOffset);
-
+    //    servoclamp1.setPosition(clawOffset);
+    //    servoclamp2.setPosition(-clawOffset);
+        //encoder for the claw
+   //     clawOffset = Range.clip(clawOffset, -1.0, 1.0);
+        //END CLAW
 
 //        servo2.setPosition(clawOffset);
-
 //        if (gamepad1.b) {
 //            servo1.setPosition(0.5);
 //        }
@@ -226,7 +225,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //            //clawOffset -= CLAW_SPEED;
 
         // Move both servos to new position.  Assume servos are mirror image of each other.
-        clawOffset = Range.clip(clawOffset, -1.0, 1.0);
+        //
 //        leftClaw.setPosition(MID_SERVO + clawOffset);
 //        rightClaw.setPosition(MID_SERVO - clawOffset);
 
@@ -234,36 +233,52 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //         Use gamepad buttons to move the arm up (Y) and down (A)
         //     armOffset = Range.clip(armOffset, -1.0, 1.0);
 
+
+        // moving arm vertically to preset position
+        //START
         if (gamepad1.y){
             arm.setPower(ARM_SPEED);
             arm.setTargetPosition(armOffset180);
-            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);}
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
         else if (gamepad1.a){
             arm.setPower(ARM_SPEED);
             arm.setTargetPosition(armOffset0);
-            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);}
-            else{
-                arm.setPower(0.0);}
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        else{
+            arm.setPower(0.0);
+        }
 
+        //encoder for the vertical arm movement
         armOffset = (int) Range.clip(armOffset, 0.0, 500.0);
+        //END
 
+        // manual movement of arm
+        //START
         if (gamepad1.dpad_down) {
             armOffset += ARM_SPEED;
-        arm.setTargetPosition(armOffset);}
+            arm.setTargetPosition(armOffset);
+        }
         else if (gamepad1.dpad_up){
             armOffset -=ARM_SPEED ;
-            arm.setTargetPosition(armOffset);}
+            arm.setTargetPosition(armOffset);
+        }
+        //END
 
    //     if (gamepad1.left_bumper)
   //          armOffset += ARM_SPEED;
   //      else if (gamepad1.left_trigger > 0)
  //           armOffset -= ARM_SPEED;
 
+
+
+
         // Send telemetry message to signify robot running;
-        telemetry.addData("claw",  "Offset = %.2f", clawOffset);
-        telemetry.addData("front",  "%.2f", front);
-        telemetry.addData("turn", "%.2f", turn);
-        telemetry.addData("arm",arm.getCurrentPosition());
+  //      telemetry.addData("claw",  "Offset = %.2f", clawOffset);
+ //       telemetry.addData("front",  "%.2f", front);
+  //      telemetry.addData("turn", "%.2f", turn);
+  //      telemetry.addData("arm",arm.getCurrentPosition());
     }
 
     /*
