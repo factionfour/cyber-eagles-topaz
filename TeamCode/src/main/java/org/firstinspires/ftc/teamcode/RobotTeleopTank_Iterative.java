@@ -52,38 +52,47 @@ import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name="Robot: Teleop Tank", group="Robot")
 
-public class RobotTeleopTank_Iterative extends OpMode{
-// define each motor and servo
+public class RobotTeleopTank_Iterative extends OpMode {
+    // define each motor and servo
     /* Declare OpMode members. */
-    public DcMotor  frontleftDrive   = null;
-    public DcMotor  backleftDrive  = null;
-    public DcMotor  backrightDrive  = null;
-    public DcMotor  frontrightDrive = null;
-    public DcMotor  armExtendo = null;
-    public DcMotor  arm = null;
-     //public DcMotor  leftArm     = null;
-    public Servo    servoclamp1    = null;
-    public Servo    servoclamp2    = null;
-//    public Servo    servo2    = null;
+    public DcMotor frontleftDrive = null;
+    public DcMotor backleftDrive = null;
+    public DcMotor backrightDrive = null;
+    public DcMotor frontrightDrive = null;
+    public DcMotor armExtendo = null;
+    public DcMotor arm = null;
+    //public DcMotor  leftArm     = null;
+    public Servo servoclamp1 = null;
+    public Servo servoclamp2 = null;
+
+    //    public Servo    servo2    = null;
     //public Servo    rightClaw   = null;
-    int armOffset180 = 250;
-    int armOffset0 = 0;
+    int armOffset100 = 100;
+    int armOffset0 = 10;
     int armOffset = 0;
+    int armTarget = 0;
+    int extendTarget = 0;
+    double armTicks = 3.9583;
     double clawOffset = 0;
     // create public static speeds for each
-    public static final double MID_SERVO   =  0.5 ;
-    public static final double CLAW_SPEED  = 0.02 ;        // sets rate to move servo
-    public static final double ARM_UP_POWER    =  0.25 ;   // Run arm motor up at 50% power
-    public static final double ARM_DOWN_POWER  = -0.25 ;   // Run arm motor down at -25% power
+    public static final double MID_SERVO = 0.5;
+    public static final double CLAW_SPEED = 0.02;        // sets rate to move servo
+    public static final double ARM_UP_POWER = 0.25;   // Run arm motor up at 50% power
+    public static final double ARM_DOWN_POWER = -0.25;   // Run arm motor down at -25% power
     public static final double EXTENDO_POWER = 0.25;
-    public static  final  double ARM_SPEED = 0.25;
+    public static final double ARM_SPEED = 0.12;
+    public static final double ARM_UP_STEADY = 0.05;
+    public static boolean armMoving = false;
+    public static boolean extendoMoving = false;
+    public static final double EXTENDO_SPEED = 0.1;
+    public String nextAction = "";
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
         // Define and Initialize Motors
-        frontleftDrive  = hardwareMap.get(DcMotor.class, "front_left_drive");
+        frontleftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
@@ -97,10 +106,11 @@ public class RobotTeleopTank_Iterative extends OpMode{
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-   //     servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
-  //      servoclamp1.setPosition(MID_SERVO);
-  //      servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
-  //      servoclamp2.setPosition(MID_SERVO);
+        armExtendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //      servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
+        //      servoclamp1.setPosition(MID_SERVO);
+        //      servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
+        //      servoclamp2.setPosition(MID_SERVO);
         armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 //        servo2  = hardwareMap.get(Servo.class, "servo_two");
 //        servo2.setPosition(MID_SERVO);
@@ -115,7 +125,9 @@ public class RobotTeleopTank_Iterative extends OpMode{
 //        rightClaw.setPosition(MID_SERVO);
 
         // Send telemetry message to signify robot waiting;
-       armExtendo.setTargetPosition(0);
+//        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armExtendo.setTargetPosition(0);
+        arm.setTargetPosition(0);
         telemetry.addData(">", "Robot Ready.  Press START.");    //
     }
 
@@ -132,6 +144,7 @@ public class RobotTeleopTank_Iterative extends OpMode{
      */
     @Override
     public void start() {
+
     }
 
     /*
@@ -149,10 +162,10 @@ public class RobotTeleopTank_Iterative extends OpMode{
         turn = gamepad1.right_stick_x;
         strafe = gamepad1.left_stick_x;
 
-        frontleftDrive.setPower(front);
-        frontrightDrive.setPower(front);
-        backleftDrive.setPower(front);
-        backrightDrive.setPower(front);
+        frontleftDrive.setPower(-front);
+        frontrightDrive.setPower(-front);
+        backleftDrive.setPower(-front);
+        backrightDrive.setPower(-front);
 
         frontleftDrive.setPower(-turn);
         frontrightDrive.setPower(turn);
@@ -172,10 +185,10 @@ public class RobotTeleopTank_Iterative extends OpMode{
         else if (gamepad1.dpad_right)
             clawOffset -= CLAW_SPEED;
 
-    //    servoclamp1.setPosition(clawOffset);
-    //    servoclamp2.setPosition(-clawOffset);
+        //    servoclamp1.setPosition(clawOffset);
+        //    servoclamp2.setPosition(-clawOffset);
         //encoder for the claw
-   //     clawOffset = Range.clip(clawOffset, -1.0, 1.0);
+        //     clawOffset = Range.clip(clawOffset, -1.0, 1.0);
         //END CLAW
 
 //        servo2.setPosition(clawOffset);
@@ -232,60 +245,81 @@ public class RobotTeleopTank_Iterative extends OpMode{
 
 //         Use gamepad buttons to move the arm up (Y) and down (A)
         //     armOffset = Range.clip(armOffset, -1.0, 1.0);
-
-
+        if (gamepad1.dpad_left) {
+        }
         // moving arm vertically to preset position
         //START
-        if (gamepad1.y){
+        if (gamepad1.y) {
+            armExtendo.setPower(EXTENDO_SPEED);
+//            armExtendo.setTargetPosition();
+            extendoMoving = true;
+            nextAction = "ARMUP";
+//            arm.setPower(ARM_SPEED);
+//            armTarget = (int) (armOffset100 * armTicks);
+////            arm.setTargetPosition((int) (armOffset100 * armTicks));
+//            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMoving = true;
+        } else if (gamepad1.a) {
             arm.setPower(ARM_SPEED);
-            arm.setTargetPosition(armOffset180);
-            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armTarget = (int) (armOffset0 * armTicks);
+//            arm.setTargetPosition((int) (armOffset0 * armTicks));
+//            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMoving = true;
+        } else {
+//            arm.setPower(0.0);
         }
-        else if (gamepad1.a){
-            arm.setPower(ARM_SPEED);
-            arm.setTargetPosition(armOffset0);
-            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        if (armMoving && !arm.isBusy()) {
+////            arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+////            arm.setPower(ARM_UP_STEADY);
+//            armMoving = false;
+//
+//        }
+        if (extendoMoving && !armExtendo.isBusy()){
+            if (nextAction == "ARMUP") {
+                nextAction = "";
+                arm.setPower(ARM_SPEED);
+            armTarget = (int) (armOffset100 * armTicks);
+//
+            }
         }
-        else{
-            arm.setPower(0.0);
-        }
-
         //encoder for the vertical arm movement
         armOffset = (int) Range.clip(armOffset, 0.0, 500.0);
         //END
+        arm.setTargetPosition(armTarget);
+        arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        armExtendo.setTargetPosition(extendTarget);
+        armExtendo.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         // manual movement of arm
-        //START
-        if (gamepad1.dpad_down) {
-            armOffset += ARM_SPEED;
-            arm.setTargetPosition(armOffset);
-        }
-        else if (gamepad1.dpad_up){
-            armOffset -=ARM_SPEED ;
-            arm.setTargetPosition(armOffset);
-        }
+        //START.
+//        if (gamepad1.dpad_down) {
+//            armOffset += ARM_SPEED;
+//            arm.setTargetPosition(armOffset);
+//        }
+//        else if (gamepad1.dpad_up){
+//            armOffset -=ARM_SPEED ;
+//            arm.setTargetPosition(armOffset);
+        //  }
         //END
 
-   //     if (gamepad1.left_bumper)
-  //          armOffset += ARM_SPEED;
-  //      else if (gamepad1.left_trigger > 0)
- //           armOffset -= ARM_SPEED;
-
-
+        //     if (gamepad1.left_bumper)
+        //          armOffset += ARM_SPEED;
+        //      else if (gamepad1.left_trigger > 0)
+        //           armOffset -= ARM_SPEED;
 
 
         // Send telemetry message to signify robot running;
-  //      telemetry.addData("claw",  "Offset = %.2f", clawOffset);
- //       telemetry.addData("front",  "%.2f", front);
-  //      telemetry.addData("turn", "%.2f", turn);
-  //      telemetry.addData("arm",arm.getCurrentPosition());
+        telemetry.addData("claw",  "Offset = %.2f", clawOffset);
+        telemetry.addData("front",  "%.2f", front);
+        telemetry.addData("turn", "%.2f", turn);
+        telemetry.addData("arm", arm.getCurrentPosition());
     }
-
+}
     /*
      * Code to run ONCE after the driver hits STOP
      */
-    @Override
-    public void stop() {
-    }
 
-}
+//    public void stop() {
+//    }
+//
+//}
