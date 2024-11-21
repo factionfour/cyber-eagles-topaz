@@ -108,7 +108,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armExtendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //armExtendo.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         servoclamp1  = hardwareMap.get(Servo.class, "servo_one");
         servoclamp1.setPosition(MID_SERVO);
         servoclamp2  = hardwareMap.get(Servo.class, "servo_two");
@@ -271,10 +271,19 @@ public class RobotTeleopTank_Iterative extends OpMode {
 //    servoclamp2.setPosition(clawOffset2);
 //    servoclamp1.setPosition(clawOffset1);
 
-        if (gamepad1.dpad_left)
+        //MANUAL MOVING CODE
+        if (gamepad2.dpad_left) {
+            //CLAW IN
             clawOffset1 += CLAW_SPEED;
-        else if (gamepad1.dpad_right)
+        }
+        else if (gamepad2.dpad_right) {
+            //CLAW OUT
             clawOffset1 -= CLAW_SPEED;
+        }
+
+
+
+        //AUTOMATED MOVING CODE
 
         // Move both servos to new position.  Assume servos are mirror image of each other.
         clawOffset1 = Range.clip(clawOffset1, -0.5, 0.5);
@@ -283,7 +292,16 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         // moving arm vertically to preset position
         //START
-        if (gamepad1.y) {
+        if (gamepad2.y) {
+            //the logic to move the arm up is the following:
+            //the arm "extendo" must vome in before the arm goes up.
+            //this is because the arm power is not enough with the currrent design.
+            //1. Move arm in -
+            //  once this action is complete, step 2 can start "ARMUP"
+            //2. Move arm up -
+            //  once this action is complete, step 3 can start "ARMOUT"
+            //3. Move arm out
+            //
             armExtendo.setPower(EXTENDO_SPEED);
 //            armExtendo.setTargetPosition();
             extendoMoving = true;
@@ -293,14 +311,12 @@ public class RobotTeleopTank_Iterative extends OpMode {
 ////            arm.setTargetPosition((int) (armOffset100 * armTicks));
 //            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             armMoving = true;
-        } else if (gamepad1.a) {
+        } else if (gamepad2.a) {
             arm.setPower(ARM_SPEED);
             armTarget = (int) (armOffset0 * armTicks);
 //            arm.setTargetPosition((int) (armOffset0 * armTicks));
 //            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             armMoving = true;
-        } else {
-//            arm.setPower(0.0);
         }
 //        if (armMoving && !arm.isBusy()) {
 ////            arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -312,7 +328,8 @@ public class RobotTeleopTank_Iterative extends OpMode {
             if (nextAction == "ARMUP") {
                 nextAction = "";
                 arm.setPower(ARM_SPEED);
-            armTarget = (int) (armOffset100 * armTicks);
+                armTarget = (int) (armOffset100 * armTicks);
+
 //
             }
         }
@@ -322,8 +339,10 @@ public class RobotTeleopTank_Iterative extends OpMode {
         arm.setTargetPosition(armTarget);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        armExtendo.setTargetPosition(extendTarget);
-        armExtendo.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //jack commented
+        //armExtendo.setTargetPosition(extendTarget);
+        //armExtendo.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         // manual movement of arm
         //START.
 //        if (gamepad1.dpad_down) {
