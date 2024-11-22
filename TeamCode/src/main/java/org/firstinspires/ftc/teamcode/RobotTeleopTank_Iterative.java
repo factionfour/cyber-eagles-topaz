@@ -48,7 +48,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
      * Code to run ONCE when the driver hits INIT
      */
     //debounce variables
-    long lastExtensionMovementTime = System.currentTimeMillis(); // Last time the arm moved
+    //long lastExtensionMovementTime = System.currentTimeMillis(); // Last time the arm moved
     //boolean extensionMoveTriggered = false; // Flag to indicate if the arm moved
 
     long lastArmMovementTime = System.currentTimeMillis(); // Last time the arm moved
@@ -224,9 +224,9 @@ public class RobotTeleopTank_Iterative extends OpMode {
             extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             extensionArmMotor.setPower(0.5); // Set constant power for testing
         }*/
-        if (gamepad2.x || gamepad2.b) {
-            lastExtensionMovementTime = System.currentTimeMillis();
-        }
+        //if (gamepad2.x || gamepad2.b) {
+        //    lastExtensionMovementTime = System.currentTimeMillis();
+        //}
        /* if (gamepad2.x && (currentTime - lastXPressTime) > DEBOUNCE_DELAY) {
                  extensionTargetPosition = Math.min(extensionTargetPosition + EXTENSION_MIN_SPEED, EXTENSION_MAX_POSITION); // Ensure it doesn't go beyond max
                  lastXPressTime = System.currentTimeMillis(); // Update last press time
@@ -251,7 +251,6 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
          //EMERGENCY STOP BUTTON (BOTTOM)
         if (gamepad2.a) {// || (extensionTargetPosition <= 0 && extensionArmMotor.getCurrentPosition() > 0 && (System.currentTimeMillis() - lastExtensionMovementTime) > 500)) {
-
             // Stop and reset encoder
             extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             extensionArmMotor.setTargetPosition(0);
@@ -307,14 +306,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
         }
         // --- END WHEEL SERVO CONTROL ---
 
-        telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
-        telemetry.addData("Arm Target Position", armTargetPosition);
-        telemetry.addData("ARM_MIN_POSITION_WHEN_EXTENSION_EXTENDED", ARM_MIN_POSITION_WHEN_EXTENSION_EXTENDED);
-        telemetry.addData("extensionPosition", extensionPosition);
-        telemetry.addData("EXTENSION_MAX_POSITION", EXTENSION_MAX_POSITION);
-        telemetry.addData("dynamicArmMinPosition", dynamicArmMinPosition);
-
-      /*  // Send telemetry message to signify robot running;
+        // Send telemetry message to signify robot running;
         telemetry.addData("front",  "%.2f", front);
         telemetry.addData("turn", "%.2f", turn);
         telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
@@ -329,7 +321,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
         telemetry.addData("Extension Calculated Power", extensionPower);
         telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
         telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
-        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
+        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());
     }
 
 
