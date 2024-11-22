@@ -159,13 +159,13 @@ public class RobotTeleopTank_Iterative extends OpMode {
         if (gamepad2.dpad_down) {
             if (currentTime - lastDPadDownPressTime > DEBOUNCE_DELAY) { // Only update every 100ms
                 double extensionFactor = (double) extensionPosition / EXTENSION_MAX_POSITION;
-                // If the extension is fully extended (2200), set dynamicArmMinPosition to 150
+                // If the extension is fully extended (2200), set dynamicArmMinPosition to 200
                 if (extensionPosition == EXTENSION_MAX_POSITION) {
-                    dynamicArmMinPosition = 190;
+                    dynamicArmMinPosition = 200;
                 }
-                // If the extension is at 900, set dynamicArmMinPosition to 80
+                // If the extension is at 900, set dynamicArmMinPosition to 100
                 else if (extensionPosition == 900) {
-                    dynamicArmMinPosition = 90;
+                    dynamicArmMinPosition = 100;
                 }
                 // If the extension is fully retracted (0), set dynamicArmMinPosition to 100
                 else if (extensionPosition == EXTENSION_MIN_POSITION) {
@@ -174,11 +174,11 @@ public class RobotTeleopTank_Iterative extends OpMode {
                 // If the extension is somewhere in between, calculate a value between 80 and 150
                 else {
                     if (extensionPosition > 900) {
-                        // Linearly interpolate between 900 and 2200 for the range [90, 165]
-                        dynamicArmMinPosition = (int) (90 + (extensionPosition - 900) * (190 - 90) / (EXTENSION_MAX_POSITION - 900));
+                        // Linearly interpolate between 900 and 2200 for the range [100, 200]
+                        dynamicArmMinPosition = (int) (100 + (extensionPosition - 900) * (200 - 100) / (EXTENSION_MAX_POSITION - 900));
                     } else {
-                        // Linearly interpolate between 0 and 900 for the range [100, 90]
-                        dynamicArmMinPosition = (int) (100 + extensionPosition * (90 - 100) / 900);
+                        // Linearly interpolate between 0 and 900 for the range [100, 100]
+                        dynamicArmMinPosition = (int) (100 + extensionPosition * (100 - 100) / 900);
                     }
                 }
                 armTargetPosition = Math.max(armTargetPosition - ARM_MIN_SPEED, dynamicArmMinPosition);
