@@ -27,17 +27,17 @@ public class RobotTeleopTank_Iterative extends OpMode {
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.6;
-    int ARM_MIN_SPEED = 12; // How far to move per loop iteration
+    int ARM_MAX_SPEED = 12; // How far to move per loop iteration
     int ARM_MIN_POSITION_WHEN_EXTENSION_EXTENDED = 150;
 
     // Vertical extension limits and base power
     int extensionTargetPosition = 0;
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
+    int EXTENSION_MAX_SPEED = 80; // Time in milliseconds to wait before accepting another press
 
-    int EXTENSION_MIN_SPEED = 80; // How far to move per loop iteration
-    //int EXTENSION_MAX_SPEED = 20; // Time in milliseconds to wait before accepting another press
-    //int EXTENSION_RAMP_TIME = 200;
+    int RAMP_TIME = 200;
+
     double EXTENSION_BASE_POWER = 0.5; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
     long DEBOUNCE_DELAY = 40; // Time in milliseconds to wait before accepting another press
@@ -61,8 +61,10 @@ public class RobotTeleopTank_Iterative extends OpMode {
     int dynamicArmMinPosition = 0;
     long lastXPressTime = 0;
     long lastBPressTime = 0;
+
     long lastDPadUpPressTime = 0;
     long lastDPadDownPressTime = 0;
+
     double currentExtensionPower = 0;
     double currentArmPower = 0;
     boolean predefinedActionRunning = false;
@@ -155,19 +157,32 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         // --- ARM ROTATE MOTOR CONTROL ---
         if (gamepad2.dpad_up && !predefinedActionRunning) {
-            if (currentTime - lastDPadUpPressTime > DEBOUNCE_DELAY) {
-                armTargetPosition = Math.min(armTargetPosition + ARM_MIN_SPEED, ARM_MAX_POSITION);
+            //if (currentTime - lastDPadUpPressTime > DEBOUNCE_DELAY) {
+                long timeHeld = currentTime - lastDPadUpPressTime;
+
+                if (timeHeld < RAMP_TIME) {
+                    armTargetPosition += Math.min((int) (ARM_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), ARM_MAX_SPEED);
+                } else {
+                    armTargetPosition += ARM_MAX_SPEED;  // Max speed after ramp time
+                }
+                armTargetPosition = Math.min(armTargetPosition, ARM_MAX_POSITION);
+
+                //armTargetPosition = Math.min(armTargetPosition + ARM_MAX_SPEED, ARM_MAX_POSITION);
                 currentArmPower = calcArmPower();
                 armMotor.setTargetPosition(armTargetPosition);
                 armMotor.setPower(currentArmPower);
                 armMoveTriggered = true;
                 lastArmMovementTime = System.currentTimeMillis();
                 lastDPadUpPressTime = currentTime;
-            }
+            //}
         }
+        else {
+            lastDPadUpPressTime = 0;
+        }
+
         int extensionPosition = extensionArmMotor.getCurrentPosition();
         if (gamepad2.dpad_down && !predefinedActionRunning) {
-            if (currentTime - lastDPadDownPressTime > DEBOUNCE_DELAY) {
+            //if (currentTime - lastDPadDownPressTime > DEBOUNCE_DELAY) {
                 double extensionFactor = (double) extensionPosition / EXTENSION_MAX_POSITION;
                 // If the extension is fully extended (2200), set dynamicArmMinPosition to 200
                 if (extensionPosition == EXTENSION_MAX_POSITION) {
@@ -190,8 +205,19 @@ public class RobotTeleopTank_Iterative extends OpMode {
                         // Linearly interpolate between 0 and 900 for the range [100, 100]
                         dynamicArmMinPosition = (int) (100 + extensionPosition * (100 - 100) / 900);
                     }
+
                 }
-                armTargetPosition = Math.max(armTargetPosition - ARM_MIN_SPEED, dynamicArmMinPosition);
+
+                long timeHeld = currentTime - lastDPadDownPressTime;
+
+                if (timeHeld < RAMP_TIME) {
+                    armTargetPosition += Math.min((int) (ARM_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), ARM_MAX_SPEED);
+                } else {
+                    armTargetPosition += ARM_MAX_SPEED;  // Max speed after ramp time
+                }
+                armTargetPosition = Math.max(armTargetPosition, dynamicArmMinPosition);
+
+                //armTargetPosition = Math.max(armTargetPosition - ARM_MAX_SPEED, dynamicArmMinPosition);
                 currentArmPower = calcArmPower();
                 armMotor.setTargetPosition(armTargetPosition);
                 armMotor.setPower(currentArmPower);
@@ -199,7 +225,10 @@ public class RobotTeleopTank_Iterative extends OpMode {
                 armMoveTriggered = true;
                 lastArmMovementTime = System.currentTimeMillis();
                 lastDPadDownPressTime = currentTime;
-            }
+            //}
+        }
+        else {
+            lastDPadDownPressTime = 0;
         }
 
         // --- END ARM ROTATE MOTOR CONTROL ---
@@ -207,23 +236,50 @@ public class RobotTeleopTank_Iterative extends OpMode {
         // --- EXTENSION ARM MOTOR CONTROL ---
 
         if (gamepad2.x && !predefinedActionRunning) {
-            extensionTargetPosition += EXTENSION_MIN_SPEED; // Increment continuously
+            long timeHeld = currentTime - lastXPressTime;
+
+            if (timeHeld < RAMP_TIME) {
+                extensionTargetPosition += Math.min((int) (EXTENSION_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), EXTENSION_MAX_SPEED);
+            } else {
+                extensionTargetPosition += EXTENSION_MAX_SPEED;  // Max speed after ramp time
+            }
+            extensionTargetPosition = Math.min(extensionTargetPosition, EXTENSION_MAX_POSITION);
+            //   extensionTargetPosition += EXTENSION_MIN_SPEED; // Increment continuously
             // Clamp target position to stay within bounds
-            extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
+            //extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
             extensionArmMotor.setTargetPosition(extensionTargetPosition);
             extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(currentExtensionPower);
+
+            lastXPressTime = System.currentTimeMillis(); // Update last press time
+        }
+        else {
+            lastXPressTime = 0;
         }
 
         if (gamepad2.b && !predefinedActionRunning) {
-            extensionTargetPosition -= EXTENSION_MIN_SPEED; // Increment continuously
+            // Calculate how long the button has been held down
+            long timeHeld = currentTime - lastBPressTime;
+            if (timeHeld < RAMP_TIME) {
+                extensionTargetPosition -= Math.min((int) (EXTENSION_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), EXTENSION_MAX_SPEED);
+            } else {
+                extensionTargetPosition -= EXTENSION_MAX_SPEED;  // Max speed after ramp time
+            }
+            extensionTargetPosition = Math.max(extensionTargetPosition, EXTENSION_MIN_POSITION);
+
+            //extensionTargetPosition -= EXTENSION_MIN_SPEED; // Increment continuously
             // Clamp target position to stay within bounds
-            extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
+            //extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
             extensionArmMotor.setTargetPosition(extensionTargetPosition);
             extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(currentExtensionPower);
+
+            lastBPressTime = System.currentTimeMillis(); // Update last press time
+        }
+        else {
+            lastBPressTime = 0;
         }
 
         // --- END EXTENSION ARM MOTOR CONTROL ---
@@ -369,8 +425,8 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         // --- STOP & EMERGENCY ACTIONS
 
-        // Reset the arm position scale down the motor if it hasn't moved in .5 second (and it should be)
-        if (armMoveTriggered && (currentTime - lastArmMovementTime) > 500) {
+        // Reset the arm position scale down the motor if it hasn't moved in 1 second (and it should be)
+        if (armMoveTriggered && (currentTime - lastArmMovementTime) > 1000) {
             armTargetPosition = armMotor.getCurrentPosition();
             armMotor.setTargetPosition(armTargetPosition);
             armMoveTriggered = false;  // Reset movement flag

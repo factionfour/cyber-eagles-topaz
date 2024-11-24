@@ -8,12 +8,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="Robot: Auto Drive By Time Position 1", group="Robot")
-public class RobotAutoDriveByTimePos1_Linear extends AutoBase {
+public class RobotAutoBlueLeft extends AutoBase {
     @Override
     public void runOpMode() {
         initializeHardware();
-        // Step 1:  Drive forward for 3 seconds
-        //driveForward(3000,100);
+        // Step 1:  Drive forward for 30 CM
+        driveForwardCM(40,100);
 
 //      Step 2:  Straife right for 1.3 seconds
         //strafeLeft(1300,100);
