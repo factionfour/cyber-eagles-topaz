@@ -61,6 +61,12 @@ public abstract class AutoBase extends LinearOpMode {
     double currentArmPower = 0;
     boolean predefinedActionRunning = false;
 
+    //CONVERSION TO CENTIMETERS
+    final double WHEEL_DIAMETER_CM = 10.0; // Replace with your wheel diameter in cm
+    final double TICKS_PER_REV = 1120.0; // Replace with your motor's ticks per revolution
+    final double WHEEL_CIRCUMFERENCE_CM = Math.PI * WHEEL_DIAMETER_CM;
+    final double STRAFE_FACTOR = 1.1;
+
     private ElapsedTime runtime = new ElapsedTime();
 
     public void initializeHardware() {
@@ -102,7 +108,10 @@ public abstract class AutoBase extends LinearOpMode {
         waitForStart();
     }
 
-    public void driveForward(int milliseconds, int sleepMS) {
+    public void driveForwardCM(int CM, int sleepMS) {
+        driveForward((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV,sleepMS);
+    }
+    public void driveForward(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
@@ -119,7 +128,11 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
    }
 
-    public void driveBackward(int milliseconds, int sleepMS) {
+    public void driveBackwardCM(int CM, int sleepMS) {
+        driveBackward((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV,sleepMS);
+    }
+
+    public void driveBackward(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(-FORWARD_SPEED);
         backleftDrive.setPower(-FORWARD_SPEED);
@@ -136,7 +149,10 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void strafeLeft(int milliseconds, int sleepMS) {
+    public void strafeLeftCM(int CM, int sleepMS) {
+        strafeLeft((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV * STRAFE_FACTOR,sleepMS);
+    }
+    public void strafeLeft(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
@@ -153,7 +169,10 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void strafeRight(int milliseconds, int sleepMS) {
+    public void strafeRightCM(int CM, int sleepMS) {
+        strafeLeft((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV * STRAFE_FACTOR,sleepMS);
+    }
+    public void strafeRight(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(-FORWARD_SPEED);
         backleftDrive.setPower(-FORWARD_SPEED);
@@ -170,7 +189,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void turnLeft(int milliseconds, int sleepMS) {
+    public void turnLeft(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(-FORWARD_SPEED);
         frontleftDrive.setPower(FORWARD_SPEED);
         backleftDrive.setPower(FORWARD_SPEED);
@@ -186,7 +205,7 @@ public abstract class AutoBase extends LinearOpMode {
         backrightDrive.setPower(0);
         sleep(sleepMS);
     }
-    public void turnRight(int milliseconds, int sleepMS) {
+    public void turnRight(double milliseconds, int sleepMS) {
         frontrightDrive.setPower(FORWARD_SPEED);
         frontleftDrive.setPower(-FORWARD_SPEED);
         backleftDrive.setPower(-FORWARD_SPEED);
