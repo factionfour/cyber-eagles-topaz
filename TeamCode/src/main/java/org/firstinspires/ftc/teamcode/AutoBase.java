@@ -47,8 +47,12 @@ public abstract class AutoBase extends LinearOpMode {
     double SERVO_FORWARD = 1;
     double SERVO_BACKWARD = 0;
 
+    double FORWARD_MIN_SPEED = 0.4;
     double FORWARD_SPEED = 1;
+    int FORWARD_RAMP_TIME = 200;
     double TURN_SPEED    = 1;
+
+    int RAMP_TIME = 200;
 
     //pre-defined positions
     int HOOK_EXTENSION_POSITION = 1800;
@@ -62,9 +66,9 @@ public abstract class AutoBase extends LinearOpMode {
     boolean predefinedActionRunning = false;
 
     //CONVERSION TO CENTIMETERS
-    final double WHEEL_DIAMETER_CM = 10.0; // Replace with your wheel diameter in cm
-    final double TICKS_PER_REV = 1120.0; // Replace with your motor's ticks per revolution
-    final double WHEEL_CIRCUMFERENCE_CM = Math.PI * WHEEL_DIAMETER_CM;
+    double FORWARD_MM_SECOND = 1040;
+    double BACKWARD_MM_SECOND = 1060;
+    double STRAIFE_MM_SECOND = 706;
     final double STRAFE_FACTOR = 1.1;
 
     private ElapsedTime runtime = new ElapsedTime();
@@ -76,9 +80,13 @@ public abstract class AutoBase extends LinearOpMode {
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
 
         frontleftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontleftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontrightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
+        backrightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backleftDrive.setDirection(DcMotor.Direction.FORWARD);
+        backleftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Initialize arm motor
         armMotor = hardwareMap.get(DcMotor.class, "arm_1");
@@ -108,84 +116,191 @@ public abstract class AutoBase extends LinearOpMode {
         waitForStart();
     }
 
-    public void driveForwardCM(int CM, int sleepMS) {
-        driveForward((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV,sleepMS);
+
+
+    public void driveForwardMM(int distanceMM, int sleepMS) {
+        long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
+        driveForward(timeToTravelMM,sleepMS);
     }
     public void driveForward(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(FORWARD_SPEED);
-        frontleftDrive.setPower(FORWARD_SPEED);
-        backleftDrive.setPower(FORWARD_SPEED);
-        backrightDrive.setPower(FORWARD_SPEED);
+        long startTime = System.currentTimeMillis();
+        double currentPower = FORWARD_MIN_SPEED;
         runtime.reset();
+
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            double elapsedTime = runtime.milliseconds();
+
+            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                // Ramp up phase
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            } else {
+                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+            }
+
+            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
+            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+
+            // Apply the power to the motors (inverting the power for right motors)
+            frontrightDrive.setPower(currentPower);
+            frontleftDrive.setPower(currentPower);
+            backleftDrive.setPower(currentPower);
+            backrightDrive.setPower(currentPower);
+
+            // Telemetry for monitoring
+            telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
+
+        // Stop the motors after the loop is done
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+// Sleep for the specified time
         sleep(sleepMS);
    }
 
-    public void driveBackwardCM(int CM, int sleepMS) {
-        driveBackward((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV,sleepMS);
+    public void driveBackwardMM(int distanceMM, int sleepMS) {
+        long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
+        driveBackward(timeToTravelMM,sleepMS);
     }
 
     public void driveBackward(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(-FORWARD_SPEED);
-        frontleftDrive.setPower(-FORWARD_SPEED);
-        backleftDrive.setPower(-FORWARD_SPEED);
-        backrightDrive.setPower(-FORWARD_SPEED);
+        long startTime = System.currentTimeMillis();
+        double currentPower = FORWARD_MIN_SPEED;
         runtime.reset();
+
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            double elapsedTime = runtime.milliseconds();
+
+            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                // Ramp up phase
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            } else {
+                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+            }
+
+            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
+            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+
+            // Apply the power to the motors (inverting the power for right motors)
+            frontrightDrive.setPower(-currentPower);
+            frontleftDrive.setPower(-currentPower);
+            backleftDrive.setPower(-currentPower);
+            backrightDrive.setPower(-currentPower);
+
+            // Telemetry for monitoring
+            telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
+
+        // Stop the motors after the loop is done
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+// Sleep for the specified time
         sleep(sleepMS);
     }
 
-    public void strafeLeftCM(int CM, int sleepMS) {
-        strafeLeft((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV * STRAFE_FACTOR,sleepMS);
+    public void strafeLeftMM(int distanceMM, int sleepMS) {
+        long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
+        strafeLeft(timeToTravelMM, sleepMS);
     }
+
     public void strafeLeft(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(-FORWARD_SPEED);
-        frontleftDrive.setPower(FORWARD_SPEED);
-        backleftDrive.setPower(FORWARD_SPEED);
-        backrightDrive.setPower(-FORWARD_SPEED);
+        long startTime = System.currentTimeMillis();
+        double currentPower = FORWARD_MIN_SPEED;
         runtime.reset();
+
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            double elapsedTime = runtime.milliseconds();
+
+            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                // Ramp up phase
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            } else {
+                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+            }
+
+            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
+            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+
+            // Apply the power to the motors (inverting the power for right motors)
+            frontrightDrive.setPower(-currentPower);
+            frontleftDrive.setPower(currentPower);
+            backleftDrive.setPower(-currentPower);
+            backrightDrive.setPower(currentPower);
+
+            // Telemetry for monitoring
+            telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
+
+        // Stop the motors after the loop is done
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+// Sleep for the specified time
         sleep(sleepMS);
     }
 
-    public void strafeRightCM(int CM, int sleepMS) {
-        strafeLeft((CM / WHEEL_CIRCUMFERENCE_CM) * TICKS_PER_REV * STRAFE_FACTOR,sleepMS);
+    public void strafeRightMM(int distanceMM, int sleepMS) {
+        long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
+        strafeRight(timeToTravelMM, sleepMS);
     }
     public void strafeRight(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(FORWARD_SPEED);
-        frontleftDrive.setPower(-FORWARD_SPEED);
-        backleftDrive.setPower(-FORWARD_SPEED);
-        backrightDrive.setPower(FORWARD_SPEED);
+        long startTime = System.currentTimeMillis();
+        double currentPower = FORWARD_MIN_SPEED;
         runtime.reset();
+
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+            double elapsedTime = runtime.milliseconds();
+
+            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                // Ramp up phase
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            } else {
+                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+            }
+
+            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
+            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+
+            // Apply the power to the motors (inverting the power for right motors)
+            frontrightDrive.setPower(currentPower);
+            frontleftDrive.setPower(-currentPower);
+            backleftDrive.setPower(currentPower);
+            backrightDrive.setPower(-currentPower);
+
+            // Telemetry for monitoring
+            telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
+
+        // Stop the motors after the loop is done
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+// Sleep for the specified time
         sleep(sleepMS);
     }
 

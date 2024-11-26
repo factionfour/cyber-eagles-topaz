@@ -3,13 +3,13 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Robot: Test Forward 1 second", group="Robot")
-public class  Test_DriveFront extends AutoBase {
+@Autonomous(name="Robot: Test Strafe Left 1500mm", group="Robot")
+public class Test_StraifeLeft2 extends AutoBase {
     @Override
     public void runOpMode() {
         initializeHardware();
         // Step 1:  Drive forward for 1 second
-        driveForward(1000,200);
+        strafeLeftMM(1500,200);
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();

@@ -13,9 +13,9 @@ public class RobotAutoBlueLeft extends AutoBase {
     public void runOpMode() {
         initializeHardware();
         // Step 1:  Drive forward for 30 CM
-        driveForwardCM(40,100);
+        driveForwardMM(40,100);
 
-//      Step 2:  Straife right for 1.3 seconds
+//      Step 2:  Strafe right for 1.3 seconds
         //strafeLeft(1300,100);
 
         moveArm(100,1000,100);

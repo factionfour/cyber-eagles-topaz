@@ -468,7 +468,6 @@ public class RobotTeleopTank_Iterative extends OpMode {
         telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
         telemetry.addData("Arm Calculated Power", currentArmPower);
         telemetry.addData("Arm Motor Busy", armMotor.isBusy());
-
         telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
         telemetry.addData("Extension Target Position", extensionTargetPosition);
         //telemetry.addData("Extension Proximity Factor", extensionProximityFactor);
