@@ -57,8 +57,8 @@ public abstract class AutoBase extends LinearOpMode {
     //pre-defined positions
     int HOOK_EXTENSION_POSITION = 1800;
     int HOOK_ARM_HEIGHT = 420;
-    int HOOK_RELEASE_EXTENSION_POSITION = 1500;
-    int HOOK_RELEASE_ARM_HEIGHT = 350;
+    int HOOK_RELEASE_EXTENSION_POSITION = 1400;
+    int HOOK_RELEASE_ARM_HEIGHT = 300;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -69,7 +69,7 @@ public abstract class AutoBase extends LinearOpMode {
     double FORWARD_MM_SECOND = 1040;
     double BACKWARD_MM_SECOND = 1060;
     double STRAIFE_MM_SECOND = 706;
-    final double STRAFE_FACTOR = 1.1;
+    int STRAIFE_RAMP_TIME = 100;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -212,8 +212,18 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
     public void strafeLeftMM(int distanceMM, int sleepMS) {
-        long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
-        strafeLeft(timeToTravelMM, sleepMS);
+        //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
+
+        // Calculate ramp-up/down distance
+        double rampDistanceMM = ((FORWARD_MIN_SPEED + FORWARD_SPEED) / 2) * STRAIFE_RAMP_TIME / 1000.0 * STRAIFE_MM_SECOND;
+        // Ensure ramp distances don't exceed total distance
+        double constantSpeedDistanceMM = Math.max(0, distanceMM - 2 * rampDistanceMM);
+        // Calculate durations for each phase
+        double rampTimeMS = STRAIFE_RAMP_TIME; // Ramp-up and ramp-down times are fixed
+        double constantSpeedTimeMS = (constantSpeedDistanceMM / STRAIFE_MM_SECOND) * 1000;
+        // Total time to travel
+        long totalTimeMS = (long)(2 * rampTimeMS + constantSpeedTimeMS);
+        strafeLeft(totalTimeMS, sleepMS);
     }
 
     public void strafeLeft(double milliseconds, int sleepMS) {
@@ -224,13 +234,13 @@ public abstract class AutoBase extends LinearOpMode {
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+            if (elapsedTime < (milliseconds - STRAIFE_RAMP_TIME)) {
                 // Ramp up phase
                 currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
             } else {
                 // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)STRAIFE_RAMP_TIME));
             }
 
             // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
@@ -259,8 +269,18 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
     public void strafeRightMM(int distanceMM, int sleepMS) {
-        long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
-        strafeRight(timeToTravelMM, sleepMS);
+        //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
+
+        // Calculate ramp-up/down distance
+        double rampDistanceMM = ((FORWARD_MIN_SPEED + FORWARD_SPEED) / 2) * STRAIFE_RAMP_TIME / 1000.0 * STRAIFE_MM_SECOND;
+        // Ensure ramp distances don't exceed total distance
+        double constantSpeedDistanceMM = Math.max(0, distanceMM - 2 * rampDistanceMM);
+        // Calculate durations for each phase
+        double rampTimeMS = STRAIFE_RAMP_TIME; // Ramp-up and ramp-down times are fixed
+        double constantSpeedTimeMS = (constantSpeedDistanceMM / STRAIFE_MM_SECOND) * 1000;
+        // Total time to travel
+        long totalTimeMS = (long)(2 * rampTimeMS + constantSpeedTimeMS);
+        strafeRight(totalTimeMS, sleepMS);
     }
     public void strafeRight(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
@@ -270,13 +290,13 @@ public abstract class AutoBase extends LinearOpMode {
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+            if (elapsedTime < (milliseconds - STRAIFE_RAMP_TIME)) {
                 // Ramp up phase
                 currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
             } else {
                 // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_TIME);
+                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)STRAIFE_RAMP_TIME));
             }
 
             // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]

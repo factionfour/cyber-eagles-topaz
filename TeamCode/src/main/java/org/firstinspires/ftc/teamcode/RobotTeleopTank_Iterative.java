@@ -52,8 +52,8 @@ public class RobotTeleopTank_Iterative extends OpMode {
     int HOOK_EXTENSION_POSITION = 1800;
     int HOOK_ARM_HEIGHT = 420;
     long HOOK_ACTION_TIMEOUT = 4000; // 5 seconds
-    int HOOK_RELEASE_EXTENSION_POSITION = 1500;
-    int HOOK_RELEASE_ARM_HEIGHT = 350;
+    int HOOK_RELEASE_EXTENSION_POSITION = 1400;
+    int HOOK_RELEASE_ARM_HEIGHT = 300;
     long HOOK_RELEASE_ACTION_TIMEOUT = 1500; //1.5 seconds
 
     long lastArmMovementTime = System.currentTimeMillis(); // Last time the arm moved
@@ -426,11 +426,12 @@ public class RobotTeleopTank_Iterative extends OpMode {
         // --- STOP & EMERGENCY ACTIONS
 
         // Reset the arm position scale down the motor if it hasn't moved in 1 second (and it should be)
-        if (armMoveTriggered && (currentTime - lastArmMovementTime) > 1000) {
+        if (armMoveTriggered && (currentTime - lastArmMovementTime) > 1000 && isArmStalled()) {
             armTargetPosition = armMotor.getCurrentPosition();
             armMotor.setTargetPosition(armTargetPosition);
+            armMotor.setPower(calcArmPower());
             armMoveTriggered = false;  // Reset movement flag
-            //predefinedActionRunning = false;
+            predefinedActionRunning = false;
         }
 
         //Stop the motor if it has reached the limit
@@ -509,6 +510,11 @@ public class RobotTeleopTank_Iterative extends OpMode {
         horizontalArmPower += verticalFactor * ARM_EXTRA_FORCE; // Add extra power when fully raised
         horizontalArmPower = Range.clip(horizontalArmPower, 0.2, 1.0);
         return horizontalArmPower;
+    }
+
+    private boolean isArmStalled() {
+        int currentPosition = armMotor.getCurrentPosition();
+        return Math.abs(currentPosition - armTargetPosition) <= MOTOR_TOLERANCE;
     }
 }
     /*
