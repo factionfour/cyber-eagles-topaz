@@ -1,10 +1,14 @@
 
 package org.firstinspires.ftc.teamcode;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import java.text.DecimalFormat;
 
@@ -20,6 +24,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
     public DcMotor extensionArmMotor = null;
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
+    public IMU imu;
 
     // Arm motor limits and power
     int armTargetPosition = 0;
@@ -104,6 +109,9 @@ public class RobotTeleopTank_Iterative extends OpMode {
         rightWheelServo = hardwareMap.get(Servo.class, "servo_two");
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
+
+        imu = hardwareMap.get(IMU.class,"imu");
+        imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         telemetry.addData(">", "Charlie 2 is READY.  Press START.");    //
     }
@@ -515,6 +523,10 @@ public class RobotTeleopTank_Iterative extends OpMode {
     private boolean isArmStalled() {
         int currentPosition = armMotor.getCurrentPosition();
         return Math.abs(currentPosition - armTargetPosition) <= MOTOR_TOLERANCE;
+    }
+    public double getAngle() {
+        double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        return angle;
     }
 }
     /*

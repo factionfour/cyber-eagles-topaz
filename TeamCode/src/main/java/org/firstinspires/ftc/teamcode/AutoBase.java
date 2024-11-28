@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,6 +13,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public abstract class AutoBase extends LinearOpMode {
     // define each motor and servo
@@ -21,6 +26,7 @@ public abstract class AutoBase extends LinearOpMode {
     public DcMotor extensionArmMotor = null;
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
+    public IMU imu;
 
     // Arm motor limits and power
     int armTargetPosition = 0;
@@ -50,7 +56,8 @@ public abstract class AutoBase extends LinearOpMode {
     double FORWARD_MIN_SPEED = 0.4;
     double FORWARD_SPEED = 1;
     int FORWARD_RAMP_TIME = 200;
-    double TURN_SPEED    = 1;
+    double TURN_SPEED_MIN    = .2;
+    double TURN_SPEED_MAX    = .8;
 
     int RAMP_TIME = 200;
 
@@ -70,6 +77,8 @@ public abstract class AutoBase extends LinearOpMode {
     double BACKWARD_MM_SECOND = 1060;
     double STRAIFE_MM_SECOND = 706;
     int STRAIFE_RAMP_TIME = 100;
+
+    double ROTATE_ERROR_DEGREES = 1;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -111,6 +120,9 @@ public abstract class AutoBase extends LinearOpMode {
         rightWheelServo = hardwareMap.get(Servo.class, "servo_two");
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
+
+        imu = hardwareMap.get(IMU.class,"imu");
+        imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
         waitForStart();
@@ -324,14 +336,39 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void turnLeft(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(-FORWARD_SPEED);
-        frontleftDrive.setPower(FORWARD_SPEED);
-        backleftDrive.setPower(FORWARD_SPEED);
-        backrightDrive.setPower(-FORWARD_SPEED);
+    public void turnLeft(double targetAngle, int sleepMS) {
+
         runtime.reset();
-        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+        double currentAngle = getAngle();
+        double currentError = 0;
+        double lastError = 0;
+        double derivative;
+        double motorPower;
+        // Calculate error and wrap to -180 to 180 range
+
+        while (opModeIsActive()) {
+            currentError = targetAngle - currentAngle;
+            currentError = (currentError + 360) % 360; // Ensure positive range
+            if (currentError > 180) currentError -= 360; // Wrap to -180 to 180
+            // Calculate derivative
+            derivative = currentError - lastError;
+
+            // Calculate motor power
+            motorPower = (TURN_SPEED_MIN * currentError) + (TURN_SPEED_MIN * derivative);
+            motorPower = Math.min(motorPower,TURN_SPEED_MAX);
+
+            frontrightDrive.setPower(-motorPower);
+            frontleftDrive.setPower(motorPower);
+            backleftDrive.setPower(motorPower);
+            backrightDrive.setPower(-motorPower);
+
+            // Break if within acceptable range
+            if (Math.abs(currentError) <= ROTATE_ERROR_DEGREES) break;
+
+            // Update last error
+            lastError = currentError;
+
+            telemetry.addData("turning", targetAngle);
             telemetry.update();
         }
         frontleftDrive.setPower(0);
@@ -494,5 +531,10 @@ public abstract class AutoBase extends LinearOpMode {
         horizontalArmPower += verticalFactor * ARM_EXTRA_FORCE; // Add extra power when fully raised
         horizontalArmPower = Range.clip(horizontalArmPower, 0.2, 1.0);
         return horizontalArmPower;
+    }
+
+    public double getAngle() {
+        double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        return angle;
     }
 }
