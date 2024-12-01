@@ -33,9 +33,8 @@ public abstract class AutoBase extends LinearOpMode {
     int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
-    double ARM_EXTRA_FORCE = 0.6;
-    int ARM_MIN_SPEED = 12; // How far to move per loop iteration
-    int ARM_MIN_POSITION_WHEN_EXTENSION_EXTENDED = 150;
+    double ARM_EXTRA_FORCE = 0.6;//extra force if the extension is out
+    //int ARM_MIN_SPEED = 12; // How far to move per loop iteration
 
     // Vertical extension limits and base power
     int extensionTargetPosition = 0;
@@ -44,18 +43,12 @@ public abstract class AutoBase extends LinearOpMode {
     int EXTENSION_MIN_SPEED = 125; // How far to move per loop iteration
     double EXTENSION_BASE_POWER = 0.5; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
-
-
-    long DEBOUNCE_DELAY = 40; // Time in milliseconds to wait before accepting another press
-    int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
+     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks (used for arm & extension)
 
     //servo limits
     double SERVO_STOPPED = 0.5;
     double SERVO_FORWARD = 1;
     double SERVO_BACKWARD = 0;
-
-
-    int RAMP_TIME = 200;
 
     //pre-defined positions
     int HOOK_EXTENSION_POSITION = 1800;
@@ -73,19 +66,20 @@ public abstract class AutoBase extends LinearOpMode {
     double BACKWARD_MM_SECOND = 1060;
     double STRAIFE_MM_SECOND = 706;
 
-
+    //STRAFE MOVEMENT CONTROLS
     int STRAIFE_RAMP_TIME = 600;
     int STRAIFE_RAMP_DOWN_TIME = 600;
     double STRAFE_MIN_SPEED = 0.4;
     double STRAFE_SPEED = 0.8;
     double STRAFE_CORRECTION_GAIN = 0.10;
 
+    //FORWARD & BACKWARD MOVEMENT CONTROLS
     double FORWARD_MIN_SPEED = 0.2;
     double FORWARD_SPEED = .7;
     int FORWARD_RAMP_TIME = 600;
     double FORWARD_CORRECTION_GAIN = 0.05;
 
-    // turning Control constants
+    //TURNING MOVEMENT CONTROLS
     double Kp = 0.01; // Proportional gain
     double Kd = 0.005; // Derivative gain
     double TURN_SPEED_MIN = 0.2;
@@ -113,8 +107,8 @@ public abstract class AutoBase extends LinearOpMode {
         armMotor = hardwareMap.get(DcMotor.class, "arm_1");
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setTargetPosition(ARM_MIN_POSITION);
-        armMotor.setPower(ARM_BASE_POWER);
+        //armMotor.setTargetPosition(ARM_MIN_POSITION);
+        //armMotor.setPower(ARM_BASE_POWER);
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armTargetPosition = ARM_MIN_POSITION;
 
@@ -140,12 +134,16 @@ public abstract class AutoBase extends LinearOpMode {
         waitForStart();
     }
 
-
+    public void setInitialPosition() {
+        moveArm(ARM_MIN_POSITION,1000,200);
+    }
+    //drive the robot forward a specific distance
     public void driveForwardMM(int distanceMM, int sleepMS) {
         long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
         driveForward(timeToTravelMM, sleepMS);
     }
 
+    //drive the robot forward a specific time
     public void driveForward(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
@@ -209,15 +207,16 @@ public abstract class AutoBase extends LinearOpMode {
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
 
-// Sleep for the specified time
         sleep(sleepMS);
     }
 
+    //drive robot backward a specific distance
     public void driveBackwardMM(int distanceMM, int sleepMS) {
         long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
         driveBackward(timeToTravelMM, sleepMS);
     }
 
+    //drive robot backward a specific time
     public void driveBackward(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
@@ -283,7 +282,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-
+    //strafe robot left a specific distance
     public void strafeLeftMM(int distanceMM, int sleepMS) {
         //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
 
@@ -299,7 +298,7 @@ public abstract class AutoBase extends LinearOpMode {
         strafeLeft(totalTimeMS, sleepMS);
     }
 
-
+    //strafe robot a specific time
     public void strafeLeft(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = STRAFE_MIN_SPEED;
@@ -331,7 +330,6 @@ public abstract class AutoBase extends LinearOpMode {
                 double rampDownFactor = 1.0 - (timeSinceRampDown / STRAIFE_RAMP_DOWN_TIME); // Ramp from 1.0 to 0
                 currentPower = currentPower * rampDownFactor;  // Scale currentPower down smoothly
             }
-
 
             // Ensure currentPower stays within the range [0, FORWARD_SPEED]
             currentPower = Math.max(0, Math.min(currentPower, STRAFE_SPEED));
@@ -414,9 +412,7 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
 
-
-
-
+    //strafe robot right a specific distance
     public void strafeRightMM(int distanceMM, int sleepMS) {
         //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
 
@@ -532,8 +528,7 @@ public abstract class AutoBase extends LinearOpMode {
 
     }
 
-
-
+    //turn robot left a specific degrees (from current position)
     public void turnLeft(double targetAngle, int sleepMS) {
         runtime.reset();
 
@@ -545,8 +540,6 @@ public abstract class AutoBase extends LinearOpMode {
         double lastError = 0;
         double derivative;
         double motorPower;
-
-
 
         while (opModeIsActive()) {
             // Get the current angle from the IMU
@@ -606,6 +599,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
+    //turn robot right a specific degrees (from current position)
     public void turnRight(double targetAngle, int sleepMS) {
         runtime.reset();
 
@@ -676,7 +670,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-
+    //raise or lower the robot's arm to a specific height
     public void moveArm(int targetPosition, int actionTimeout, int sleepMS) {
         long actionStartTime;
         int currentArmPosition = armMotor.getCurrentPosition();
@@ -730,6 +724,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
+    //move the extension out to a specific position
     public void moveExtension(int targetPosition, int actionTimeout, int sleepMS) {
         long actionStartTime;
         extensionTargetPosition = targetPosition;
@@ -778,11 +773,13 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
+    //shut down the robot (end of auto)
     public void closeRobot() {
         moveExtension(0,1000,100);
         moveArm(0,1000,100);
     }
 
+    //calculate the extension power based on the current position of the extension
     public double calcExtensionPower() {
         //Adjust motor power based on proximity to limits
         int currentPosition = extensionArmMotor.getCurrentPosition();
@@ -807,6 +804,7 @@ public abstract class AutoBase extends LinearOpMode {
         return extensionPower;
     }
 
+    //calculate the power of the arm
     public double calcArmPower() {
         // Adjust arm motor power based on vertical arm position
         double horizontalArmPower = ARM_BASE_POWER;
@@ -816,6 +814,7 @@ public abstract class AutoBase extends LinearOpMode {
         return horizontalArmPower;
     }
 
+    //get the current angle of the robot
     public double getAngle() {
         double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         return angle;

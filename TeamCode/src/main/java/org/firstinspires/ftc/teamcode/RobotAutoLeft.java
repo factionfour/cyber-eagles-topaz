@@ -2,16 +2,14 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Robot: Auto Drive By Time Position 1", group="Robot")
-public class RobotAutoBlueLeft extends AutoBase {
+@Autonomous(name="Topaz: Auto Drive Position Left", group="Robot")
+public class RobotAutoLeft extends AutoBase {
     @Override
     public void runOpMode() {
         initializeHardware();
+        
+        setInitialPosition();
         // Step 1:  Drive forward for 30 CM
         //turnLeft(90,100);
         driveForwardMM(1000,500);

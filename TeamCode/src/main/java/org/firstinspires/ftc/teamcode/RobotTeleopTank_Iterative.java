@@ -12,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import java.text.DecimalFormat;
 
-@TeleOp(name="Robot: Teleop Tank", group="Robot")
+@TeleOp(name="Topaz Teleop", group="Robot")
 
 public class RobotTeleopTank_Iterative extends OpMode {
     // define each motor and servo
@@ -347,7 +347,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         // --- AUTOMATED MOVEMENT BUTTONS
 
-        /*if (gamepad2.y && !predefinedActionRunning) {
+        if (gamepad2.y && !predefinedActionRunning) {
             //HOOK SET BUTTON
             // Get current positions
             long actionStartTime;
@@ -466,7 +466,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
             armMotor.setPower(ARM_BASE_POWER);
             extensionArmMotor.setPower(0);
             predefinedActionRunning = false;
-        }*/
+        }
 
         // --- END AUTOMATED MOVEMENT BUTTONS
 
