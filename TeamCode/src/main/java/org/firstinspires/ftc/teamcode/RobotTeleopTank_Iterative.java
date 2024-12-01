@@ -244,28 +244,6 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         // --- EXTENSION ARM MOTOR CONTROL ---
 
-       /* if (gamepad2.x && !predefinedActionRunning) {
-            long timeHeld = currentTime - lastXPressTime;
-
-            if (timeHeld < RAMP_TIME) {
-                extensionTargetPosition += Math.min((int) (EXTENSION_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), EXTENSION_MAX_SPEED);
-            } else {
-                extensionTargetPosition += EXTENSION_MAX_SPEED;  // Max speed after ramp time
-            }
-            extensionTargetPosition = Math.min(extensionTargetPosition, EXTENSION_MAX_POSITION);
-            //   extensionTargetPosition += EXTENSION_MIN_SPEED; // Increment continuously
-            // Clamp target position to stay within bounds
-            //extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
-            extensionArmMotor.setTargetPosition(extensionTargetPosition);
-            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            currentExtensionPower = calcExtensionPower();
-            extensionArmMotor.setPower(currentExtensionPower);
-
-            lastXPressTime = System.currentTimeMillis(); // Update last press time
-        }
-        else {
-            lastXPressTime = 0;
-        }*/
         if (gamepad2.x && !predefinedActionRunning) {
 
             long timeHeld = currentTime - lastXPressTime; // Time the X button has been held
@@ -307,23 +285,38 @@ public class RobotTeleopTank_Iterative extends OpMode {
 
         if (gamepad2.b && !predefinedActionRunning) {
             // Calculate how long the button has been held down
-            long timeHeld = currentTime - lastBPressTime;
-            if (timeHeld < RAMP_TIME) {
-                extensionTargetPosition -= Math.min((int) (EXTENSION_MAX_SPEED * (timeHeld / (float) RAMP_TIME)), EXTENSION_MAX_SPEED);
+            long timeHeld = currentTime - lastXPressTime; // Time the X button has been held
+
+            // Ramp speed over time if the button is held
+            int rampSpeed = 0;
+            if (timeHeld < EXTENSION_RAMP_TIME) {
+                // Gradually increase the speed based on how long the button is held
+                rampSpeed = (int) (EXTENSION_MAX_SPEED * (timeHeld / (float) EXTENSION_RAMP_TIME));
             } else {
-                extensionTargetPosition -= EXTENSION_MAX_SPEED;  // Max speed after ramp time
+                // Once RAMP_TIME has passed, use max speed
+                rampSpeed = EXTENSION_MAX_SPEED;
             }
+
+            // Update the target position based on the ramped speed
+            extensionTargetPosition -= rampSpeed;
+            extensionTargetPosition = Math.min(extensionTargetPosition, EXTENSION_MAX_POSITION); // Clamp to max position
+
+            // Optionally clamp to min position (to avoid retracting beyond the limit)
             extensionTargetPosition = Math.max(extensionTargetPosition, EXTENSION_MIN_POSITION);
 
-            //extensionTargetPosition -= EXTENSION_MIN_SPEED; // Increment continuously
-            // Clamp target position to stay within bounds
-            //extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
+            // Set motor target position and mode
             extensionArmMotor.setTargetPosition(extensionTargetPosition);
             extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // Calculate the motor power
             currentExtensionPower = calcExtensionPower();
+            currentExtensionPower = Range.clip(extensionTargetPosition, EXTENSION_BASE_POWER, 1.0);
+
+            // Set the motor power to control the speed (based on rampSpeed)
             extensionArmMotor.setPower(currentExtensionPower);
 
-            lastBPressTime = System.currentTimeMillis(); // Update last press time
+            // Update the last press time
+            lastXPressTime = currentTime;
         }
         else {
             lastBPressTime = 0;

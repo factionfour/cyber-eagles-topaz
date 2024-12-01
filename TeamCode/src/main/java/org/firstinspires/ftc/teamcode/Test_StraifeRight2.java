@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Robot: Test Straige Right 1500mm", group="Robot")
+@Autonomous(name="Z: Test Straige Right 1500mm", group="Robot")
 public class Test_StraifeRight2 extends AutoBase {
     @Override
     public void runOpMode() {

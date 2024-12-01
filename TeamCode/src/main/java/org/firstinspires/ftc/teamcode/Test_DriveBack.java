@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Robot: Test Backward 1 second", group="Robot")
+@Autonomous(name="Z: Test Backward 1 second", group="Robot")
 public class Test_DriveBack extends AutoBase {
     @Override
     public void runOpMode() {
