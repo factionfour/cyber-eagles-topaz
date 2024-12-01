@@ -13,9 +13,11 @@ public class RobotAutoBlueLeft extends AutoBase {
     public void runOpMode() {
         initializeHardware();
         // Step 1:  Drive forward for 30 CM
-        driveForwardMM(50,100);
-        strafeRightMM(500,100);
-        driveForwardMM(200,100);
+        //turnLeft(90,100);
+        driveForwardMM(1000,500);
+        driveBackwardMM(1000,500);
+        //strafeRightMM(1000,100);
+        //driveForwardMM(400,100);
 //        //prepare the hook
 //        moveArm(HOOK_ARM_HEIGHT,1000,100);
 //        moveExtension(HOOK_EXTENSION_POSITION,1000,500);

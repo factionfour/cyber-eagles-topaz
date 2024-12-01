@@ -30,7 +30,7 @@ public abstract class AutoBase extends LinearOpMode {
 
     // Arm motor limits and power
     int armTargetPosition = 0;
-    int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
+    int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.6;
@@ -41,10 +41,11 @@ public abstract class AutoBase extends LinearOpMode {
     int extensionTargetPosition = 0;
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
-
-    int EXTENSION_MIN_SPEED = 80; // How far to move per loop iteration
+    int EXTENSION_MIN_SPEED = 125; // How far to move per loop iteration
     double EXTENSION_BASE_POWER = 0.5; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
+
+
     long DEBOUNCE_DELAY = 40; // Time in milliseconds to wait before accepting another press
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
 
@@ -53,11 +54,6 @@ public abstract class AutoBase extends LinearOpMode {
     double SERVO_FORWARD = 1;
     double SERVO_BACKWARD = 0;
 
-    double FORWARD_MIN_SPEED = 0.4;
-    double FORWARD_SPEED = 1;
-    int FORWARD_RAMP_TIME = 200;
-    double TURN_SPEED_MIN    = .2;
-    double TURN_SPEED_MAX    = .8;
 
     int RAMP_TIME = 200;
 
@@ -76,9 +72,25 @@ public abstract class AutoBase extends LinearOpMode {
     double FORWARD_MM_SECOND = 1040;
     double BACKWARD_MM_SECOND = 1060;
     double STRAIFE_MM_SECOND = 706;
-    int STRAIFE_RAMP_TIME = 100;
 
-    double ROTATE_ERROR_DEGREES = 1;
+
+    int STRAIFE_RAMP_TIME = 600;
+    int STRAIFE_RAMP_DOWN_TIME = 600;
+    double STRAFE_MIN_SPEED = 0.4;
+    double STRAFE_SPEED = 0.8;
+    double STRAFE_CORRECTION_GAIN = 0.10;
+
+    double FORWARD_MIN_SPEED = 0.2;
+    double FORWARD_SPEED = .7;
+    int FORWARD_RAMP_TIME = 600;
+    double FORWARD_CORRECTION_GAIN = 0.05;
+
+    // turning Control constants
+    double Kp = 0.01; // Proportional gain
+    double Kd = 0.005; // Derivative gain
+    double TURN_SPEED_MIN = 0.2;
+    double TURN_SPEED_MAX = 0.8;
+    double ROTATE_ERROR_DEGREES =1;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -121,7 +133,7 @@ public abstract class AutoBase extends LinearOpMode {
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
 
-        imu = hardwareMap.get(IMU.class,"imu");
+        imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
@@ -129,39 +141,64 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
 
-
     public void driveForwardMM(int distanceMM, int sleepMS) {
         long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
-        driveForward(timeToTravelMM,sleepMS);
+        driveForward(timeToTravelMM, sleepMS);
     }
+
     public void driveForward(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
+        double correctionPower = 0;  // Initialize correction power to 0 initially
+        double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);// Get the initial heading (yaw) from the IMU before the strafe
+
         runtime.reset();
 
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
-                // Ramp up phase
-                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+
+            if (elapsedTime < FORWARD_RAMP_TIME) {
+                telemetry.addData("RAMPING", "UP");
+                // Ramp up phase: gradually increase power from FORWARD_MIN_SPEED to FORWARD_SPEED
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / FORWARD_RAMP_TIME);
+            } else if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                telemetry.addData("RAMPING", "FULL");
+                // Constant power phase: maintain power at FORWARD_SPEED
+                currentPower = FORWARD_SPEED;
             } else {
-                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+                telemetry.addData("RAMPING", "DOWN");
+                // Ramp down phase: gradually decrease power from current speed to 0
+                double timeSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                double rampDownFactor = 1.0 - (timeSinceRampDown / FORWARD_RAMP_TIME); // Ramp from 1.0 to 0
+                currentPower = currentPower * rampDownFactor;  // Scale currentPower down smoothly
             }
 
             // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
             currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
 
+            // Calculate correction power based on heading deviation
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double adjustmentError = initialHeading - currentHeading;
+
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            // Ramp down correction power similarly as the main currentPower
+            double correctionRampDownFactor = currentPower / FORWARD_SPEED; // Same ramp factor as currentPower
+            correctionPower = FORWARD_CORRECTION_GAIN * adjustmentError * correctionRampDownFactor;
+
+
             // Apply the power to the motors (inverting the power for right motors)
-            frontrightDrive.setPower(currentPower);
-            frontleftDrive.setPower(currentPower);
-            backleftDrive.setPower(currentPower);
-            backrightDrive.setPower(currentPower);
+            frontrightDrive.setPower(-currentPower + correctionPower);
+            frontleftDrive.setPower(-currentPower - correctionPower);
+            backleftDrive.setPower(currentPower + correctionPower);
+            backrightDrive.setPower(currentPower - correctionPower);
 
             // Telemetry for monitoring
             telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("CORRECTION POWER", correctionPower);
             telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
@@ -174,41 +211,64 @@ public abstract class AutoBase extends LinearOpMode {
 
 // Sleep for the specified time
         sleep(sleepMS);
-   }
+    }
 
     public void driveBackwardMM(int distanceMM, int sleepMS) {
         long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
-        driveBackward(timeToTravelMM,sleepMS);
+        driveBackward(timeToTravelMM, sleepMS);
     }
 
     public void driveBackward(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
+        double correctionPower = 0;  // Initialize correction power to 0 initially
+        double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES); // Get the initial heading (yaw) from the IMU before the strafe
+
         runtime.reset();
 
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
-                // Ramp up phase
-                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            if (elapsedTime < FORWARD_RAMP_TIME) {
+                telemetry.addData("RAMPING", "UP");
+                // Ramp up phase: gradually increase power from FORWARD_MIN_SPEED to FORWARD_SPEED
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / FORWARD_RAMP_TIME);
+            } else if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                telemetry.addData("RAMPING", "FULL");
+                // Constant power phase: maintain power at FORWARD_SPEED
+                currentPower = FORWARD_SPEED;
             } else {
-                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)FORWARD_RAMP_TIME));
+                telemetry.addData("RAMPING", "DOWN");
+                // Ramp down phase: gradually decrease power from current speed to 0
+                double timeSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                double rampDownFactor = 1.0 - (timeSinceRampDown / FORWARD_RAMP_TIME); // Ramp from 1.0 to 0
+                currentPower = currentPower * rampDownFactor;  // Scale currentPower down smoothly
             }
 
             // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
             currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
 
-            // Apply the power to the motors (inverting the power for right motors)
-            frontrightDrive.setPower(-currentPower);
-            frontleftDrive.setPower(-currentPower);
-            backleftDrive.setPower(-currentPower);
-            backrightDrive.setPower(-currentPower);
+            // Calculate correction power based on heading deviation
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double adjustmentError = initialHeading - currentHeading;
+
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            // Ramp down correction power similarly as the main currentPower
+            double correctionRampDownFactor = currentPower / FORWARD_SPEED; // Same ramp factor as currentPower
+            correctionPower = FORWARD_CORRECTION_GAIN * adjustmentError * correctionRampDownFactor;
+
+            // Apply the power to the motors for backward movement
+            frontrightDrive.setPower(currentPower - correctionPower);
+            frontleftDrive.setPower(currentPower + correctionPower);
+            backleftDrive.setPower(-currentPower - correctionPower);
+            backrightDrive.setPower(-currentPower + correctionPower);
 
             // Telemetry for monitoring
             telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("CORRECTION POWER", correctionPower);
             telemetry.addData("Elapsed Time", elapsedTime);
             telemetry.update();
         }
@@ -219,9 +279,10 @@ public abstract class AutoBase extends LinearOpMode {
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
 
-// Sleep for the specified time
+        // Sleep for the specified time
         sleep(sleepMS);
     }
+
 
     public void strafeLeftMM(int distanceMM, int sleepMS) {
         //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
@@ -234,39 +295,66 @@ public abstract class AutoBase extends LinearOpMode {
         double rampTimeMS = STRAIFE_RAMP_TIME; // Ramp-up and ramp-down times are fixed
         double constantSpeedTimeMS = (constantSpeedDistanceMM / STRAIFE_MM_SECOND) * 1000;
         // Total time to travel
-        long totalTimeMS = (long)(2 * rampTimeMS + constantSpeedTimeMS);
+        long totalTimeMS = (long) (2 * rampTimeMS + constantSpeedTimeMS);
         strafeLeft(totalTimeMS, sleepMS);
     }
 
+
     public void strafeLeft(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
-        double currentPower = FORWARD_MIN_SPEED;
+        double currentPower = STRAFE_MIN_SPEED;
+        double correctionPower = 0;  // Initialize correction power to 0 initially
         runtime.reset();
+
+        // Get the initial heading (yaw) from the IMU before the strafe
+        double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - STRAIFE_RAMP_TIME)) {
-                // Ramp up phase
-                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            // Calculate the percentage of time elapsed (this can be used for ramping)
+            double rampFactor = 1.0;
+
+            // Ramp up phase (first part)
+            if (elapsedTime < STRAIFE_RAMP_TIME) {
+                telemetry.addData("RAMPING", "UP");
+                // Ramp up phase: gradually increase power from STRAFE_MIN_SPEED to STRAFE_SPEED
+                currentPower = STRAFE_MIN_SPEED + (STRAFE_SPEED - STRAFE_MIN_SPEED) * (elapsedTime / STRAIFE_RAMP_TIME);
+            } else if (elapsedTime < (milliseconds - STRAIFE_RAMP_DOWN_TIME)) {
+                telemetry.addData("RAMPING", "FULL");
+                // Constant power phase: maintain power at FORWARD_SPEED
+                currentPower = STRAFE_SPEED;
             } else {
-                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)STRAIFE_RAMP_TIME));
+                telemetry.addData("RAMPING", "DOWN");
+                // Ramp down phase: gradually decrease power from current speed to 0
+                double timeSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_DOWN_TIME);
+                double rampDownFactor = 1.0 - (timeSinceRampDown / STRAIFE_RAMP_DOWN_TIME); // Ramp from 1.0 to 0
+                currentPower = currentPower * rampDownFactor;  // Scale currentPower down smoothly
             }
 
-            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
-            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
 
-            // Apply the power to the motors (inverting the power for right motors)
-            frontrightDrive.setPower(-currentPower);
-            frontleftDrive.setPower(currentPower);
-            backleftDrive.setPower(-currentPower);
-            backrightDrive.setPower(currentPower);
+            // Ensure currentPower stays within the range [0, FORWARD_SPEED]
+            currentPower = Math.max(0, Math.min(currentPower, STRAFE_SPEED));
 
-            // Telemetry for monitoring
-            telemetry.addData("Wheel Power", currentPower);
-            telemetry.addData("Elapsed Time", elapsedTime);
+            // Calculate correction power based on heading deviation
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double adjustmentError = initialHeading - currentHeading;
+
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            // Ramp down correction power similarly as the main currentPower
+            double correctionRampDownFactor = currentPower / STRAFE_SPEED; // Same ramp factor as currentPower
+            correctionPower = STRAFE_CORRECTION_GAIN * adjustmentError * correctionRampDownFactor;
+
+            // Apply power to motors (strafe + correction)
+            frontleftDrive.setPower(currentPower + correctionPower);  // Front left motor forward with correction
+            frontrightDrive.setPower(-currentPower - correctionPower); // Front right motor backward with correction
+            backleftDrive.setPower(-currentPower + correctionPower);   // Left back motor backward with correction
+            backrightDrive.setPower(currentPower - correctionPower);   // Right back motor forward with correction
+            telemetry.addData("CURRENT POWER", currentPower);
+            telemetry.addData("CORRECTION POWER", correctionPower);
             telemetry.update();
         }
 
@@ -276,9 +364,58 @@ public abstract class AutoBase extends LinearOpMode {
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
 
-// Sleep for the specified time
+
+        // Sleep for a short period (e.g., 100ms) to allow robot to stabilize before correction
+        sleep(100);  // 100 milliseconds pause to let the robot settle
+
+        // Now adjust the robot back to its initial heading if needed
+        double finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double adjustmentError = initialHeading - finalHeading;
+
+        // Normalize the adjustment error to range [-180, 180]
+        if (adjustmentError > 180) adjustmentError -= 360;
+        if (adjustmentError < -180) adjustmentError += 360;
+
+        // Apply a correction until the robot is back to its initial heading
+        while (Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
+            finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            adjustmentError = initialHeading - finalHeading;
+
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            double adjustmentCorrection = STRAFE_CORRECTION_GAIN * adjustmentError;
+
+            // Apply correction to motors
+            if (adjustmentError > 0) {
+                // Robot is turning counter-clockwise, apply correction to rotate right
+                frontleftDrive.setPower(adjustmentCorrection);
+                frontrightDrive.setPower(-adjustmentCorrection);
+                backleftDrive.setPower(adjustmentCorrection);
+                backrightDrive.setPower(-adjustmentCorrection);
+            } else {
+                // Robot is turning clockwise, apply correction to rotate left
+                frontleftDrive.setPower(-adjustmentCorrection);
+                frontrightDrive.setPower(adjustmentCorrection);
+                backleftDrive.setPower(-adjustmentCorrection);
+                backrightDrive.setPower(adjustmentCorrection);
+            }
+        }
+
+        // Stop the motors after correction is done
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+
+        // Sleep for the specified time
         sleep(sleepMS);
     }
+
+
+
+
 
     public void strafeRightMM(int distanceMM, int sleepMS) {
         //long timeToTravelMM = (long) ((distanceMM / STRAIFE_MM_SECOND) * 1000); // Time in milliseconds
@@ -296,103 +433,249 @@ public abstract class AutoBase extends LinearOpMode {
     }
     public void strafeRight(double milliseconds, int sleepMS) {
         long startTime = System.currentTimeMillis();
-        double currentPower = FORWARD_MIN_SPEED;
+        double currentPower = STRAFE_MIN_SPEED;
+        double correctionPower = 0; // Initialize correction power to 0
         runtime.reset();
+
+        // Get the initial heading (yaw) from the IMU before the strafe
+        double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
 
-            if (elapsedTime < (milliseconds - STRAIFE_RAMP_TIME)) {
-                // Ramp up phase
-                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / (double)(milliseconds - FORWARD_RAMP_TIME));
+            // Ramp up, full speed, and ramp down phases
+            if (elapsedTime < STRAIFE_RAMP_TIME) {
+                telemetry.addData("RAMPING", "UP");
+                currentPower = STRAFE_MIN_SPEED + (STRAFE_SPEED - STRAFE_MIN_SPEED) * (elapsedTime / STRAIFE_RAMP_TIME);
+            } else if (elapsedTime < (milliseconds - STRAIFE_RAMP_DOWN_TIME)) {
+                telemetry.addData("RAMPING", "FULL");
+                currentPower = STRAFE_SPEED;
             } else {
-                // Ramp down phase (last FORWARD_RAMP_TIME milliseconds)
-                double timeElapsedSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_TIME);
-                currentPower = FORWARD_SPEED - (FORWARD_SPEED * (timeElapsedSinceRampDown / (double)STRAIFE_RAMP_TIME));
+                telemetry.addData("RAMPING", "DOWN");
+                double timeSinceRampDown = elapsedTime - (milliseconds - STRAIFE_RAMP_DOWN_TIME);
+                double rampDownFactor = 1.0 - (timeSinceRampDown / STRAIFE_RAMP_DOWN_TIME);
+                currentPower = currentPower * rampDownFactor;
             }
 
-            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
-            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+            // Ensure currentPower stays within valid range
+            currentPower = Math.max(0, Math.min(currentPower, STRAFE_SPEED));
 
-            // Apply the power to the motors (inverting the power for right motors)
-            frontrightDrive.setPower(currentPower);
-            frontleftDrive.setPower(-currentPower);
-            backleftDrive.setPower(currentPower);
-            backrightDrive.setPower(-currentPower);
+            // Calculate correction power based on heading deviation
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double adjustmentError = initialHeading - currentHeading;
 
-            // Telemetry for monitoring
-            telemetry.addData("Wheel Power", currentPower);
-            telemetry.addData("Elapsed Time", elapsedTime);
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            // Ramp down correction power with currentPower
+            double correctionRampDownFactor = currentPower / STRAFE_SPEED;
+            correctionPower = STRAFE_CORRECTION_GAIN * adjustmentError * correctionRampDownFactor;
+
+            // Apply power to motors (strafe + correction) for strafing right
+            frontleftDrive.setPower(-currentPower + correctionPower);  // Front left motor backward with correction
+            frontrightDrive.setPower(currentPower - correctionPower);  // Front right motor forward with correction
+            backleftDrive.setPower(currentPower + correctionPower);   // Back left motor forward with correction
+            backrightDrive.setPower(-currentPower - correctionPower); // Back right motor backward with correction
+
+            // Telemetry for debugging
+            telemetry.addData("CURRENT POWER", currentPower);
+            telemetry.addData("CORRECTION POWER", correctionPower);
             telemetry.update();
         }
 
-        // Stop the motors after the loop is done
+        // Stop the motors after the loop
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
 
-// Sleep for the specified time
+        // Optional: Adjust back to the initial heading
+        sleep(100); // Stabilize before heading correction
+        double finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double adjustmentError = initialHeading - finalHeading;
+
+        if (adjustmentError > 180) adjustmentError -= 360;
+        if (adjustmentError < -180) adjustmentError += 360;
+
+        while (Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
+            finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            adjustmentError = initialHeading - finalHeading;
+
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            double adjustmentCorrection = STRAFE_CORRECTION_GAIN * adjustmentError;
+
+            // Apply correction to motors
+            if (adjustmentError > 0) {
+                frontleftDrive.setPower(adjustmentCorrection);
+                frontrightDrive.setPower(-adjustmentCorrection);
+                backleftDrive.setPower(adjustmentCorrection);
+                backrightDrive.setPower(-adjustmentCorrection);
+            } else {
+                frontleftDrive.setPower(-adjustmentCorrection);
+                frontrightDrive.setPower(adjustmentCorrection);
+                backleftDrive.setPower(-adjustmentCorrection);
+                backrightDrive.setPower(adjustmentCorrection);
+            }
+        }
+
+        // Stop motors after correction
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+
+        // Sleep for the specified time
         sleep(sleepMS);
+
     }
 
-    public void turnLeft(double targetAngle, int sleepMS) {
 
+
+    public void turnLeft(double targetAngle, int sleepMS) {
         runtime.reset();
-        double currentAngle = getAngle();
-        double currentError = 0;
+
+        // Initial heading from IMU
+        double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double currentAngle;
+        targetAngle += zeroAngle;
+        double currentError;
         double lastError = 0;
         double derivative;
         double motorPower;
-        // Calculate error and wrap to -180 to 180 range
+
+
 
         while (opModeIsActive()) {
+            // Get the current angle from the IMU
+            currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
+            // Calculate the error between target and current angle
             currentError = targetAngle - currentAngle;
+
+            // Normalize the error to the range [-180, 180]
             currentError = (currentError + 360) % 360; // Ensure positive range
-            if (currentError > 180) currentError -= 360; // Wrap to -180 to 180
-            // Calculate derivative
+            if (currentError > 180) currentError -= 360; // Wrap to [-180, 180]
+
+            // Calculate derivative (rate of change of error)
             derivative = currentError - lastError;
 
-            // Calculate motor power
-            motorPower = (TURN_SPEED_MIN * currentError) + (TURN_SPEED_MIN * derivative);
-            motorPower = Math.min(motorPower,TURN_SPEED_MAX);
+            // Calculate motor power using proportional + derivative control
+            motorPower = (Kp * currentError) + (Kd * derivative);
 
+            // Clamp motor power to safe range
+            motorPower = Range.clip(motorPower, -TURN_SPEED_MAX, TURN_SPEED_MAX);
+
+            // Ensure minimum power for small errors (only if moving)
+            if (Math.abs(motorPower) < TURN_SPEED_MIN && Math.abs(currentError) > ROTATE_ERROR_DEGREES) {
+                motorPower = Math.copySign(TURN_SPEED_MIN, motorPower);
+            }
+
+            // Apply motor power for turning
             frontrightDrive.setPower(-motorPower);
             frontleftDrive.setPower(motorPower);
             backleftDrive.setPower(motorPower);
             backrightDrive.setPower(-motorPower);
 
-            // Break if within acceptable range
+            // Log telemetry for debugging
+            telemetry.addData("Target Angle", targetAngle);
+            telemetry.addData("Current Angle", currentAngle);
+            telemetry.addData("Angle Error", currentError);
+            telemetry.addData("Motor Power", motorPower);
+            telemetry.update();
+
+            // Break the loop if the error is within the acceptable range
             if (Math.abs(currentError) <= ROTATE_ERROR_DEGREES) break;
 
-            // Update last error
+            // Update last error for derivative calculation
             lastError = currentError;
 
-            telemetry.addData("turning", targetAngle);
-            telemetry.update();
+            // Small delay for control loop
+            sleep(10);
         }
+
+        // Stop the motors after turning
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+        // Optional delay after turning
         sleep(sleepMS);
     }
-    public void turnRight(double milliseconds, int sleepMS) {
-        frontrightDrive.setPower(FORWARD_SPEED);
-        frontleftDrive.setPower(-FORWARD_SPEED);
-        backleftDrive.setPower(-FORWARD_SPEED);
-        backrightDrive.setPower(FORWARD_SPEED);
+
+    public void turnRight(double targetAngle, int sleepMS) {
         runtime.reset();
-        while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.milliseconds());
+
+        // Initial heading from IMU
+        double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double currentAngle;
+        targetAngle = zeroAngle - targetAngle; // Subtract targetAngle for right turn
+        double currentError;
+        double lastError = 0;
+        double derivative;
+        double motorPower;
+
+        while (opModeIsActive()) {
+            // Get the current angle from the IMU
+            currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
+            // Calculate the error between target and current angle
+            currentError = targetAngle - currentAngle;
+
+            // Normalize the error to the range [-180, 180]
+            currentError = (currentError + 360) % 360; // Ensure positive range
+            if (currentError > 180) currentError -= 360; // Wrap to [-180, 180]
+
+            // Calculate derivative (rate of change of error)
+            derivative = currentError - lastError;
+
+            // Calculate motor power using proportional + derivative control
+            motorPower = (Kp * currentError) + (Kd * derivative);
+
+            // Clamp motor power to safe range
+            motorPower = Range.clip(motorPower, -TURN_SPEED_MAX, TURN_SPEED_MAX);
+
+            // Ensure minimum power for small errors (only if moving)
+            if (Math.abs(motorPower) < TURN_SPEED_MIN && Math.abs(currentError) > ROTATE_ERROR_DEGREES) {
+                motorPower = Math.copySign(TURN_SPEED_MIN, motorPower);
+            }
+
+            // Apply motor power for turning (reverse directions for turning right)
+            frontrightDrive.setPower(motorPower);
+            frontleftDrive.setPower(-motorPower);
+            backleftDrive.setPower(-motorPower);
+            backrightDrive.setPower(motorPower);
+
+            // Log telemetry for debugging
+            telemetry.addData("Target Angle", targetAngle);
+            telemetry.addData("Current Angle", currentAngle);
+            telemetry.addData("Angle Error", currentError);
+            telemetry.addData("Motor Power", motorPower);
             telemetry.update();
+
+            // Break the loop if the error is within the acceptable range
+            if (Math.abs(currentError) <= ROTATE_ERROR_DEGREES) break;
+
+            // Update last error for derivative calculation
+            lastError = currentError;
+
+            // Small delay for control loop
+            sleep(10);
         }
+
+        // Stop the motors after turning
         frontleftDrive.setPower(0);
         frontrightDrive.setPower(0);
         backleftDrive.setPower(0);
         backrightDrive.setPower(0);
+
+        // Optional delay after turning
         sleep(sleepMS);
     }
+
 
     public void moveArm(int targetPosition, int actionTimeout, int sleepMS) {
         long actionStartTime;
