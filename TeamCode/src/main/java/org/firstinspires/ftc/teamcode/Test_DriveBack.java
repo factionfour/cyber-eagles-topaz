@@ -8,6 +8,7 @@ public class Test_DriveBack extends AutoBase {
     @Override
     public void runOpMode() {
         initializeHardware();
+        setInitialPosition();
         // Step 1:  Drive forward for 1 second
         driveBackward(1000,200);
         closeRobot();

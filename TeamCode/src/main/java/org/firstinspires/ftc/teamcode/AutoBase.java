@@ -33,7 +33,7 @@ public abstract class AutoBase extends LinearOpMode {
     int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
-    double ARM_EXTRA_FORCE = 0.6;//extra force if the extension is out
+    double ARM_EXTRA_FORCE = 0.7;//extra force if the extension is out
     //int ARM_MIN_SPEED = 12; // How far to move per loop iteration
 
     // Vertical extension limits and base power
@@ -51,8 +51,8 @@ public abstract class AutoBase extends LinearOpMode {
     double SERVO_BACKWARD = 0;
 
     //pre-defined positions
-    int HOOK_EXTENSION_POSITION = 1800;
-    int HOOK_ARM_HEIGHT = 420;
+    int HOOK_EXTENSION_POSITION = 1900;
+    int HOOK_ARM_HEIGHT = 450;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 300;
 
@@ -74,17 +74,17 @@ public abstract class AutoBase extends LinearOpMode {
     double STRAFE_CORRECTION_GAIN = 0.10;
 
     //FORWARD & BACKWARD MOVEMENT CONTROLS
-    double FORWARD_MIN_SPEED = 0.2;
+    double FORWARD_MIN_SPEED = 0.1;
     double FORWARD_SPEED = .7;
     int FORWARD_RAMP_TIME = 600;
-    double FORWARD_CORRECTION_GAIN = 0.05;
+    double FORWARD_CORRECTION_GAIN = 0.01;
 
     //TURNING MOVEMENT CONTROLS
     double Kp = 0.01; // Proportional gain
     double Kd = 0.005; // Derivative gain
     double TURN_SPEED_MIN = 0.2;
     double TURN_SPEED_MAX = 0.8;
-    double ROTATE_ERROR_DEGREES =1;
+    double ROTATE_ERROR_DEGREES =2;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -107,10 +107,6 @@ public abstract class AutoBase extends LinearOpMode {
         armMotor = hardwareMap.get(DcMotor.class, "arm_1");
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //armMotor.setTargetPosition(ARM_MIN_POSITION);
-        //armMotor.setPower(ARM_BASE_POWER);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armTargetPosition = ARM_MIN_POSITION;
 
         // Initialize extension arm motor
         extensionArmMotor = hardwareMap.get(DcMotor.class, "arm_extendo");
@@ -135,6 +131,10 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
     public void setInitialPosition() {
+        armMotor.setTargetPosition(ARM_MIN_POSITION);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(ARM_BASE_POWER);
+        armTargetPosition = ARM_MIN_POSITION;
         moveArm(ARM_MIN_POSITION,1000,200);
     }
     //drive the robot forward a specific distance
@@ -530,6 +530,7 @@ public abstract class AutoBase extends LinearOpMode {
 
     //turn robot left a specific degrees (from current position)
     public void turnLeft(double targetAngle, int sleepMS) {
+        sleep(200);
         runtime.reset();
 
         // Initial heading from IMU
@@ -601,12 +602,13 @@ public abstract class AutoBase extends LinearOpMode {
 
     //turn robot right a specific degrees (from current position)
     public void turnRight(double targetAngle, int sleepMS) {
+        sleep(200);
         runtime.reset();
 
         // Initial heading from IMU
         double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         double currentAngle;
-        targetAngle = zeroAngle - targetAngle; // Subtract targetAngle for right turn
+        targetAngle += (zeroAngle*-1); // Subtract targetAngle for right turn
         double currentError;
         double lastError = 0;
         double derivative;
@@ -685,6 +687,7 @@ public abstract class AutoBase extends LinearOpMode {
             extensionArmMotor.setPower(EXTENSION_BASE_POWER); // Set appropriate power
             actionStartTime = System.currentTimeMillis();
             while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+                addTelemetry();
                 if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
                 }
@@ -698,6 +701,8 @@ public abstract class AutoBase extends LinearOpMode {
             armMotor.setPower(currentArmPower);
             actionStartTime = System.currentTimeMillis();
             while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+
+                addTelemetry();
                 if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
                 }
@@ -712,6 +717,7 @@ public abstract class AutoBase extends LinearOpMode {
             armMotor.setPower(currentArmPower);
             actionStartTime = System.currentTimeMillis();
             while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+                addTelemetry();
                 if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
                 }
@@ -818,5 +824,16 @@ public abstract class AutoBase extends LinearOpMode {
     public double getAngle() {
         double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         return angle;
+    }
+
+    private void addTelemetry() {
+        // Log telemetry for debugging
+        telemetry.addData("Arm Target Position", armTargetPosition);
+        telemetry.addData("Arm Current Postiion", armMotor.getCurrentPosition());
+        telemetry.addData("Arm Current Power", currentArmPower);
+        telemetry.addData("Extension Target Position", extensionTargetPosition);
+        telemetry.addData("Extension Current Postiion", extensionArmMotor.getCurrentPosition());
+        telemetry.addData("Extension Current Power", currentExtensionPower);
+        telemetry.update();
     }
 }

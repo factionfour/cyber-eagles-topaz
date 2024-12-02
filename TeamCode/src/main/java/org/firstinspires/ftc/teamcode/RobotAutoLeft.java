@@ -10,44 +10,36 @@ public class RobotAutoLeft extends AutoBase {
         initializeHardware();
         
         setInitialPosition();
-        // Step 1:  Drive forward for 30 CM
-        //turnLeft(90,100);
-        driveForwardMM(1000,500);
-        driveBackwardMM(1000,500);
-        //strafeRightMM(1000,100);
-        //driveForwardMM(400,100);
-//        //prepare the hook
-//        moveArm(HOOK_ARM_HEIGHT,1000,100);
-//        moveExtension(HOOK_EXTENSION_POSITION,1000,500);
-//
-//        //hook the specimen
-//        outputClaw(400,100);
-//        moveArm(HOOK_RELEASE_ARM_HEIGHT,1000,100);
-//        moveExtension(HOOK_RELEASE_EXTENSION_POSITION,1000,500);
-//        driveBackwardMM(50,100);
-//
-//        //now move to start sample collection
-//        moveExtension(0,1000,100);
-//        moveArm(100,1000,0);
-//        turnLeft(600,0);
-//        driveForwardMM(600,100);
-//        turnRight(600,100);
-//        driveForwardMM(1500,00);
-//
-//        //start sample collection
-//        strafeLeftMM(200,100);
-//        driveBackwardMM(2000,100);
-//        driveForwardMM(2000,00);
-//        strafeLeftMM(200,100);
-//        driveBackwardMM(2000,100);
-//        driveForwardMM(2000,00);
-//        strafeLeftMM(200,100);
-//        driveBackwardMM(2000,100);
-//
-//        //prepare the robot for sample collection
-//        driveForwardMM(500,100);
-//        turnRight(1200,100);
-//        driveForwardMM(500,100);
+        // Step 1:  Drive strafeleft 360mm
+        strafeLeft(837,200);
+        driveForward(930,200);
+        moveArm(HOOK_ARM_HEIGHT,1500,400);
+        moveExtension(HOOK_EXTENSION_POSITION,1500,200);
+        moveArm(HOOK_RELEASE_ARM_HEIGHT,1500,200);
+        moveExtension(0,2000,200);
+        moveArm(0,2000,0);
+        strafeRight(1575,200);
+
+        //first block
+        driveForward(1400,200);
+        strafeRight(450,200);
+        driveBackward(1600,200);
+
+        //second block
+        driveForward(1600,200);
+        strafeRight(450,200);
+        driveBackward(1600,200);
+
+        //third block
+        driveForward(1600,200);
+        //strafeRight(310,200);
+        //driveBackward(1600,200);
+
+
+        driveForward(500,200);
+        //strafeLeft(1000,200);
+
+        turnRight(180,200);
 
         closeRobot();
         telemetry.addData("Path", "Complete");
