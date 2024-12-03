@@ -34,7 +34,7 @@ public abstract class AutoBase extends LinearOpMode {
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.7;//extra force if the extension is out
-    //int ARM_MIN_SPEED = 12; // How far to move per loop iteration
+    double ARM_ENCODER_SPEED = .5; // How far to move per loop iteration
 
     // Vertical extension limits and base power
     int extensionTargetPosition = 0;
@@ -133,7 +133,14 @@ public abstract class AutoBase extends LinearOpMode {
     public void setInitialPosition() {
         armMotor.setTargetPosition(ARM_MIN_POSITION);
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setPower(ARM_BASE_POWER);
+        armMotor.setPower(ARM_ENCODER_SPEED);
+        armTargetPosition = ARM_MIN_POSITION;
+        moveArm(ARM_MIN_POSITION,1000,200);
+    }
+    public void setInitialPosition2() {
+        armMotor.setTargetPosition(ARM_MIN_POSITION);
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setPower(ARM_ENCODER_SPEED);
         armTargetPosition = ARM_MIN_POSITION;
         moveArm(ARM_MIN_POSITION,1000,200);
     }
@@ -726,6 +733,64 @@ public abstract class AutoBase extends LinearOpMode {
 
         // Stop motors at the end to ensure no lingering movement
         armMotor.setPower(ARM_BASE_POWER);
+        extensionArmMotor.setPower(0);
+        sleep(sleepMS);
+    }
+
+
+    //raise or lower the robot's arm to a specific height
+    public void moveArmEncoder(int targetPosition, int actionTimeout, int sleepMS) {
+        long actionStartTime;
+        int currentArmPosition = armMotor.getCurrentPosition();
+        int currentExtensionPosition = extensionArmMotor.getCurrentPosition();
+
+        if (currentArmPosition < targetPosition) {
+            // Step 1: Retract the extension
+            extensionTargetPosition = EXTENSION_MIN_POSITION;
+            extensionArmMotor.setTargetPosition(extensionTargetPosition); // Fully retract
+            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            currentExtensionPower = calcExtensionPower();
+            extensionArmMotor.setPower(EXTENSION_BASE_POWER); // Set appropriate power
+            actionStartTime = System.currentTimeMillis();
+            while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+                addTelemetry();
+                if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
+                    break; // Break if within tolerance
+                }
+            }
+
+            // Step 2: Move the arm to the target height
+            armTargetPosition = targetPosition;
+            armMotor.setTargetPosition(armTargetPosition);
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            currentArmPower = ARM_ENCODER_SPEED;
+            armMotor.setPower(currentArmPower);
+            actionStartTime = System.currentTimeMillis();
+            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+                addTelemetry();
+                if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
+                    break; // Break if within tolerance
+                }
+            }
+        } else {
+            // If the arm is already at or above the target height
+            // Step 1: Move the arm to the target height
+            armTargetPosition = targetPosition;
+            armMotor.setTargetPosition(armTargetPosition);
+            armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            currentArmPower = ARM_ENCODER_SPEED;
+            armMotor.setPower(currentArmPower);
+            actionStartTime = System.currentTimeMillis();
+            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+                addTelemetry();
+                if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
+                    break; // Break if within tolerance
+                }
+            }
+        }
+
+        // Stop motors at the end to ensure no lingering movement
+        armMotor.setPower(ARM_ENCODER_SPEED);
         extensionArmMotor.setPower(0);
         sleep(sleepMS);
     }
