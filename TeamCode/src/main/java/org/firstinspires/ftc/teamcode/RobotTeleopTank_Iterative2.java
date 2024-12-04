@@ -42,20 +42,21 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
-    double ARM_PRECISION_SPEED = .1;
-    double ARM_BASE_SPEED = .3;
+    double ARM_BASE_POWER = 0.3;
+    double ARM_EXTRA_FORCE = 0.6;
     double ARM_MAX_SPEED = 0.7;
-    int ARM_RAMP_TIME = 200;
+    double ARM_MIN_SPEED = 0.3;
+    double ARM_RAMP_TICKS = 50;
 
-    // Vertical extension limits and base power
 
+    // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
-    double EXTENSION_PRESCION_SPEED = .1;
-    double EXTENSION_BASE_SPEED = .3; // How far to move per iteration
-    double EXTENSION_MAX_SPEED = .9; // How far to move per iteration
-    int EXTENSION_RAMP_TIME = 200;
+    double EXTENSION_BASE_POWER = 0.6;
 
+    double EXTENSION_MIN_SPEED = 0.3; // How far to move per iteration
+    double EXTENSION_MAX_SPEED = 0.7; // How far to move per iteration
+    double EXTENSION_RAMP_TICKS = 50;
 
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
 
@@ -72,20 +73,15 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
 
     int dynamicArmMinPosition = 0;
-    long lastXPressTime = 0;
-    long lastBPressTime = 0;
-    long lastDPadUpPressTime = 0;
-    long lastDPadDownPressTime = 0;
-
-    double currentExtensionSpeed = 0;
-    double currentArmSpeed = 0;
+    double currentExtensionPower = 0;
+    double currentArmPower = 0;
     int extensionTargetPosition = 0;
     int armTargetPosition = 0;
 
     HookState hookState = HookState.IDLE;
     HookReleaseState releaseState = HookReleaseState.IDLE;
-
-    private ElapsedTime stateTimer = new ElapsedTime();
+    int hookArmPositionHolder = 0;
+    int hookExtensionPositionHolder = 0;
     @Override
     public void init() {
         // Define and Initialize wheel Motors
@@ -114,9 +110,6 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         extensionArmMotor.setDirection(DcMotor.Direction.REVERSE);
         extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         extensionArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //extensionArmMotor.setTargetPosition(0);
-        //extensionArmMotor.setPower(ARM_BASE_SPEED);
-        //extensionArmMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Initialize wheel servos
         leftWheelServo = hardwareMap.get(Servo.class, "servo_one");
@@ -181,67 +174,22 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         backleftDrive.setPower(backLeftPower);
         backrightDrive.setPower(backRightPower);
 
-//        frontleftDrive.setPower(front);
-//        frontrightDrive.setPower(front);
-//        backleftDrive.setPower(-front);
-//        backrightDrive.setPower(-front);
-//
-//        frontleftDrive.setPower(-turn);
-//        frontrightDrive.setPower(turn);
-//        backleftDrive.setPower(-turn);
-//        backrightDrive.setPower(turn);
-//
-//        frontleftDrive.setPower(-strafe);
-//        frontrightDrive.setPower(strafe);
-//        backleftDrive.setPower(strafe);
-//        backrightDrive.setPower(-strafe);
-
         long currentTime = System.currentTimeMillis();
 
         // --- ARM ROTATE MOTOR CONTROL ---
-        if (gamepad2.dpad_up) {
-            telemetry.addData("ACTION", "gamepad2.dpad_up");
+        if (gamepad2.left_stick_y != 0) {  // Check if the left trigger is pulled
+            telemetry.addData("ACTION", "gamepad2.left_stick_y");
+            // Get the value of the left stick Y axis (range from -1.0 to 1.0)
+            float leftStickY = gamepad2.left_stick_y;
 
-            timeHeld = currentTime - lastDPadUpPressTime;
+            // Invert the stick input for natural control (up = positive value, down = negative value)
+            leftStickY = -leftStickY;  // If you want the arm to move up when the stick is pulled up
 
-            // Ramp power over time if the button is held
-            if (timeHeld < ARM_RAMP_TIME) {
-                currentArmSpeed = ARM_MAX_SPEED * (timeHeld / (float) ARM_RAMP_TIME); // Gradual ramp up
-            } else {
-                currentArmSpeed = ARM_MAX_SPEED; // Max power after ramp time
-            }
+            // Adjust the target position based on the stick value (scaled by max speed)
+            armTargetPosition += (leftStickY * ARM_MAX_SPEED);  // Increment or decrement target position
 
-            // Clamp power to maximum
-            currentArmSpeed = Math.min(currentArmSpeed, ARM_MAX_SPEED);
-
-            // Get current position
-            int currentPosition = armMotor.getCurrentPosition();
-
-            // Ensure the motor doesn't move beyond max or min positions
-            if (currentPosition < ARM_MAX_POSITION) {
-                // Allow movement upwards
-                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                armMotor.setPower(currentArmSpeed);
-            } else {
-                // Stop motor if at max position
-                currentArmSpeed = 0;
-                armMotor.setPower(currentArmSpeed);
-            }
-
-            lastDPadUpPressTime = currentTime;
-        } else {
-            lastDPadUpPressTime = 0;
-            currentArmSpeed = 0;
-            armMotor.setPower(currentArmSpeed);
-        }
-
-
-
-        if (gamepad2.dpad_down) {
-            telemetry.addData("ACTION", "gamepad2.dpad_down");
+            // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
             int extensionPosition = extensionArmMotor.getCurrentPosition();
-
-            // Calculate dynamicArmMinPosition based on extensionPosition
             if (extensionPosition == EXTENSION_MAX_POSITION) {
                 dynamicArmMinPosition = 200;
             } else if (extensionPosition == 900) {
@@ -255,110 +203,40 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
                 dynamicArmMinPosition = 100; // No interpolation needed as both bounds are 100
             }
 
-            // Determine how long the button has been held
-            timeHeld = currentTime - lastDPadDownPressTime;
+            // Clamp the target position to ensure the arm doesn't exceed the boundaries
+            armTargetPosition = Math.min(armTargetPosition, ARM_MAX_POSITION);  // Clamp to max position
+            armTargetPosition = Math.max(armTargetPosition, dynamicArmMinPosition);  // Clamp to min position
 
-            // Calculate ramped power
-            if (timeHeld < ARM_RAMP_TIME) {
-                currentArmSpeed = -(ARM_MAX_SPEED * (timeHeld / (float) ARM_RAMP_TIME)); // Ramp power gradually
-            } else {
-                currentArmSpeed = -ARM_MAX_SPEED; // Max power after ramp time
-            }
+            // Set the arm motor's target position
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMotor.setTargetPosition(armTargetPosition);
 
-            // Clamp power to maximum
-            currentArmSpeed = Math.max(currentArmSpeed, -ARM_MAX_SPEED);
+            // Set motor power based on your control system logic
+            currentArmPower = calcArmPower();
+            armMotor.setPower(currentArmPower);
 
-            // Get current position and calculate new position bounds
-            int currentPosition = armMotor.getCurrentPosition();
-            if (currentPosition > dynamicArmMinPosition) {
-                // Allow movement downwards
-                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                armMotor.setPower(currentArmSpeed); // Negative power to move downward
-            } else {
-                currentArmSpeed = 0;
-                armMotor.setPower(currentArmSpeed);
-            }
-            lastDPadDownPressTime = currentTime;
-        } else {
-            lastDPadDownPressTime = 0;
-            currentArmSpeed = 0;
-            armMotor.setPower(currentArmSpeed);
         }
-
 
         // --- END ARM ROTATE MOTOR CONTROL ---
 
         // --- EXTENSION ARM MOTOR CONTROL ---
 
-        if (gamepad2.x) {
-            telemetry.addData("ACTION", "gamepad2.x");
+        if (gamepad2.right_stick_x != 0) {  // Check if the left trigger is pulled
+            telemetry.addData("ACTION", "gamepad2.right_stick_x");
+            float rightStickX = gamepad2.right_stick_x;
+            extensionTargetPosition += (rightStickX * ARM_MAX_SPEED);  // Increment or decrement target position
 
-            timeHeld = currentTime - lastXPressTime; // Time the X button has been held
+            // Clamp the target position to ensure the arm doesn't exceed the boundaries
+            extensionTargetPosition = Math.min(extensionTargetPosition, EXTENSION_MAX_POSITION);  // Clamp to max position
+            extensionTargetPosition = Math.max(armTargetPosition, EXTENSION_MIN_POSITION);  // Clamp to min position
 
-            // Ramp speed over time if the button is held
-            if (timeHeld < EXTENSION_RAMP_TIME) {
-                // Gradually increase the power based on how long the button is held
-                currentExtensionSpeed = EXTENSION_MAX_SPEED * (timeHeld / (double) EXTENSION_RAMP_TIME);
-            } else {
-                // Once ramp time has passed, use max power
-                currentExtensionSpeed = EXTENSION_MAX_SPEED;
-            }
+            // Set the arm motor's target position
+            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            extensionArmMotor.setTargetPosition(extensionTargetPosition);
 
-            currentExtensionSpeed = Math.min(currentExtensionSpeed, EXTENSION_MAX_SPEED);
-
-            int currentPosition = extensionArmMotor.getCurrentPosition();
-
-            // Only allow movement if within limits
-            if (currentPosition < EXTENSION_MAX_POSITION) {
-                extensionArmMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                extensionArmMotor.setPower(currentExtensionSpeed);
-            } else {
-                currentExtensionSpeed = 0;
-                extensionArmMotor.setPower(currentExtensionSpeed); // Stop motor if at max
-            }
-
-            // Update the last press time
-            lastXPressTime = currentTime;
-        } else {
-            currentExtensionSpeed = 0;
-            extensionArmMotor.setPower(currentExtensionSpeed); // Stop motor if at max
-            lastXPressTime = 0;
+            currentExtensionPower = EXTENSION_BASE_POWER;
+            extensionArmMotor.setPower(currentExtensionPower);
         }
-
-        if (gamepad2.b) {
-            telemetry.addData("ACTION", "gamepad2.b");
-
-            timeHeld = currentTime - lastXPressTime; // Time the X button has been held
-
-            // Ramp speed over time if the button is held
-            if (timeHeld < EXTENSION_RAMP_TIME) {
-                // Gradually increase the power based on how long the button is held
-                currentExtensionSpeed = -(EXTENSION_MAX_SPEED * (timeHeld / (double) EXTENSION_RAMP_TIME));
-            } else {
-                // Once ramp time has passed, use max power
-                currentExtensionSpeed = -EXTENSION_MAX_SPEED;
-            }
-
-            currentExtensionSpeed = Math.min(currentExtensionSpeed, EXTENSION_MAX_SPEED);
-            int currentPosition = extensionArmMotor.getCurrentPosition();
-
-            // Only allow movement if within limits
-            if (currentPosition > EXTENSION_MIN_POSITION) {
-                extensionArmMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                extensionArmMotor.setPower(currentExtensionSpeed);
-            } else {
-                currentExtensionSpeed = 0;
-                extensionArmMotor.setPower(currentExtensionSpeed); // Stop motor if at max
-            }
-            // Update the last press time
-            lastXPressTime = currentTime;
-        } else {
-            currentExtensionSpeed = 0;
-            extensionArmMotor.setPower(currentExtensionSpeed); // Stop motor if at max
-            lastXPressTime = 0;
-        }
-
-
         // --- END EXTENSION ARM MOTOR CONTROL ---
 
         // --- START WHEEL SERVO CONTROL ---
@@ -381,26 +259,25 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             // If button is pressed and robot is idle, start the process
             if (hookState == HookState.IDLE || hookState == HookState.COMPLETE) {
                 hookState = HookState.RETRACT_EXTENSION; // Start first step
-                stateTimer.reset();
+                hookExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
             }
 
             // Execute multi-step process based on current state
             switch (hookState) {
                 case RETRACT_EXTENSION:
-                    moveExtension(0);
-                    if (stateTimer.seconds() >= 1.5) {
+                    if (moveExtensionEncoder(hookExtensionPositionHolder,0)) {
                         hookState = HookState.MOVE_ARM; // Transition to next step
+                        hookArmPositionHolder = armMotor.getCurrentPosition();
                     }
                     break;
                 case MOVE_ARM:
-                    moveArmEncoder(HOOK_ARM_HEIGHT);
-                    if (stateTimer.seconds() >= 3.5) {
+                    if (moveArmEncoder(hookArmPositionHolder,HOOK_ARM_HEIGHT)) {
                         hookState = HookState.EXTEND_EXTENSION; // Transition to next step
+                        hookExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     }
                     break;
                 case EXTEND_EXTENSION:
-                    moveExtension(HOOK_EXTENSION_POSITION);
-                    if (stateTimer.seconds() >= 5.5) {
+                    if (moveExtensionEncoder(hookExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
                         hookState = HookState.COMPLETE; // Transition to next step
                     }
                     break;
@@ -408,7 +285,6 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
                 case COMPLETE:
                     armMotor.setPower(0);
                     extensionArmMotor.setPower(0);
-                    //hookState = HookState.IDLE;
                     break;
             }
         }
@@ -418,15 +294,15 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             // If button is pressed and robot is idle, start the process
             if (releaseState == HookReleaseState.IDLE || releaseState == HookReleaseState.COMPLETE) {
                 releaseState = HookReleaseState.RETRACT_EXTENSION; // Start first step
-                stateTimer.reset();
+                hookExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                hookArmPositionHolder = armMotor.getCurrentPosition();
             }
 
             // Execute multi-step process based on current state
             switch (hookState) {
                 case RETRACT_EXTENSION:
-                    moveExtension(HOOK_RELEASE_EXTENSION_POSITION);
-                    moveArmEncoder(HOOK_ARM_HEIGHT);
-                    if (stateTimer.seconds() >= 1) {
+                    if (moveExtensionEncoder(hookExtensionPositionHolder,HOOK_RELEASE_EXTENSION_POSITION) &&
+                    moveArmEncoder(hookArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
                         releaseState = HookReleaseState.COMPLETE; // Transition to next step
                     }
                     break;
@@ -434,7 +310,6 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
                 case COMPLETE:
                     armMotor.setPower(0);
                     extensionArmMotor.setPower(0);
-                    //releaseState = HookReleaseState.IDLE;
                     break;
             }
         }
@@ -443,10 +318,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
         // --- STOP & EMERGENCY ACTIONS
 
-        // Reset the arm position scale down the motor if it hasn't moved in 1 second (and it should be)
-
-
-        //EMERGENCY STOP BUTTON (BOTTOM)
+        //EMERGENCY RESET BUTTON (BOTTOM)
         if (gamepad2.back) {// || (extensionTargetPosition <= 0 && extensionArmMotor.getCurrentPosition() > 0 && (System.currentTimeMillis() - lastExtensionMovementTime) > 500)) {
             armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             armTargetPosition = 0;
@@ -473,35 +345,90 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
         telemetry.addData("Arm Target Position", armTargetPosition);
         telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
-        telemetry.addData("Arm Calculated Speed", currentArmSpeed);
+        telemetry.addData("Arm Calculated Power", currentArmPower);
         telemetry.addData("Arm Motor Busy", armMotor.isBusy());
         telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
         telemetry.addData("Extension Target Position", extensionTargetPosition);
-        telemetry.addData("Extension Calculated Speed", currentExtensionSpeed);
+        telemetry.addData("Extension Calculated Power", currentExtensionPower);
         telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
         telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
         telemetry.addData("Right Servo Position", rightWheelServo.getPosition());
-
+        telemetry.update();
 
     }
 
-    private void moveExtension(int targetPosition) {
-        extensionTargetPosition = targetPosition;
-        extensionArmMotor.setTargetPosition(extensionTargetPosition);
-        extensionArmMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        currentExtensionSpeed = EXTENSION_MAX_SPEED;
-        extensionArmMotor.setPower(currentExtensionSpeed);
+    private Boolean moveExtensionEncoder(int startPosition, int targetPosition) {
+        Boolean complete = false;
+        int currentPos = extensionArmMotor.getCurrentPosition();
+        int distanceToTarget = Math.abs(targetPosition - currentPos);
+        int distanceFromStart = Math.abs(currentPos - startPosition);
+        double currentSpeed = 0;
+        if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
+            complete = true;
+        }
+        else {
+            // State 1: Ramp-Up (when within the first XXX ticks of movement)
+            if (distanceFromStart <= EXTENSION_RAMP_TICKS) {
+                currentSpeed = EXTENSION_MAX_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceFromStart / EXTENSION_RAMP_TICKS);
+            }
+            // State 2: Full Speed (between the first and last 50 ticks)
+            else if (distanceFromStart > EXTENSION_RAMP_TICKS && distanceToTarget > EXTENSION_RAMP_TICKS) {
+                currentSpeed = EXTENSION_MAX_SPEED;
+            }
+            // State 3: Ramp-Down (when within the last XXX ticks of movement)
+            else if (distanceToTarget <= EXTENSION_RAMP_TICKS) {
+                currentSpeed = EXTENSION_MIN_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceToTarget / EXTENSION_RAMP_TICKS);
+            }
+
+            // Set the target position and motor power
+            extensionTargetPosition = targetPosition;
+            extensionArmMotor.setTargetPosition(extensionTargetPosition);
+            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            extensionArmMotor.setPower(currentSpeed);
+        }
+        return complete;
     }
 
     //raise or lower the robot's arm to a specific height
-    public void moveArmEncoder(int targetPosition) {
+    public Boolean moveArmEncoder(int startPosition, int targetPosition) {
+        Boolean complete = false;
+        int currentPos = armMotor.getCurrentPosition();
+        int distanceToTarget = Math.abs(targetPosition - currentPos);
+        int distanceFromStart = Math.abs(currentPos - startPosition);
+        double currentSpeed = 0;
+        if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
+            complete = true;
+        }
+        else {
+            // State 1: Ramp-Up (when within the first XXX ticks of movement)
+            if (distanceFromStart <= ARM_RAMP_TICKS) {
+                currentSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
+            }
+            // State 2: Full Speed (between the first and last 50 ticks)
+            else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > ARM_RAMP_TICKS) {
+                currentSpeed = ARM_MAX_SPEED;
+            }
+            // State 3: Ramp-Down (when within the last XXX ticks of movement)
+            else if (distanceToTarget <= ARM_RAMP_TICKS) {
+                currentSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+            }
 
-        armTargetPosition = targetPosition;
-        armMotor.setTargetPosition(armTargetPosition);
-        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        currentArmSpeed = ARM_MAX_SPEED;
-        armMotor.setPower(currentArmSpeed);
+            // Set the target position and motor power
+            armTargetPosition = targetPosition;
+            armMotor.setTargetPosition(armTargetPosition);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMotor.setPower(currentSpeed);
+        }
+        return complete;
+    }
 
+    public double calcArmPower() {
+        // Adjust arm motor power based on vertical arm position
+        double horizontalArmPower = ARM_BASE_POWER;
+        double verticalFactor = (double) extensionTargetPosition / EXTENSION_MAX_POSITION;
+        horizontalArmPower += verticalFactor * ARM_EXTRA_FORCE; // Add extra power when fully raised
+        horizontalArmPower = Range.clip(horizontalArmPower, 0.2, 1.0);
+        return horizontalArmPower;
     }
 
     public double getAngle() {

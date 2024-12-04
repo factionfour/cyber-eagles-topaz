@@ -35,6 +35,7 @@ public abstract class AutoBase extends LinearOpMode {
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.7;//extra force if the extension is out
     double ARM_ENCODER_SPEED = .5; // How far to move per loop iteration
+    int ARM_RAMP_TICKS = 50; // How far to move per loop iteration
 
     // Vertical extension limits and base power
     int extensionTargetPosition = 0;
@@ -382,7 +383,7 @@ public abstract class AutoBase extends LinearOpMode {
         if (adjustmentError < -180) adjustmentError += 360;
 
         // Apply a correction until the robot is back to its initial heading
-        while (Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
+        while (opModeIsActive() && Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
             finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
             adjustmentError = initialHeading - finalHeading;
 
@@ -501,7 +502,7 @@ public abstract class AutoBase extends LinearOpMode {
         if (adjustmentError > 180) adjustmentError -= 360;
         if (adjustmentError < -180) adjustmentError += 360;
 
-        while (Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
+        while (opModeIsActive() && Math.abs(adjustmentError) > 1) { // Tolerance of 1 degree
             finalHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
             adjustmentError = initialHeading - finalHeading;
 
@@ -607,7 +608,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    //turn robot right a specific degrees (from current position)
+   /* //turn robot right a specific degrees (from current position)
     public void turnRight(double targetAngle, int sleepMS) {
         sleep(200);
         runtime.reset();
@@ -678,6 +679,73 @@ public abstract class AutoBase extends LinearOpMode {
         // Optional delay after turning
         sleep(sleepMS);
     }
+*/
+
+    public void turnRight(double targetAngle, int sleepMS) {
+        sleep(200);
+        runtime.reset();
+
+        // Initial heading from IMU
+        double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double currentAngle;
+        double targetAbsoluteAngle = zeroAngle - targetAngle; // Subtract the targetAngle for a right turn
+        double currentError;
+        double lastError = 0;
+        double derivative;
+        double motorPower;
+
+        while (opModeIsActive()) {
+            // Get the current angle from the IMU
+            currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            // Calculate the error between target and current angle
+            currentError = targetAbsoluteAngle - currentAngle;
+            // Normalize the error to the range [-180, 180]
+            currentError = (currentError + 360) % 360; // Ensure positive range
+            if (currentError > 180) currentError -= 360; // Wrap to [-180, 180]
+            // If error is negative, normalize for turning right
+            if (currentError > 0) currentError -= 360;
+            // Calculate derivative (rate of change of error)
+            derivative = currentError - lastError;
+            // Calculate motor power using proportional + derivative control
+            motorPower = (Kp * currentError) + (Kd * derivative);
+            // Clamp motor power to safe range
+            motorPower = Range.clip(motorPower, -TURN_SPEED_MAX, TURN_SPEED_MAX);
+            // Ensure minimum power for small errors (only if moving)
+            if (Math.abs(motorPower) < TURN_SPEED_MIN && Math.abs(currentError) > ROTATE_ERROR_DEGREES) {
+                motorPower = Math.copySign(TURN_SPEED_MIN, motorPower);
+            }
+
+            // Apply motor power for turning
+            frontrightDrive.setPower(motorPower); // Positive power for turning right
+            frontleftDrive.setPower(-motorPower); // Negative power for turning right
+            backleftDrive.setPower(-motorPower);  // Negative power for turning right
+            backrightDrive.setPower(motorPower);  // Positive power for turning right
+
+            // Log telemetry for debugging
+            telemetry.addData("Target Absolute Angle", targetAbsoluteAngle);
+            telemetry.addData("Current Angle", currentAngle);
+            telemetry.addData("Angle Error", currentError);
+            telemetry.addData("Motor Power", motorPower);
+            telemetry.update();
+
+            // Break the loop if the error is within the acceptable range
+            if (Math.abs(currentError) <= ROTATE_ERROR_DEGREES) break;
+            // Update last error for derivative calculation
+            lastError = currentError;
+            // Small delay for control loop
+            sleep(10);
+        }
+
+        // Stop the motors after turning
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+
+        // Optional delay after turning
+        sleep(sleepMS);
+    }
+
 
     //raise or lower the robot's arm to a specific height
     public void moveArm(int targetPosition, int actionTimeout, int sleepMS) {
@@ -693,7 +761,7 @@ public abstract class AutoBase extends LinearOpMode {
             currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(EXTENSION_BASE_POWER); // Set appropriate power
             actionStartTime = System.currentTimeMillis();
-            while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+            while (opModeIsActive() && extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
                 addTelemetry();
                 if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
@@ -707,7 +775,7 @@ public abstract class AutoBase extends LinearOpMode {
             currentArmPower = calcArmPower();
             armMotor.setPower(currentArmPower);
             actionStartTime = System.currentTimeMillis();
-            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+            while (opModeIsActive() && armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
 
                 addTelemetry();
                 if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
@@ -723,7 +791,7 @@ public abstract class AutoBase extends LinearOpMode {
             currentArmPower = calcArmPower();
             armMotor.setPower(currentArmPower);
             actionStartTime = System.currentTimeMillis();
-            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+            while (opModeIsActive() && armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
                 addTelemetry();
                 if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
@@ -752,7 +820,7 @@ public abstract class AutoBase extends LinearOpMode {
             currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(EXTENSION_BASE_POWER); // Set appropriate power
             actionStartTime = System.currentTimeMillis();
-            while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+            while (opModeIsActive() && extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
                 addTelemetry();
                 if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
                     break; // Break if within tolerance
@@ -763,28 +831,60 @@ public abstract class AutoBase extends LinearOpMode {
             armTargetPosition = targetPosition;
             armMotor.setTargetPosition(armTargetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            currentArmPower = ARM_ENCODER_SPEED;
-            armMotor.setPower(currentArmPower);
-            actionStartTime = System.currentTimeMillis();
-            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+
+            int totalTicks = Math.abs(targetPosition - armMotor.getCurrentPosition()); // Total ticks for the move
+            while (opModeIsActive() && armMotor.isBusy()) {
+                int currentTicks = Math.abs(armMotor.getCurrentPosition() - armTargetPosition); // Ticks remaining
+                int traveledTicks = totalTicks - currentTicks; // Ticks already traveled
+
+                // Calculate the arm power based on ramping up or down
+                if (traveledTicks < ARM_RAMP_TICKS) {
+                    // Ramp up phase
+                    currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
+                } else if (currentTicks < ARM_RAMP_TICKS) {
+                    // Ramp down phase
+                    currentArmPower = ARM_ENCODER_SPEED * (currentTicks / (double) ARM_RAMP_TICKS);
+                } else {
+                    // Maintain maximum speed
+                    currentArmPower = ARM_ENCODER_SPEED;
+                }
+                armMotor.setPower(currentArmPower);
                 addTelemetry();
-                if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
-                    break; // Break if within tolerance
+
+                if (currentTicks < MOTOR_TOLERANCE) {
+                    break;
                 }
             }
+            armMotor.setPower(ARM_ENCODER_SPEED);
+
         } else {
             // If the arm is already at or above the target height
             // Step 1: Move the arm to the target height
             armTargetPosition = targetPosition;
             armMotor.setTargetPosition(armTargetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            currentArmPower = ARM_ENCODER_SPEED;
-            armMotor.setPower(currentArmPower);
-            actionStartTime = System.currentTimeMillis();
-            while (armMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+
+            int totalTicks = Math.abs(targetPosition - armMotor.getCurrentPosition()); // Total ticks for the move
+            while (opModeIsActive() && armMotor.isBusy()) {
+                int currentTicks = Math.abs(armMotor.getCurrentPosition() - armTargetPosition); // Ticks remaining
+                int traveledTicks = totalTicks - currentTicks; // Ticks already traveled
+
+                // Calculate the arm power based on ramping up or down
+                if (traveledTicks < ARM_RAMP_TICKS) {
+                    // Ramp up phase
+                    currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
+                } else if (currentTicks < ARM_RAMP_TICKS) {
+                    // Ramp down phase
+                    currentArmPower = ARM_ENCODER_SPEED * (currentTicks / (double) ARM_RAMP_TICKS);
+                } else {
+                    // Maintain maximum speed
+                    currentArmPower = ARM_ENCODER_SPEED;
+                }
+                armMotor.setPower(currentArmPower);
                 addTelemetry();
-                if (Math.abs(armMotor.getCurrentPosition() - armTargetPosition) < MOTOR_TOLERANCE) {
-                    break; // Break if within tolerance
+
+                if (currentTicks < MOTOR_TOLERANCE) {
+                    break;
                 }
             }
         }
