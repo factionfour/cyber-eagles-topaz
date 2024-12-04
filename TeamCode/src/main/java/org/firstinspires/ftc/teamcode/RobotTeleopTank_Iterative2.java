@@ -25,7 +25,7 @@ enum HookReleaseState {
     COMPLETE       // Process complete
 }
 
-@TeleOp(name="Topaz Teleop Test V2 (Encoders & Improved Driving)", group="Robot")
+@TeleOp(name="Topaz Teleop V2 (Encoders & Improved Driving)", group="Robot")
 
 public class RobotTeleopTank_Iterative2 extends OpMode {
     // define each motor and servo
@@ -162,11 +162,16 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         double backRightPower = forward - turn + strafe;
 
         // Normalize power values to avoid exceeding 1.0
-        double maxPower = Math.max(1.0, Math.abs(frontLeftPower));
-        frontLeftPower /= maxPower;
-        frontRightPower /= maxPower;
-        backLeftPower /= maxPower;
-        backRightPower /= maxPower;
+        double maxPower = Math.max(Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower)),
+                Math.max(Math.abs(backLeftPower), Math.abs(backRightPower)));
+
+        // If the maxPower exceeds 1.0, normalize all power values by dividing by maxPower
+        if (maxPower > 1.0) {
+            frontLeftPower /= maxPower;
+            frontRightPower /= maxPower;
+            backLeftPower /= maxPower;
+            backRightPower /= maxPower;
+        }
 
         // Set motor powers
         frontleftDrive.setPower(frontLeftPower);
