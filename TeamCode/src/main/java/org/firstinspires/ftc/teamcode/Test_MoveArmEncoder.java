@@ -11,7 +11,7 @@ public class Test_MoveArmEncoder extends AutoBase {
         setInitialPosition();
         // Step 1:  Drive forward for 1 second
         moveArmEncoder(HOOK_ARM_HEIGHT,1500,400);
-        moveExtension(HOOK_EXTENSION_POSITION,1500,200);
+        moveExtensionEncoder(HOOK_EXTENSION_POSITION,1500,200);
         moveArmEncoder(HOOK_RELEASE_ARM_HEIGHT,1500,200);
         moveExtension(0,2000,200);
         closeRobot();

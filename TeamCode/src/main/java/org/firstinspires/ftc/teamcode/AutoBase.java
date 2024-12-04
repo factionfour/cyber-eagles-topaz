@@ -900,7 +900,11 @@ public abstract class AutoBase extends LinearOpMode {
                 if (distanceFromStart < ARM_RAMP_TICKS) {
                     // State 1: Ramp-Up (when within the first XXX ticks of movement)
                     //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
-                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
+                    //currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceFromStart / ARM_RAMP_TICKS));
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentArmSpeed = Math.max(ARM_MIN_SPEED, Math.min(currentArmSpeed, ARM_MAX_SPEED));
                 }
                 else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > ARM_RAMP_TICKS) {
                     // State 2: Full Speed (between the first and last 50 ticks)
@@ -909,7 +913,12 @@ public abstract class AutoBase extends LinearOpMode {
                 }
                 else if (distanceToTarget <= ARM_RAMP_TICKS) {
                     // State 3: Ramp-Down (when within the last XXX ticks of movement)
-                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                    //currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceToTarget / ARM_RAMP_TICKS));
+                    // Interpolate speed using the ramp factor
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentArmSpeed = Math.max(ARM_MIN_SPEED, Math.min(currentArmSpeed, ARM_MIN_SPEED));
                 }
                 armMotor.setPower(currentArmSpeed);
                 addTelemetry();
@@ -937,7 +946,11 @@ public abstract class AutoBase extends LinearOpMode {
                 if (distanceFromStart < ARM_RAMP_TICKS) {
                     // State 1: Ramp-Up (when within the first XXX ticks of movement)
                     //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
-                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
+                    //currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceFromStart / ARM_RAMP_TICKS));
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentArmSpeed = Math.max(ARM_MIN_SPEED, Math.min(currentArmSpeed, ARM_MAX_SPEED));
                 }
                 else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > ARM_RAMP_TICKS) {
                     // State 2: Full Speed (between the first and last 50 ticks)
@@ -946,7 +959,12 @@ public abstract class AutoBase extends LinearOpMode {
                 }
                 else if (distanceToTarget <= ARM_RAMP_TICKS) {
                     // State 3: Ramp-Down (when within the last XXX ticks of movement)
-                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                    //currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceToTarget / ARM_RAMP_TICKS));
+                    // Interpolate speed using the ramp factor
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentArmSpeed = Math.max(ARM_MIN_SPEED, Math.min(currentArmSpeed, ARM_MIN_SPEED));
                 }
                 armMotor.setPower(currentArmSpeed);
                 addTelemetry();
@@ -1002,16 +1020,29 @@ public abstract class AutoBase extends LinearOpMode {
                 if (distanceFromStart < EXTENSION_RAMP_TICKS) {
                     // State 1: Ramp-Up (when within the first XXX ticks of movement)
                     //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
-                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (ARM_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceFromStart / EXTENSION_RAMP_TICKS);
+                    //currentExtensionSpeed = EXTENSION_MIN_SPEED + (ARM_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceFromStart / EXTENSION_RAMP_TICKS);
+                    // Cap the ramp factor to [0, 1] to avoid exceeding bounds
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceFromStart / EXTENSION_RAMP_TICKS));
+                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentExtensionSpeed = Math.max(EXTENSION_MIN_SPEED, Math.min(currentExtensionSpeed, EXTENSION_MAX_SPEED));
+
                 }
-                else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > EXTENSION_RAMP_TICKS) {
+                else if (distanceFromStart > EXTENSION_RAMP_TICKS && distanceToTarget > EXTENSION_RAMP_TICKS) {
                     // State 2: Full Speed (between the first and last 50 ticks)
-                    currentExtensionSpeed = ARM_MAX_SPEED;
+                    currentExtensionSpeed = EXTENSION_MAX_SPEED;
                     //currentArmPower = ARM_ENCODER_SPEED * (remainingTicks / (double) ARM_RAMP_TICKS);
                 }
-                else if (distanceToTarget <= ARM_RAMP_TICKS) {
+                else if (distanceToTarget <= EXTENSION_RAMP_TICKS) {
                     // State 3: Ramp-Down (when within the last XXX ticks of movement)
-                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (ARM_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceToTarget / EXTENSION_RAMP_TICKS);
+                    //currentExtensionSpeed = EXTENSION_MIN_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceToTarget / EXTENSION_RAMP_TICKS);
+                    // Calculate ramp factor for the ramp-down phase
+                    float rampFactor = Math.min(1.0f, Math.max(0.0f, (float) distanceToTarget / EXTENSION_RAMP_TICKS));
+                    // Interpolate speed using the ramp factor
+                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * rampFactor;
+                    // Ensure power doesn't exceed EXTENSION_MAX_SPEED or drop below EXTENSION_MIN_SPEED
+                    currentExtensionSpeed = Math.max(EXTENSION_MIN_SPEED, Math.min(currentExtensionSpeed, EXTENSION_MAX_SPEED));
+
                 }
                 extensionArmMotor.setPower(currentExtensionSpeed);
                 addTelemetry();
