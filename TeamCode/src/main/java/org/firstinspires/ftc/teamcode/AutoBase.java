@@ -28,22 +28,26 @@ public abstract class AutoBase extends LinearOpMode {
     public Servo rightWheelServo = null;
     public IMU imu;
 
-    // Arm motor limits and power
+    // Arm motor limits and power (both power and speed for encoders)
     int armTargetPosition = 0;
     int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.7;//extra force if the extension is out
-    double ARM_ENCODER_SPEED = .5; // How far to move per loop iteration
     int ARM_RAMP_TICKS = 50; // How far to move per loop iteration
+    double ARM_MAX_SPEED = 0.7;
+    double ARM_MIN_SPEED = 0.3;
 
-    // Vertical extension limits and base power
+    // Vertical extension limits and base power (both power and speed for encoders)
     int extensionTargetPosition = 0;
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
-    int EXTENSION_MIN_SPEED = 125; // How far to move per loop iteration
-    double EXTENSION_BASE_POWER = 0.5; // Base power to hold position
+    double EXTENSION_MIN_SPEED = 0.3;
+    double EXTENSION_MAX_SPEED = 0.7;
+    double EXTENSION_BASE_POWER = 0.4; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
+    int EXTENSION_RAMP_TICKS = 50; // How far to move per loop iteration
+
      int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks (used for arm & extension)
 
     //servo limits
@@ -132,24 +136,19 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
     public void setInitialPosition() {
-        armMotor.setTargetPosition(ARM_MIN_POSITION);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setPower(ARM_ENCODER_SPEED);
-        armTargetPosition = ARM_MIN_POSITION;
+        //armMotor.setTargetPosition(ARM_MIN_POSITION);
+        //armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //armMotor.setPower(ARM_BASE_POWER);
+        //armTargetPosition = ARM_MIN_POSITION;
         moveArm(ARM_MIN_POSITION,1000,200);
     }
-    public void setInitialPosition2() {
-        armMotor.setTargetPosition(ARM_MIN_POSITION);
-        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armMotor.setPower(ARM_ENCODER_SPEED);
-        armTargetPosition = ARM_MIN_POSITION;
-        moveArm(ARM_MIN_POSITION,1000,200);
-    }
+
     //drive the robot forward a specific distance
     public void driveForwardMM(int distanceMM, int sleepMS) {
         long timeToTravelMM = (long) ((distanceMM / FORWARD_MM_SECOND) * 1000); // Time in milliseconds
         driveForward(timeToTravelMM, sleepMS);
     }
+
 
     //drive the robot forward a specific time
     public void driveForward(double milliseconds, int sleepMS) {
@@ -162,7 +161,6 @@ public abstract class AutoBase extends LinearOpMode {
 
         while (opModeIsActive() && (runtime.milliseconds() < milliseconds)) {
             double elapsedTime = runtime.milliseconds();
-
 
             if (elapsedTime < FORWARD_RAMP_TIME) {
                 telemetry.addData("RAMPING", "UP");
@@ -217,6 +215,75 @@ public abstract class AutoBase extends LinearOpMode {
 
         sleep(sleepMS);
     }
+
+    /*private Boolean isDriveMotorBusy() {
+
+    }
+    //drive the robot forward a specific time
+    public void driveForwardTicks(double ticks, int sleepMS) {
+        long startTime = System.currentTimeMillis();
+        double currentPower = FORWARD_MIN_SPEED;
+        double correctionPower = 0;  // Initialize correction power to 0 initially
+        double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);// Get the initial heading (yaw) from the IMU before the strafe
+
+        runtime.reset();
+
+        while (opModeIsActive() && isDriveMotorBusy()) {
+            double elapsedTime = runtime.milliseconds();
+
+            if (elapsedTime < FORWARD_RAMP_TIME) {
+                telemetry.addData("RAMPING", "UP");
+                // Ramp up phase: gradually increase power from FORWARD_MIN_SPEED to FORWARD_SPEED
+                currentPower = FORWARD_MIN_SPEED + (FORWARD_SPEED - FORWARD_MIN_SPEED) * (elapsedTime / FORWARD_RAMP_TIME);
+            } else if (elapsedTime < (milliseconds - FORWARD_RAMP_TIME)) {
+                telemetry.addData("RAMPING", "FULL");
+                // Constant power phase: maintain power at FORWARD_SPEED
+                currentPower = FORWARD_SPEED;
+            } else {
+                telemetry.addData("RAMPING", "DOWN");
+                // Ramp down phase: gradually decrease power from current speed to 0
+                double timeSinceRampDown = elapsedTime - (milliseconds - FORWARD_RAMP_TIME);
+                double rampDownFactor = 1.0 - (timeSinceRampDown / FORWARD_RAMP_TIME); // Ramp from 1.0 to 0
+                currentPower = currentPower * rampDownFactor;  // Scale currentPower down smoothly
+            }
+
+            // Ensure currentPower stays within the range [FORWARD_MIN_SPEED, FORWARD_SPEED]
+            currentPower = Math.max(FORWARD_MIN_SPEED, Math.min(currentPower, FORWARD_SPEED));
+
+            // Calculate correction power based on heading deviation
+            double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            double adjustmentError = initialHeading - currentHeading;
+
+            // Normalize the adjustment error to range [-180, 180]
+            if (adjustmentError > 180) adjustmentError -= 360;
+            if (adjustmentError < -180) adjustmentError += 360;
+
+            // Ramp down correction power similarly as the main currentPower
+            double correctionRampDownFactor = currentPower / FORWARD_SPEED; // Same ramp factor as currentPower
+            correctionPower = FORWARD_CORRECTION_GAIN * adjustmentError * correctionRampDownFactor;
+
+
+            // Apply the power to the motors (inverting the power for right motors)
+            frontrightDrive.setPower(-currentPower + correctionPower);
+            frontleftDrive.setPower(-currentPower - correctionPower);
+            backleftDrive.setPower(currentPower + correctionPower);
+            backrightDrive.setPower(currentPower - correctionPower);
+
+            // Telemetry for monitoring
+            telemetry.addData("Wheel Power", currentPower);
+            telemetry.addData("CORRECTION POWER", correctionPower);
+            telemetry.addData("Elapsed Time", elapsedTime);
+            telemetry.update();
+        }
+
+        // Stop the motors after the loop is done
+        frontleftDrive.setPower(0);
+        frontrightDrive.setPower(0);
+        backleftDrive.setPower(0);
+        backrightDrive.setPower(0);
+
+        sleep(sleepMS);
+    }*/
 
     //drive robot backward a specific distance
     public void driveBackwardMM(int distanceMM, int sleepMS) {
@@ -809,53 +876,49 @@ public abstract class AutoBase extends LinearOpMode {
     //raise or lower the robot's arm to a specific height
     public void moveArmEncoder(int targetPosition, int actionTimeout, int sleepMS) {
         long actionStartTime;
-        int currentArmPosition = armMotor.getCurrentPosition();
-        int currentExtensionPosition = extensionArmMotor.getCurrentPosition();
+        int startArmPosition = armMotor.getCurrentPosition();
+        double currentArmSpeed = 0;
 
-        if (currentArmPosition < targetPosition) {
+        if (startArmPosition < targetPosition) {
             // Step 1: Retract the extension
-            extensionTargetPosition = EXTENSION_MIN_POSITION;
-            extensionArmMotor.setTargetPosition(extensionTargetPosition); // Fully retract
-            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            currentExtensionPower = calcExtensionPower();
-            extensionArmMotor.setPower(EXTENSION_BASE_POWER); // Set appropriate power
-            actionStartTime = System.currentTimeMillis();
-            while (opModeIsActive() && extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
-                addTelemetry();
-                if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
-                    break; // Break if within tolerance
-                }
-            }
+            moveExtensionEncoder(0,1500,200);
 
             // Step 2: Move the arm to the target height
             armTargetPosition = targetPosition;
             armMotor.setTargetPosition(armTargetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            currentArmSpeed = ARM_MIN_SPEED;
+            armMotor.setPower(currentArmSpeed);
 
             int totalTicks = Math.abs(targetPosition - armMotor.getCurrentPosition()); // Total ticks for the move
             while (opModeIsActive() && armMotor.isBusy()) {
-                int currentTicks = Math.abs(armMotor.getCurrentPosition() - armTargetPosition); // Ticks remaining
-                int traveledTicks = totalTicks - currentTicks; // Ticks already traveled
+                int currentPos = armMotor.getCurrentPosition();
+                int distanceToTarget = Math.abs(targetPosition - currentPos);
+                int distanceFromStart = Math.abs(currentPos - startArmPosition);
 
                 // Calculate the arm power based on ramping up or down
-                if (traveledTicks < ARM_RAMP_TICKS) {
-                    // Ramp up phase
-                    currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
-                } else if (currentTicks < ARM_RAMP_TICKS) {
-                    // Ramp down phase
-                    currentArmPower = ARM_ENCODER_SPEED * (currentTicks / (double) ARM_RAMP_TICKS);
-                } else {
-                    // Maintain maximum speed
-                    currentArmPower = ARM_ENCODER_SPEED;
+                if (distanceFromStart < ARM_RAMP_TICKS) {
+                    // State 1: Ramp-Up (when within the first XXX ticks of movement)
+                    //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
                 }
-                armMotor.setPower(currentArmPower);
+                else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > ARM_RAMP_TICKS) {
+                    // State 2: Full Speed (between the first and last 50 ticks)
+                    currentArmSpeed = ARM_MAX_SPEED;
+                    //currentArmPower = ARM_ENCODER_SPEED * (remainingTicks / (double) ARM_RAMP_TICKS);
+                }
+                else if (distanceToTarget <= ARM_RAMP_TICKS) {
+                    // State 3: Ramp-Down (when within the last XXX ticks of movement)
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                }
+                armMotor.setPower(currentArmSpeed);
                 addTelemetry();
 
-                if (currentTicks < MOTOR_TOLERANCE) {
+                if (distanceToTarget < MOTOR_TOLERANCE) {
                     break;
                 }
             }
-            armMotor.setPower(ARM_ENCODER_SPEED);
+            armMotor.setPower(ARM_MIN_SPEED);
 
         } else {
             // If the arm is already at or above the target height
@@ -866,31 +929,36 @@ public abstract class AutoBase extends LinearOpMode {
 
             int totalTicks = Math.abs(targetPosition - armMotor.getCurrentPosition()); // Total ticks for the move
             while (opModeIsActive() && armMotor.isBusy()) {
-                int currentTicks = Math.abs(armMotor.getCurrentPosition() - armTargetPosition); // Ticks remaining
-                int traveledTicks = totalTicks - currentTicks; // Ticks already traveled
+                int currentPos = armMotor.getCurrentPosition();
+                int distanceToTarget = Math.abs(targetPosition - currentPos);
+                int distanceFromStart = Math.abs(currentPos - startArmPosition);
 
                 // Calculate the arm power based on ramping up or down
-                if (traveledTicks < ARM_RAMP_TICKS) {
-                    // Ramp up phase
-                    currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
-                } else if (currentTicks < ARM_RAMP_TICKS) {
-                    // Ramp down phase
-                    currentArmPower = ARM_ENCODER_SPEED * (currentTicks / (double) ARM_RAMP_TICKS);
-                } else {
-                    // Maintain maximum speed
-                    currentArmPower = ARM_ENCODER_SPEED;
+                if (distanceFromStart < ARM_RAMP_TICKS) {
+                    // State 1: Ramp-Up (when within the first XXX ticks of movement)
+                    //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
                 }
-                armMotor.setPower(currentArmPower);
+                else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > ARM_RAMP_TICKS) {
+                    // State 2: Full Speed (between the first and last 50 ticks)
+                    currentArmSpeed = ARM_MAX_SPEED;
+                    //currentArmPower = ARM_ENCODER_SPEED * (remainingTicks / (double) ARM_RAMP_TICKS);
+                }
+                else if (distanceToTarget <= ARM_RAMP_TICKS) {
+                    // State 3: Ramp-Down (when within the last XXX ticks of movement)
+                    currentArmSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceToTarget / ARM_RAMP_TICKS);
+                }
+                armMotor.setPower(currentArmSpeed);
                 addTelemetry();
 
-                if (currentTicks < MOTOR_TOLERANCE) {
+                if (distanceToTarget < MOTOR_TOLERANCE) {
                     break;
                 }
             }
         }
 
         // Stop motors at the end to ensure no lingering movement
-        armMotor.setPower(ARM_ENCODER_SPEED);
+        armMotor.setPower(ARM_MIN_SPEED);
         extensionArmMotor.setPower(0);
         sleep(sleepMS);
     }
@@ -907,6 +975,50 @@ public abstract class AutoBase extends LinearOpMode {
         while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
             if (Math.abs(extensionArmMotor.getCurrentPosition() - extensionTargetPosition) < MOTOR_TOLERANCE) {
                 break; // Break if within tolerance
+            }
+        }
+        sleep(sleepMS);
+    }
+
+    public void moveExtensionEncoder(int targetPosition, int actionTimeout, int sleepMS) {
+        long actionStartTime;
+        double currentExtensionSpeed = 0;
+        int startExtensionPosition = extensionArmMotor.getCurrentPosition();
+        extensionTargetPosition = targetPosition;
+        extensionArmMotor.setTargetPosition(extensionTargetPosition);
+        extensionArmMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        currentExtensionSpeed = EXTENSION_MIN_SPEED;
+        extensionArmMotor.setPower(currentExtensionSpeed);
+        actionStartTime = System.currentTimeMillis();
+        while (extensionArmMotor.isBusy() && (System.currentTimeMillis() - actionStartTime) < actionTimeout) {
+
+            int totalTicks = Math.abs(targetPosition - extensionArmMotor.getCurrentPosition()); // Total ticks for the move
+            while (opModeIsActive() && extensionArmMotor.isBusy()) {
+                int currentPos = armMotor.getCurrentPosition();
+                int distanceToTarget = Math.abs(targetPosition - currentPos);
+                int distanceFromStart = Math.abs(currentPos - startExtensionPosition);
+
+                // Calculate the arm power based on ramping up or down
+                if (distanceFromStart < EXTENSION_RAMP_TICKS) {
+                    // State 1: Ramp-Up (when within the first XXX ticks of movement)
+                    //currentArmPower = ARM_ENCODER_SPEED * (traveledTicks / (double) ARM_RAMP_TICKS);
+                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (ARM_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceFromStart / EXTENSION_RAMP_TICKS);
+                }
+                else if (distanceFromStart > ARM_RAMP_TICKS && distanceToTarget > EXTENSION_RAMP_TICKS) {
+                    // State 2: Full Speed (between the first and last 50 ticks)
+                    currentExtensionSpeed = ARM_MAX_SPEED;
+                    //currentArmPower = ARM_ENCODER_SPEED * (remainingTicks / (double) ARM_RAMP_TICKS);
+                }
+                else if (distanceToTarget <= ARM_RAMP_TICKS) {
+                    // State 3: Ramp-Down (when within the last XXX ticks of movement)
+                    currentExtensionSpeed = EXTENSION_MIN_SPEED + (ARM_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceToTarget / EXTENSION_RAMP_TICKS);
+                }
+                extensionArmMotor.setPower(currentExtensionSpeed);
+                addTelemetry();
+
+                if (distanceToTarget < MOTOR_TOLERANCE) {
+                    break;
+                }
             }
         }
         sleep(sleepMS);
@@ -952,7 +1064,7 @@ public abstract class AutoBase extends LinearOpMode {
 
     //calculate the extension power based on the current position of the extension
     public double calcExtensionPower() {
-        //Adjust motor power based on proximity to limits
+        //Adjust motor power based on proximity to limits - only to be used in runToPosition
         int currentPosition = extensionArmMotor.getCurrentPosition();
         double extensionProximityFactor = 1.0; // Full power by default
         if (currentPosition < extensionTargetPosition) {
@@ -977,7 +1089,7 @@ public abstract class AutoBase extends LinearOpMode {
 
     //calculate the power of the arm
     public double calcArmPower() {
-        // Adjust arm motor power based on vertical arm position
+        // Adjust arm motor power based on vertical arm position - only to be used in runToPosition
         double horizontalArmPower = ARM_BASE_POWER;
         double verticalFactor = (double) extensionTargetPosition / EXTENSION_MAX_POSITION;
         horizontalArmPower += verticalFactor * ARM_EXTRA_FORCE; // Add extra power when fully raised
