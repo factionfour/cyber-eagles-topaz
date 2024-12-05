@@ -56,8 +56,8 @@ public abstract class AutoBase extends LinearOpMode {
     double SERVO_BACKWARD = 0;
 
     //pre-defined positions
-    int HOOK_EXTENSION_POSITION = 1900;
-    int HOOK_ARM_HEIGHT = 450;
+    int HOOK_EXTENSION_POSITION = 1800;
+    int HOOK_ARM_HEIGHT = 430;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 300;
 
@@ -783,10 +783,10 @@ public abstract class AutoBase extends LinearOpMode {
             }
 
             // Apply motor power for turning
-            frontrightDrive.setPower(motorPower); // Positive power for turning right
-            frontleftDrive.setPower(-motorPower); // Negative power for turning right
-            backleftDrive.setPower(-motorPower);  // Negative power for turning right
-            backrightDrive.setPower(motorPower);  // Positive power for turning right
+            frontrightDrive.setPower(-motorPower); // Positive power for turning right
+            frontleftDrive.setPower(motorPower); // Negative power for turning right
+            backleftDrive.setPower(motorPower);  // Negative power for turning right
+            backrightDrive.setPower(-motorPower);  // Positive power for turning right
 
             // Log telemetry for debugging
             telemetry.addData("Target Absolute Angle", targetAbsoluteAngle);

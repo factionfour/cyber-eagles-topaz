@@ -44,10 +44,10 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.6;
-    double ARM_MAX_SPEED = 0.7;
-    double ARM_MIN_SPEED = 0.3;
+    double ARM_MAX_SPEED = 0.8;
+    double ARM_MIN_SPEED = 0.2;
     double ARM_RAMP_TICKS = 50;
-
+    double ARM_MANUAL_MAX_SPEED = 0;
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
@@ -156,10 +156,10 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         strafe = Math.abs(strafe) > 0.05 ? Math.pow(strafe, 3) : 0.0;
 
         // Combine inputs for omnidirectional control
-        double frontLeftPower = forward + turn + strafe;
-        double frontRightPower = forward - turn - strafe;
-        double backLeftPower = forward + turn - strafe;
-        double backRightPower = forward - turn + strafe;
+        double frontLeftPower = -forward + -turn + -strafe;
+        double frontRightPower = -forward - -turn - -strafe;
+        double backLeftPower = forward + -turn - -strafe;
+        double backRightPower = forward - -turn + -strafe;
 
         // Normalize power values to avoid exceeding 1.0
         double maxPower = Math.max(Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower)),
@@ -184,6 +184,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         // --- ARM ROTATE MOTOR CONTROL ---
         if (gamepad2.left_stick_y != 0) {  // Check if the left trigger is pulled
             telemetry.addData("ACTION", "gamepad2.left_stick_y");
+            telemetry.addData("GamepadY",gamepad2.left_stick_y);
             // Get the value of the left stick Y axis (range from -1.0 to 1.0)
             float leftStickY = gamepad2.left_stick_y;
 
@@ -191,9 +192,9 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             leftStickY = -leftStickY;  // If you want the arm to move up when the stick is pulled up
 
             // Adjust the target position based on the stick value (scaled by max speed)
-            armTargetPosition += (leftStickY * ARM_MAX_SPEED);  // Increment or decrement target position
-
-            // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
+            //armTargetPosition += (leftStickY * ARM_MAX_SPEED);  // Increment or decrement target position
+            armTargetPosition += (leftStickY * ARM_MANUAL_MAX_SPEED);
+           // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
             int extensionPosition = extensionArmMotor.getCurrentPosition();
             if (extensionPosition == EXTENSION_MAX_POSITION) {
                 dynamicArmMinPosition = 200;
@@ -209,15 +210,15 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             }
 
             // Clamp the target position to ensure the arm doesn't exceed the boundaries
-            armTargetPosition = Math.min(armTargetPosition, ARM_MAX_POSITION);  // Clamp to max position
-            armTargetPosition = Math.max(armTargetPosition, dynamicArmMinPosition);  // Clamp to min position
-
+            //armTargetPosition = Math.max(armTargetPosition, ARM_MAX_POSITION);  // Clamp to max position
+            //armTargetPosition = Math.min(armTargetPosition, dynamicArmMinPosition);  // Clamp to min position
+            armTargetPosition = Range.clip(armTargetPosition, dynamicArmMinPosition, ARM_MAX_POSITION);
             // Set the arm motor's target position
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armMotor.setTargetPosition(armTargetPosition);
 
-            // Set motor power based on your control system logic
+            armMotor.setTargetPosition(armTargetPosition);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             currentArmPower = calcArmPower();
+            // Set motor power based on your control system logic
             armMotor.setPower(currentArmPower);
 
         }
@@ -236,8 +237,9 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             extensionTargetPosition = Math.max(armTargetPosition, EXTENSION_MIN_POSITION);  // Clamp to min position
 
             // Set the arm motor's target position
-            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             extensionArmMotor.setTargetPosition(extensionTargetPosition);
+            extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
 
             currentExtensionPower = EXTENSION_BASE_POWER;
             extensionArmMotor.setPower(currentExtensionPower);
@@ -262,7 +264,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
         if (gamepad2.y) {
             // If button is pressed and robot is idle, start the process
-            if (hookState == HookState.IDLE || hookState == HookState.COMPLETE) {
+            if (hookState == HookState.IDLE) {
                 hookState = HookState.RETRACT_EXTENSION; // Start first step
                 hookExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
             }
@@ -293,11 +295,14 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
                     break;
             }
         }
+        else {
+            hookState = HookState.IDLE; // Transition to next step
+        }
 
         if (gamepad2.a) {
             //HOOK RELEASE BUTTON -- ASSUMES CURRENTLY IN HOOK POSITION
             // If button is pressed and robot is idle, start the process
-            if (releaseState == HookReleaseState.IDLE || releaseState == HookReleaseState.COMPLETE) {
+            if (releaseState == HookReleaseState.IDLE) {
                 releaseState = HookReleaseState.RETRACT_EXTENSION; // Start first step
                 hookExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                 hookArmPositionHolder = armMotor.getCurrentPosition();
@@ -307,7 +312,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             switch (hookState) {
                 case RETRACT_EXTENSION:
                     if (moveExtensionEncoder(hookExtensionPositionHolder,HOOK_RELEASE_EXTENSION_POSITION) &&
-                    moveArmEncoder(hookArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
+                        moveArmEncoder(hookArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
                         releaseState = HookReleaseState.COMPLETE; // Transition to next step
                     }
                     break;
@@ -317,6 +322,10 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
                     extensionArmMotor.setPower(0);
                     break;
             }
+
+        }
+        else {
+            releaseState = HookReleaseState.IDLE; // Transition to next step
         }
 
         // --- END AUTOMATED MOVEMENT BUTTONS
