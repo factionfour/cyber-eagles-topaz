@@ -47,12 +47,13 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     double ARM_MAX_SPEED = 0.8;
     double ARM_MIN_SPEED = 0.2;
     double ARM_RAMP_TICKS = 50;
-    double ARM_MANUAL_MAX_SPEED = 0;
+    double ARM_MANUAL_MAX_SPEED = 100;
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
-    double EXTENSION_BASE_POWER = 0.6;
+    double EXTENSION_BASE_POWER = 0.3;
+    double EXTENSION_EXTRA_FORCE = 0.6;
 
     double EXTENSION_MIN_SPEED = 0.3; // How far to move per iteration
     double EXTENSION_MAX_SPEED = 0.7; // How far to move per iteration
@@ -210,11 +211,8 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             }
 
             // Clamp the target position to ensure the arm doesn't exceed the boundaries
-            //armTargetPosition = Math.max(armTargetPosition, ARM_MAX_POSITION);  // Clamp to max position
-            //armTargetPosition = Math.min(armTargetPosition, dynamicArmMinPosition);  // Clamp to min position
             armTargetPosition = Range.clip(armTargetPosition, dynamicArmMinPosition, ARM_MAX_POSITION);
             // Set the arm motor's target position
-
             armMotor.setTargetPosition(armTargetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             currentArmPower = calcArmPower();
@@ -233,15 +231,13 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             extensionTargetPosition += (rightStickX * ARM_MAX_SPEED);  // Increment or decrement target position
 
             // Clamp the target position to ensure the arm doesn't exceed the boundaries
-            extensionTargetPosition = Math.min(extensionTargetPosition, EXTENSION_MAX_POSITION);  // Clamp to max position
-            extensionTargetPosition = Math.max(armTargetPosition, EXTENSION_MIN_POSITION);  // Clamp to min position
+            extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
 
             // Set the arm motor's target position
             extensionArmMotor.setTargetPosition(extensionTargetPosition);
             extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-
-            currentExtensionPower = EXTENSION_BASE_POWER;
+            currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(currentExtensionPower);
         }
         // --- END EXTENSION ARM MOTOR CONTROL ---
@@ -443,6 +439,41 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         horizontalArmPower += verticalFactor * ARM_EXTRA_FORCE; // Add extra power when fully raised
         horizontalArmPower = Range.clip(horizontalArmPower, 0.2, 1.0);
         return horizontalArmPower;
+    }
+
+    public double calcExtensionPower() {
+        // Get the current position of the extension arm
+        int currentPosition = extensionArmMotor.getCurrentPosition();
+
+        // Adjust the motor power based on proximity to target
+        double extensionProximityFactor = 1.0; // Full power by default
+
+        // Scale power when near target position (within 50 ticks)
+        int proximityRange = 50;
+        if (currentPosition < extensionTargetPosition) {
+            // Arm is moving towards the max position
+            if (extensionTargetPosition - currentPosition < proximityRange) {
+                extensionProximityFactor = (extensionTargetPosition - currentPosition) / (double) proximityRange;
+            }
+        } else if (currentPosition > extensionTargetPosition) {
+            // Arm is moving towards the min position
+            if (currentPosition - extensionTargetPosition < proximityRange) {
+                extensionProximityFactor = (currentPosition - extensionTargetPosition) / (double) proximityRange;
+            }
+        }
+
+        // Calculate the base power based on current position relative to the target
+        double distanceToTarget = Math.abs(extensionTargetPosition - currentPosition);
+        double extensionPower = EXTENSION_BASE_POWER + ((double) distanceToTarget / EXTENSION_MAX_POSITION) * EXTENSION_EXTRA_FORCE;
+
+        // Apply proximity factor to the power (if close to target, reduce power)
+        extensionPower = extensionPower * extensionProximityFactor;
+
+        // Clip the power to a safe range (minimum 0.2, maximum 1.0)
+        extensionPower = Range.clip(extensionPower, 0.2, 1.0);
+
+        // Return the calculated power
+        return extensionPower;
     }
 
     public double getAngle() {
