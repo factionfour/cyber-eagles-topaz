@@ -65,13 +65,13 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
-    int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
+    int ARM_MAX_POSITION = 850; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.6;
     double ARM_MAX_SPEED = 0.8;
     double ARM_MIN_SPEED = 0.2;
     double ARM_RAMP_TICKS = 50;
-    double ARM_MANUAL_MAX_SPEED = 100;
+    double ARM_MANUAL_MAX_SPEED = 40;
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
@@ -82,6 +82,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     double EXTENSION_MIN_SPEED = 0.3; // How far to move per iteration
     double EXTENSION_MAX_SPEED = 0.7; // How far to move per iteration
     double EXTENSION_RAMP_TICKS = 50;
+    double EXTENSION_MANUAL_MAX_SPEED = 100;
 
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
 
@@ -253,16 +254,20 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             armMotor.setPower(currentArmPower);
         }
         else {
-            armMotor.setPower(0);
+            //if (!isRunnign) {
+                armMotor.setPower(calcArmPower());
+//}
         }
 
         // --- END ARM ROTATE MOTOR CONTROL ---
 
         // --- EXTENSION ARM MOTOR CONTROL ---
-        if (gamepad2.right_stick_x != 0) {  // Check if the left trigger is pulled
-            telemetry.addData("ACTION", "gamepad2.right_stick_x");
-            float rightStickX = gamepad2.right_stick_x;
-            extensionTargetPosition += (rightStickX * ARM_MAX_SPEED);  // Increment or decrement target position
+        if (gamepad2.right_stick_y != 0) {  // Check if the left trigger is pulled
+            telemetry.addData("ACTION", "gamepad2.right_stick_y");
+            float rightStickY = gamepad2.right_stick_y;
+            // Invert the stick input for natural control (up = positive value, down = negative value)
+            rightStickY = -rightStickY;  // If you want the arm to move up when the stick is pulled up
+            extensionTargetPosition += (rightStickY * EXTENSION_MANUAL_MAX_SPEED);  // Increment or decrement target position
 
             // Clamp the target position to ensure the arm doesn't exceed the boundaries
             extensionTargetPosition = Range.clip(extensionTargetPosition, EXTENSION_MIN_POSITION, EXTENSION_MAX_POSITION);
@@ -275,7 +280,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             extensionArmMotor.setPower(currentExtensionPower);
         }
         else {
-            extensionArmMotor.setPower(0);
+            extensionArmMotor.setPower(calcExtensionPower());
         }
         // --- END EXTENSION ARM MOTOR CONTROL ---
 

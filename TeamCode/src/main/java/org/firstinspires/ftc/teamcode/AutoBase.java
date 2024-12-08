@@ -31,7 +31,7 @@ public abstract class AutoBase extends LinearOpMode {
     // Arm motor limits and power (both power and speed for encoders)
     int armTargetPosition = 0;
     int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
-    int ARM_MAX_POSITION = 440; // Maximum encoder position (fully extended)
+    int ARM_MAX_POSITION = 850; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.3;
     double ARM_EXTRA_FORCE = 0.7;//extra force if the extension is out
     int ARM_RAMP_TICKS = 50; // How far to move per loop iteration
@@ -44,8 +44,8 @@ public abstract class AutoBase extends LinearOpMode {
     int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
     double EXTENSION_MIN_SPEED = 0.3;
     double EXTENSION_MAX_SPEED = 0.7;
-    double EXTENSION_BASE_POWER = 0.4; // Base power to hold position
-    double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
+    double EXTENSION_BASE_POWER = 0.8; // Base power to hold position
+    double EXTENSION_EXTRA_FORCE = 0.2; // Extra power when arm is extended
     int EXTENSION_RAMP_TICKS = 50; // How far to move per loop iteration
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks (used for arm & extension)
 
@@ -56,11 +56,14 @@ public abstract class AutoBase extends LinearOpMode {
 
     //pre-defined positions
     int HOOK_EXTENSION_POSITION = 1800;
-    int HOOK_ARM_HEIGHT = 430;
+    int HOOK_ARM_HEIGHT = 750;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
-    int HOOK_RELEASE_ARM_HEIGHT = 300;
-    int PICKUP_SPECIMEN_EXTENSION_POSITION = 600;
-    int PICKUP_SPECIMEN_ARM_HEIGHT = 150;
+    int HOOK_RELEASE_ARM_HEIGHT = 670;
+    int PICKUP_SPECIMEN_EXTENSION_POSITION = 1300;
+    int PICKUP_SPECIMEN_ARM_HEIGHT = 130;
+
+    int PARK_ARM_HEIGHT = 650;
+    int PARK_EXTENSION_POSITION = 1000;
 
     double currentExtensionPower = 0;
     double currentArmPower = 0;
@@ -912,7 +915,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void intakeClaw(int runMS, int sleepMS) {
+    public void outputClaw(int runMS, int sleepMS) {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
 
@@ -920,7 +923,7 @@ public abstract class AutoBase extends LinearOpMode {
         rightWheelServo.setPosition(SERVO_FORWARD); // Spin inward
         // Wait for the specified duration
         while (opModeIsActive() && timer.milliseconds() < runMS) {
-            telemetry.addData("Intake Claw", "Running for %d ms", runMS);
+            telemetry.addData("Output Claw", "Running for %d ms", runMS);
             telemetry.update();
         }
         leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
@@ -928,7 +931,7 @@ public abstract class AutoBase extends LinearOpMode {
         sleep(sleepMS);
     }
 
-    public void outputClaw(int runMS, int sleepMS) {
+    public void intakeClaw(int runMS, int sleepMS) {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
 
@@ -936,7 +939,7 @@ public abstract class AutoBase extends LinearOpMode {
         rightWheelServo.setPosition(SERVO_BACKWARD); // Spin inward
         // Wait for the specified duration
         while (opModeIsActive() && timer.milliseconds() < runMS) {
-            telemetry.addData("Output Claw", "Running for %d ms", runMS);
+            telemetry.addData("Intake Claw", "Running for %d ms", runMS);
             telemetry.update();
         }
         leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
