@@ -47,8 +47,7 @@ public abstract class AutoBase extends LinearOpMode {
     double EXTENSION_BASE_POWER = 0.4; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
     int EXTENSION_RAMP_TICKS = 50; // How far to move per loop iteration
-
-     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks (used for arm & extension)
+    int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks (used for arm & extension)
 
     //servo limits
     double SERVO_STOPPED = 0.5;
@@ -60,11 +59,11 @@ public abstract class AutoBase extends LinearOpMode {
     int HOOK_ARM_HEIGHT = 430;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 300;
+    int PICKUP_SPECIMEN_EXTENSION_POSITION = 600;
+    int PICKUP_SPECIMEN_ARM_HEIGHT = 150;
 
-    int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
     double currentArmPower = 0;
-    boolean predefinedActionRunning = false;
 
     //CONVERSION TO CENTIMETERS
     double FORWARD_MM_SECOND = 1040;
@@ -92,6 +91,7 @@ public abstract class AutoBase extends LinearOpMode {
     double ROTATE_ERROR_DEGREES =2;
 
     private ElapsedTime runtime = new ElapsedTime();
+    double initRobotHeading = 0;
 
     public void initializeHardware() {
         frontleftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
@@ -131,6 +131,7 @@ public abstract class AutoBase extends LinearOpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
+        initRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
         waitForStart();
     }
@@ -985,12 +986,12 @@ public abstract class AutoBase extends LinearOpMode {
     }
 
     //get the current angle of the robot
-    public double getAngle() {
+    public double getHeading() {
         double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         return angle;
     }
 
-    public void rotateToAngle(double targetAngle, int sleepMS) {
+    public void rotateToHeading(double targetAngle, int sleepMS) {
         sleep(200); // Optional small delay before starting
         runtime.reset();
 
