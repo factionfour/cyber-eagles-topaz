@@ -25,13 +25,29 @@ enum HookReleaseState {
     COMPLETE       // Process complete
 }
 
-enum pickupSpecimenEdgeState {
+enum pickupSampleGroundState {
     IDLE,          // Waiting for button press
     RETRACT_EXTENSION,         // First movement
     MOVE_ARM,
     EXTEND_EXTENSION,
     COMPLETE       // Process complete
 }
+
+enum releaseSampleFirstBucketState {
+    IDLE,          // Waiting for button press
+    MOVE_ARM,
+    EXTEND_EXTENSION,
+    COMPLETE       // Process complete
+}
+
+
+//enum pickupSpecimenEdgeState {
+//    IDLE,          // Waiting for button press
+//    RETRACT_EXTENSION,         // First movement
+//    MOVE_ARM,
+//    EXTEND_EXTENSION,
+//    COMPLETE       // Process complete
+//}
 
 @TeleOp(name="Topaz Teleop V2 (Encoders & Improved Driving)", group="Robot")
 
@@ -79,9 +95,13 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     int HOOK_ARM_HEIGHT = 420;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 300;
-    int PICKUP_SPECIMEN_EXTENSION_POSITION = 600;
-    int PICKUP_SPECIMEN_ARM_HEIGHT = 150;
+    //int PICKUP_SPECIMEN_EXTENSION_POSITION = 600;
+    //int PICKUP_SPECIMEN_ARM_HEIGHT = 150;
 
+    int PICKUP_SAMPLE_ARM_HEIGHT = 150;
+    int PICKUP_SAMPLE_EXTENSION_POSITION = 600;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 400;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2000;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -89,9 +109,12 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     int extensionTargetPosition = 0;
     int armTargetPosition = 0;
 
-    HookState hookState = HookState.IDLE;
-    HookReleaseState releaseState = HookReleaseState.IDLE;
-    pickupSpecimenEdgeState specimenPickupState = pickupSpecimenEdgeState.IDLE;
+    HookState specimenHookState = HookState.IDLE;
+    HookReleaseState specimenReleaseState = HookReleaseState.IDLE;
+    //pickupSpecimenEdgeState specimenPickupState = pickupSpecimenEdgeState.IDLE;
+    pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
+    releaseSampleFirstBucketState sampleReleaseState = releaseSampleFirstBucketState.IDLE;
+
     int tmpArmPositionHolder = 0;
     int tmpExtensionPositionHolder = 0;
 
@@ -282,29 +305,29 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
         // --- AUTOMATED MOVEMENT BUTTONS
         if (gamepad2.y) {
-            //move arm and extension up to the hook height
-            if (hookState == HookState.IDLE) {
-                hookState = HookState.RETRACT_EXTENSION; // Start first step
+            //SPECIMEN HOOK START
+            if (specimenHookState == HookState.IDLE) {
+                specimenHookState = HookState.RETRACT_EXTENSION; // Start first step
                 tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
             }
 
             // Execute multi-step process based on current state
-            switch (hookState) {
+            switch (specimenHookState) {
                 case RETRACT_EXTENSION:
                     if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
-                        hookState = HookState.MOVE_ARM; // Transition to next step
+                        specimenHookState = HookState.MOVE_ARM; // Transition to next step
                         tmpArmPositionHolder = armMotor.getCurrentPosition();
                     }
                     break;
                 case MOVE_ARM:
                     if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT)) {
-                        hookState = HookState.EXTEND_EXTENSION; // Transition to next step
+                        specimenHookState = HookState.EXTEND_EXTENSION; // Transition to next step
                         tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     }
                     break;
                 case EXTEND_EXTENSION:
                     if (moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
-                        hookState = HookState.COMPLETE; // Transition to next step
+                        specimenHookState = HookState.COMPLETE; // Transition to next step
                     }
                     break;
 
@@ -315,23 +338,23 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             }
         }
         else {
-            hookState = HookState.IDLE; // Transition to next step
+            specimenHookState = HookState.IDLE; // Transition to next step
         }
 
-        if (gamepad2.a) {
-            //HOOK RELEASE -- ASSUMES CURRENTLY IN HOOK POSITION
-            if (releaseState == HookReleaseState.IDLE) {
-                releaseState = HookReleaseState.RETRACT_EXTENSION; // Start first step
+        if (gamepad2.x) {
+            //SPECIMEN HOOK RELEASE -- ***ASSUMES CURRENTLY IN HOOK POSITION***
+            if (specimenReleaseState == HookReleaseState.IDLE) {
+                specimenReleaseState = HookReleaseState.RETRACT_EXTENSION; // Start first step
                 tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                 tmpArmPositionHolder = armMotor.getCurrentPosition();
             }
 
             // Execute multi-step process based on current state
-            switch (hookState) {
+            switch (specimenReleaseState) {
                 case RETRACT_EXTENSION:
                     if (moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_RELEASE_EXTENSION_POSITION) &&
                         moveArmEncoder(tmpArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
-                        releaseState = HookReleaseState.COMPLETE; // Transition to next step
+                        specimenReleaseState = HookReleaseState.COMPLETE; // Transition to next step
                     }
                     break;
 
@@ -343,34 +366,67 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
         }
         else {
-            releaseState = HookReleaseState.IDLE; // Transition to next step
+            specimenReleaseState = HookReleaseState.IDLE; // Transition to next step
         }
 
+//        if (gamepad2.b) {
+//            //PICK UP SPECIMEN AT EDGE OF ARENA
+//            if (specimenPickupState == pickupSpecimenEdgeState.IDLE) {
+//                specimenPickupState = pickupSpecimenEdgeState.EXTEND_EXTENSION; // Start first step
+//                tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+//                tmpArmPositionHolder = armMotor.getCurrentPosition();
+//            }
+//
+//            // Execute multi-step process based on current state
+//            switch (specimenPickupState) {
+//                case RETRACT_EXTENSION:
+//                    if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
+//                        specimenPickupState = specimenPickupState.MOVE_ARM; // Transition to next step
+//                        tmpArmPositionHolder = armMotor.getCurrentPosition();
+//                    }
+//                    break;
+//                case MOVE_ARM:
+//                    if (moveArmEncoder(tmpArmPositionHolder,PICKUP_SPECIMEN_ARM_HEIGHT)) {
+//                        specimenPickupState = specimenPickupState.EXTEND_EXTENSION; // Transition to next step
+//                        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+//                    }
+//                    break;
+//                case EXTEND_EXTENSION:
+//                    if (moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SPECIMEN_EXTENSION_POSITION)) {
+//                        hookState = HookState.COMPLETE; // Transition to next step
+//                    }
+//                    break;
+//                case COMPLETE:
+//                    armMotor.setPower(0);
+//                    extensionArmMotor.setPower(0);
+//                    break;
+//            }
+//
+//        }
+//        else {
+//            releaseState = HookReleaseState.IDLE; // Transition to next step
+//        }
+
         if (gamepad2.b) {
-            //PICK UP SPECIMEN AT EDGE OF ARENA
-            if (specimenPickupState == pickupSpecimenEdgeState.IDLE) {
-                specimenPickupState = pickupSpecimenEdgeState.EXTEND_EXTENSION; // Start first step
+            //SAMPLE RELEASE TO FIRST BUCKET
+            if (sampleReleaseState == releaseSampleFirstBucketState.IDLE) {
+                sampleReleaseState = releaseSampleFirstBucketState.EXTEND_EXTENSION; // Start first step
                 tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                 tmpArmPositionHolder = armMotor.getCurrentPosition();
             }
 
             // Execute multi-step process based on current state
-            switch (specimenPickupState) {
-                case RETRACT_EXTENSION:
-                    if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
-                        specimenPickupState = specimenPickupState.MOVE_ARM; // Transition to next step
+            switch (sampleReleaseState) {
+                case MOVE_ARM:
+                    if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT)) {
+                        sampleReleaseState = releaseSampleFirstBucketState.EXTEND_EXTENSION; // Transition to next step
                         tmpArmPositionHolder = armMotor.getCurrentPosition();
                     }
                     break;
-                case MOVE_ARM:
-                    if (moveArmEncoder(tmpArmPositionHolder,PICKUP_SPECIMEN_ARM_HEIGHT)) {
-                        specimenPickupState = specimenPickupState.EXTEND_EXTENSION; // Transition to next step
-                        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
-                    }
-                    break;
                 case EXTEND_EXTENSION:
-                    if (moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SPECIMEN_EXTENSION_POSITION)) {
-                        hookState = HookState.COMPLETE; // Transition to next step
+                    if (moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
+                        sampleReleaseState = releaseSampleFirstBucketState.COMPLETE; // Transition to next step
+                        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     }
                     break;
                 case COMPLETE:
@@ -381,9 +437,48 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
         }
         else {
-            releaseState = HookReleaseState.IDLE; // Transition to next step
+            sampleReleaseState = releaseSampleFirstBucketState.IDLE; // Transition to next step
         }
 
+
+        if (gamepad2.a) {
+            //SAMPLE PICKUP FROM GROUND
+            if (samplePickupState == pickupSampleGroundState.IDLE.IDLE) {
+                samplePickupState = pickupSampleGroundState.RETRACT_EXTENSION; // Start first step
+                tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                tmpArmPositionHolder = armMotor.getCurrentPosition();
+            }
+
+            // Execute multi-step process based on current state
+            switch (samplePickupState) {
+                case RETRACT_EXTENSION:
+                    if (moveExtensionEncoder(tmpExtensionPositionHolder,0) &&
+                            moveArmEncoder(tmpArmPositionHolder,0)) {
+                        samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
+                    }
+                    break;
+                case MOVE_ARM:
+                    if (moveArmEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_ARM_HEIGHT)) {
+                        samplePickupState = pickupSampleGroundState.EXTEND_EXTENSION; // Transition to next step
+                        tmpArmPositionHolder = armMotor.getCurrentPosition();
+                    }
+                    break;
+                case EXTEND_EXTENSION:
+                    if (moveExtensionEncoder(tmpArmPositionHolder,PICKUP_SAMPLE_EXTENSION_POSITION)) {
+                        samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
+                        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    }
+                    break;
+                case COMPLETE:
+                    armMotor.setPower(0);
+                    extensionArmMotor.setPower(0);
+                    break;
+            }
+
+        }
+        else {
+            samplePickupState = samplePickupState.IDLE; // Transition to next step
+        }
         // --- END AUTOMATED MOVEMENT BUTTONS
 
         // --- STOP & EMERGENCY ACTIONS
