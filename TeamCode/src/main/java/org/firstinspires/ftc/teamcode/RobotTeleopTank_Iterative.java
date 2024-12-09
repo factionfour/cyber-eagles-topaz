@@ -12,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import java.text.DecimalFormat;
 
-@TeleOp(name="Topaz Teleop", group="Robot")
+@TeleOp(name="Z: Topaz Teleop OLD", group="Robot")
 
 public class RobotTeleopTank_Iterative extends OpMode {
     // define each motor and servo
