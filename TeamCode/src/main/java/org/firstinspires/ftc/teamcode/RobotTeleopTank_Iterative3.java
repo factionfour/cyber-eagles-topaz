@@ -6,49 +6,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-enum HookState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    MOVE_ARM,         // Second movement
-    EXTEND_EXTENSION,         // Third movement
-    COMPLETE       // Process complete
-}
-
-enum HookReleaseState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    COMPLETE       // Process complete
-}
-
-enum pickupSampleGroundState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    MOVE_ARM,
-    EXTEND_EXTENSION,
-    COMPLETE       // Process complete
-}
-
-enum releaseSampleFirstBucketState {
-    IDLE,          // Waiting for button press
-    MOVE_ARM,
-    EXTEND_EXTENSION,
-    COMPLETE       // Process complete
-}
-
-enum manualArmState {
-    IDLE,          // Waiting for button press
-    MOVE_ARM
-}
-
-enum manualExtensionState {
-    IDLE,          // Waiting for button press
-    MOVE_EXTENSION
-}
 
 //enum pickupSpecimenEdgeState {
 //    IDLE,          // Waiting for button press
@@ -58,9 +19,11 @@ enum manualExtensionState {
 //    COMPLETE       // Process complete
 //}
 
-@TeleOp(name="Topaz Teleop V2 (Start @ 0)", group="Robot")
+@TeleOp(name="Topaz Teleop V2 Start Hanging", group="Robot")
 
-public class RobotTeleopTank_Iterative2 extends OpMode {
+public class RobotTeleopTank_Iterative3 extends OpMode {
+    int PARK_ARM_HEIGHT = 600;
+    int PARK_EXTENSION_POSITION = 1400;
     // define each motor and servo
     public DcMotor frontleftDrive = null;
     public DcMotor backleftDrive = null;
@@ -150,9 +113,10 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         backrightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backleftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+
         // Initialize arm motor
         armMotor = hardwareMap.get(DcMotor.class, "arm_1");
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       // armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //armTargetPosition = ARM_MIN_POSITION;
@@ -160,7 +124,9 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         // Initialize extension arm motor
         extensionArmMotor = hardwareMap.get(DcMotor.class, "arm_extendo");
         extensionArmMotor.setDirection(DcMotor.Direction.REVERSE);
-        extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armTargetPosition = PARK_ARM_HEIGHT;
+        extensionTargetPosition = PARK_EXTENSION_POSITION;
+       // extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         extensionArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Initialize wheel servos
@@ -248,7 +214,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             // Adjust the target position based on the stick value (scaled by max speed)
             //armTargetPosition += (leftStickY * ARM_MAX_SPEED);  // Increment or decrement target position
             armTargetPosition += (leftStickY * ARM_MANUAL_MAX_SPEED);
-           // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
+            // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
             int extensionPosition = extensionArmMotor.getCurrentPosition();
             if (extensionPosition == EXTENSION_MAX_POSITION) {
                 dynamicArmMinPosition = 200;
@@ -370,7 +336,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             switch (specimenReleaseState) {
                 case RETRACT_EXTENSION:
                     if (moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_RELEASE_EXTENSION_POSITION) &&
-                        moveArmEncoder(tmpArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
+                            moveArmEncoder(tmpArmPositionHolder,HOOK_RELEASE_ARM_HEIGHT)) {
                         specimenReleaseState = HookReleaseState.COMPLETE; // Transition to next step
                     }
                     break;

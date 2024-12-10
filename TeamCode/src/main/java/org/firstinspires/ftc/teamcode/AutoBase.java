@@ -38,6 +38,7 @@ public abstract class AutoBase extends LinearOpMode {
     double ARM_MAX_SPEED = 0.7;
     double ARM_MIN_SPEED = 0.3;
 
+
     // Vertical extension limits and base power (both power and speed for encoders)
     int extensionTargetPosition = 0;
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
@@ -62,8 +63,8 @@ public abstract class AutoBase extends LinearOpMode {
     int PICKUP_SPECIMEN_EXTENSION_POSITION = 1300;
     int PICKUP_SPECIMEN_ARM_HEIGHT = 130;
 
-    int PARK_ARM_HEIGHT = 650;
-    int PARK_EXTENSION_POSITION = 1000;
+    int PARK_ARM_HEIGHT = 600;
+    int PARK_EXTENSION_POSITION = 1400;
 
     double currentExtensionPower = 0;
     double currentArmPower = 0;
@@ -91,7 +92,7 @@ public abstract class AutoBase extends LinearOpMode {
     double Kd = 0.005; // Derivative gain
     double TURN_SPEED_MIN = 0.2;
     double TURN_SPEED_MAX = 0.8;
-    double ROTATE_ERROR_DEGREES =2;
+    double ROTATE_ERROR_DEGREES =3;
 
     private ElapsedTime runtime = new ElapsedTime();
     double initRobotHeading = 0;

@@ -14,6 +14,10 @@ public class RobotAutoRight extends AutoBase {
         initializeHardware();
 
         setInitialPosition();
+
+        telemetry.addData("Path", "Start");
+        telemetry.update();
+
         // Step 1:  Drive strafeleft 360mm
         strafeLeft(737,200);
         driveForward(880,200);

@@ -10,6 +10,12 @@ public class RobotAutoLeft extends AutoBase {
         initializeHardware();
         setInitialPosition();
 
+        telemetry.addData("Path", "Start");
+        telemetry.update();
+
+        telemetry.addData("Hook", "Start");
+        telemetry.update();
+
         //hook the first specimen
         strafeRight(1400,200);
         driveForward(880,200);
@@ -21,16 +27,23 @@ public class RobotAutoLeft extends AutoBase {
         moveArm(0,3500,0);
         rotateToHeading(initRobotHeading,200);//straighten out
 
+        telemetry.addData("Hook Specimen", "Complete");
+        telemetry.update();
+
         //park the robot
-        strafeLeft(1800,200);
+        strafeLeft(1500,200);
+        rotateToHeading(initRobotHeading,200);//straighten out
         driveForward(1350,200);
+        rotateToHeading(initRobotHeading,200);//straighten out
         turnRight(90,500);
+        driveForward(100,0);
         moveArm(HOOK_RELEASE_ARM_HEIGHT,2500,200);
         moveExtension(PARK_EXTENSION_POSITION,2500,200);
         moveArm(PARK_ARM_HEIGHT,1000,200);
-        //driveBackward(880,200);
 
-        closeRobot();
+
+        //driveBackward(880,200);
+        //closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);

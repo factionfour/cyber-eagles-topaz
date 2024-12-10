@@ -4,6 +4,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
@@ -25,6 +26,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
+    public DcMotor linearExtender;
 
     // Arm motor limits and power
     int armTargetPosition = 0;
@@ -45,6 +47,7 @@ public class RobotTeleopTank_Iterative extends OpMode {
     int RAMP_TIME = 200;
 
     double EXTENSION_BASE_POWER = 0.5; // Base power to hold position
+    double LINEAR_BASE_POWER = 0.5; // Base power to hold position
     double EXTENSION_EXTRA_FORCE = 0.4; // Extra power when arm is extended
     long DEBOUNCE_DELAY = 40; // Time in milliseconds to wait before accepting another press
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
@@ -106,6 +109,14 @@ public class RobotTeleopTank_Iterative extends OpMode {
         extensionArmMotor.setPower(EXTENSION_BASE_POWER);
         extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        linearExtender = hardwareMap.get(DcMotor.class, "linear_extendo");
+        linearExtender.setDirection(DcMotor.Direction.FORWARD);
+        linearExtender.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        linearExtender.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        linearExtender.setTargetPosition(0);
+        linearExtender.setPower(LINEAR_BASE_POWER);
+        linearExtender.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        
         // Initialize wheel servos
         leftWheelServo = hardwareMap.get(Servo.class, "servo_one");
         rightWheelServo = hardwareMap.get(Servo.class, "servo_two");
