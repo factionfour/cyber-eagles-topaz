@@ -272,7 +272,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
             }
         }
 
-        // --- END ARM ROTATE MOTOR CONTROL ---
+        // --- END ARM ROTATE MOTOR CONTROL ----
 
         // --- EXTENSION ARM MOTOR CONTROL ---
         if (gamepad2.right_stick_y != 0) {  // Check if the left trigger is pulled
