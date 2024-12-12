@@ -35,7 +35,7 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
     public Servo rightWheelServo = null;
     public IMU imu;
 
-    double DRIVING_SLOW =0.6;
+    double DRIVING_SLOW =0.5;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
@@ -124,8 +124,6 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
         // Initialize extension arm motor
         extensionArmMotor = hardwareMap.get(DcMotor.class, "arm_extendo");
         extensionArmMotor.setDirection(DcMotor.Direction.REVERSE);
-        armTargetPosition = PARK_ARM_HEIGHT;
-        extensionTargetPosition = PARK_EXTENSION_POSITION;
        // extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         extensionArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
@@ -137,6 +135,17 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
 
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
+
+        armTargetPosition = PARK_ARM_HEIGHT;
+        extensionTargetPosition = PARK_EXTENSION_POSITION;
+
+        armMotor.setTargetPosition(armMotor.getCurrentPosition());
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(ARM_BASE_POWER);
+        extensionArmMotor.setTargetPosition(extensionArmMotor.getCurrentPosition());
+        extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setPower(EXTENSION_BASE_POWER);
+
 
         telemetry.addData(">", "Charlie 2 is READY.  Press START.");    //
     }

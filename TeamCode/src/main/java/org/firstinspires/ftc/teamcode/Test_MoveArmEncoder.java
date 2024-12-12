@@ -2,7 +2,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name="Z: Test Move arm Encoder (multi-step)", group="Robot")
 public class Test_MoveArmEncoder extends AutoBase {
     @Override

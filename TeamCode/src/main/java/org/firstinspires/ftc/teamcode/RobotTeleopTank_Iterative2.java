@@ -72,7 +72,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
     public Servo rightWheelServo = null;
     public IMU imu;
 
-    double DRIVING_SLOW =0.6;
+    double DRIVING_SLOW =0.5;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)

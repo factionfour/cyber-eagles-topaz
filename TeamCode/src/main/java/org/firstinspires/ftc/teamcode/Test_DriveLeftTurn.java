@@ -2,7 +2,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name="Z: Test Left turn 90", group="Robot")
 public class Test_DriveLeftTurn extends AutoBase {
     @Override

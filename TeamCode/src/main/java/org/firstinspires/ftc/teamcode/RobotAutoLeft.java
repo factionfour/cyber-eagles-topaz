@@ -18,7 +18,7 @@ public class RobotAutoLeft extends AutoBase {
 
         //hook the first specimen
         strafeRight(1400,200);
-        driveForward(880,200);
+        driveForward(840,200);
         moveArm(HOOK_ARM_HEIGHT,3500,400);
         moveExtension(HOOK_EXTENSION_POSITION,2500,200);
         outputClaw(225,100);

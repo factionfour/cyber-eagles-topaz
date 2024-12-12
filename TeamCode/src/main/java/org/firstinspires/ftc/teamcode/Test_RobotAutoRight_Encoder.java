@@ -2,7 +2,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name="Z: Auto Drive Position Right - Encoder NOT USED ", group="Robot")
 public class Test_RobotAutoRight_Encoder extends AutoBase {
     @Override
