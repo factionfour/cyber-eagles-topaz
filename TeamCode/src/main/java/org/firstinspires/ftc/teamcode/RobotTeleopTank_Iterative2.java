@@ -1,3 +1,4 @@
+/*
 
 package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
@@ -175,25 +176,25 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         telemetry.addData(">", "Charlie 2 is READY.  Press START.");    //
     }
 
-    /*
      * Code to run REPEATEDLY after the driver hits INIT, but before they hit START
-     */
+
+
     @Override
     public void init_loop() {
 
     }
 
-    /*
      * Code to run ONCE when the driver hits START
-     */
+
+
     @Override
     public void start() {
 
     }
 
-    /*
      * Code to run REPEATEDLY after the driver hits START but before they hit STOP
-     */
+
+
     @Override
     public void loop() {
         long timeHeld;
@@ -625,3 +626,4 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         extensionArmMotor.setPower(currentExtensionPower);
     }
 }
+*/
