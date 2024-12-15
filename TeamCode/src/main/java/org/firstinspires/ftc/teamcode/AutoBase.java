@@ -56,7 +56,7 @@ public abstract class AutoBase extends LinearOpMode {
     double SERVO_BACKWARD = 0;
 
     //pre-defined positions
-    int HOOK_EXTENSION_POSITION = 1800;
+    int HOOK_EXTENSION_POSITION = 1750;
     int HOOK_ARM_HEIGHT = 750;
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 670;

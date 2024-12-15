@@ -34,13 +34,13 @@ public class RobotAutoRight extends AutoBase {
         //first block
         driveForward(1350,200);
         strafeRight(400,200);
-        driveBackward(1500,200);
+        driveBackward(1550,200);
         rotateToHeading(initRobotHeading,200);//straighten out
 
         //second block
-        driveForward(1500,1000);
+        driveForward(1550,1000);
         strafeRight(400,200);
-        driveBackward(1500,1500);
+        driveBackward(1550,1500);
 //        rotateToHeading(initRobotHeading,200);//straighten out
 //
 //        //retrieve first block
