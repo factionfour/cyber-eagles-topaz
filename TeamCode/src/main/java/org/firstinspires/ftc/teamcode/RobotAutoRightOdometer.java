@@ -40,11 +40,11 @@ public class RobotAutoRightOdometer extends AutoBase2 {
                 () -> {});
 
         //step 4: push first block
-        rotateToHeading(initRobotHeading,100);//straighten out
+        rotateToHeading(positionTracker.initHeading,100);//straighten out
         driveForward(1350,100);
         strafeRight(400,100);
         driveBackward(1500,100);
-        rotateToHeading(initRobotHeading,100);//straighten out
+        rotateToHeading(positionTracker.initHeading,100);//straighten out
 
         //step 5: push second block
         driveForward(1500,1000);

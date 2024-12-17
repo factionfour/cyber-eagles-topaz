@@ -1,25 +1,31 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public class RobotPositionTracker {
     private final DcMotor leftDeadWheel;   // Left dead wheel motor
     private final DcMotor rightDeadWheel;  // Right dead wheel motor
     private IMU imu;                 // IMU for heading
     private final ElapsedTime runtime;     // Timer for elapsed time
-
+    public DcMotorEx forwardWheel;
+    public DcMotorEx sideWheel;
     public double initXPosition;
     public double initYPosition;
-    public double initAngle;
+    public double initHeading;
 
     // Robot position and heading
     private double xPositionCM = 0;        // X position in cm
     private double yPositionCM = 0;        // Y position in cm
     private double lastHeading = 0;        // Last recorded heading in radians
 
+    private double currentHeading = 0;
     // Conversion factors
     private static final double ENCODER_TICKS_PER_REV = 8192; // Example for Gobilda encoder
     private static final double WHEEL_DIAMETER_CM = 5.0;      // Diameter of the dead wheel in cm
@@ -51,6 +57,8 @@ public class RobotPositionTracker {
         // Initialize the IMU
         imu = hardwareMap.get(IMU.class, "imu");
 
+        initHeading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
+
         // Initialize timer
         runtime = new ElapsedTime();
     }
@@ -62,7 +70,7 @@ public class RobotPositionTracker {
         int rightEncoder = rightDeadWheel.getCurrentPosition();
 
         // Get the current heading from the IMU
-        double currentHeading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
+        currentHeading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
 
         // Calculate encoder deltas
         int deltaLeft = leftEncoder - lastLeftEncoder;

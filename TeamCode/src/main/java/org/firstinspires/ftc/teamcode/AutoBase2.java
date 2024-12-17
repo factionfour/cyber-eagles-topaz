@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public abstract class AutoBase2 extends LinearOpMode {
@@ -21,24 +20,11 @@ public abstract class AutoBase2 extends LinearOpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
-
     //wheel travel constants - for odometer
-    private static final double WHEEL_DIAMETER = 4.0; // in inches (or cm, depending on your units)
-    private static final double ENCODER_COUNTS_PER_REVOLUTION = 1440; // Adjust this based on your motor/encoder setup
-    private static final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * Math.PI;  // In inches or cm, depending on your units
-    private static final double INCHES_TO_MM = 25.4;  // Conversion factor from inches to millimeters
-    private static final double WHEEL_DIAMETER_MM = WHEEL_DIAMETER * INCHES_TO_MM; // Wheel diameter in mm
-    private static final double WHEEL_CIRCUMFERENCE_MM = WHEEL_DIAMETER_MM * Math.PI; // Wheel circumference in mm
-    private static final double TRACK_WIDTH = 9.5; // Wheel circumference in mm
 
 
     private int INITIAL_ENCODER_POSITION_X;
     private int INITIAL_ENCODER_POSITION_Y;
-
-    // To track the current location
-    private int currentEncoderPositionX = 0;
-    private int currentEncoderPositionY = 0;
-
 
     // Arm motor limits
     int armTargetPosition = 0;
@@ -148,8 +134,6 @@ public abstract class AutoBase2 extends LinearOpMode {
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         positionTracker = new RobotPositionTracker(hardwareMap);
-        initRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-        currentRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
         waitForStart();
     }
@@ -157,25 +141,23 @@ public abstract class AutoBase2 extends LinearOpMode {
 
 
     //drive the robot forward a specific time
-    public void driveForward(double targetDistanceMM, int sleepMS) {
+    public void driveForward(double targetDistanceCM, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
         double correctionPower = 0;  // Initialize correction power to 0 initially
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);// Get the initial heading (yaw) from the IMU before the strafe
-        double initialEncoderPositionX = forwardWheel.getCurrentPosition();
-        double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
+        double initialPositionX = positionTracker.getXPositionCM();
 
         while (opModeIsActive()) {
-            currentEncoderPositionX = forwardWheel.getCurrentPosition();
+            positionTracker.updatePosition();
+            double distanceTraveledX_CM = positionTracker.getXPositionCM() - initialPositionX;
 
-            double distanceTraveledX_MM = (currentEncoderPositionX - initialEncoderPositionX) * WHEEL_CIRCUMFERENCE_MM / ENCODER_COUNTS_PER_REVOLUTION;
-
-            if (distanceTraveledX_MM >= targetDistanceMM) {
+            if (distanceTraveledX_CM >= targetDistanceCM) {
                 break;  // Exit the loop if target distance is reached
             }
 
             // Calculate the percentage of the distance traveled
-            double distancePercentage = distanceTraveledX_MM / targetDistanceMM;
+            double distancePercentage = distanceTraveledX_CM / targetDistanceCM;
             if (distancePercentage < FORWARD_RAMP_PERCENTAGE) {
                 telemetry.addData("RAMPING", "UP");
                 // Ramp up phase: gradually increase power from FORWARD_MIN_SPEED to FORWARD_SPEED
@@ -227,26 +209,25 @@ public abstract class AutoBase2 extends LinearOpMode {
 
         sleep(sleepMS);
     }
-    public void driveBackward(double targetDistanceMM, int sleepMS) {
+    public void driveBackward(double targetDistanceCM, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = FORWARD_MIN_SPEED;
         double correctionPower = 0;  // Initialize correction power to 0 initially
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES); // Get the initial heading (yaw) from the IMU
-        double initialEncoderPositionX = forwardWheel.getCurrentPosition();
-        double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
+
+        double initialPositionX = positionTracker.getXPositionCM();
+
 
         while (opModeIsActive()) {
-            currentEncoderPositionX = forwardWheel.getCurrentPosition();
+            positionTracker.updatePosition();
+            double distanceTraveledX_CM = initialPositionX - positionTracker.getXPositionCM();
 
-            // Calculate the distance traveled in mm based on the encoder's position
-            double distanceTraveledX_MM = (currentEncoderPositionX - initialEncoderPositionX) * WHEEL_CIRCUMFERENCE_MM / ENCODER_COUNTS_PER_REVOLUTION;
-
-            if (distanceTraveledX_MM >= targetDistanceMM) {
-                break;  // Exit the loop if target distance is reached
+            if (distanceTraveledX_CM >= targetDistanceCM) {
+                break;  // Exit the loop if target distance is reached  // Exit the loop if target distance is reached
             }
 
             // Calculate the percentage of the distance traveled
-            double distancePercentage = distanceTraveledX_MM / targetDistanceMM;
+            double distancePercentage = distanceTraveledX_CM / targetDistanceCM;
 
             // Ramp up phase: gradually increase power from FORWARD_MIN_SPEED to FORWARD_SPEED
             if (distancePercentage < FORWARD_RAMP_PERCENTAGE) {
@@ -301,7 +282,7 @@ public abstract class AutoBase2 extends LinearOpMode {
     }
 
 
-    public void strafeLeft(double targetDistanceMM, int sleepMS) {
+    public void strafeLeft(double targetDistanceCM, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = STRAFE_MIN_SPEED;
         double correctionPower = 0;  // Initialize correction power to 0 initially
@@ -311,22 +292,22 @@ public abstract class AutoBase2 extends LinearOpMode {
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         // Convert target distance from millimeters to encoder counts
-        double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
+        double targetEncoderCounts = getEncoderCounts(targetDistanceCM);
 
         while (opModeIsActive()) {
             double elapsedTime = runtime.milliseconds();
 
             // Calculate current encoder position for the X (side) wheel and the distance traveled
-            double currentEncoderPositionY = sideWheel.getCurrentPosition();
-            double distanceTraveledY_MM = (currentEncoderPositionY - initialEncoderPositionY) * WHEEL_CIRCUMFERENCE_MM / ENCODER_COUNTS_PER_REVOLUTION;
+            double currentEncoderPositionY = positionTracker.getYPositionCM();
+            double distanceTraveledY_CM = (currentEncoderPositionY - initialEncoderPositionY) * WHEEL_CIRCUMFERENCE_CM / ENCODER_COUNTS_PER_REVOLUTION;
 
             // Check if the robot has traveled the desired distance
-            if (distanceTraveledY_MM >= targetDistanceMM) {
+            if (distanceTraveledY_CM >= targetDistanceCM) {
                 break;  // Exit the loop if target distance is reached
             }
 
             // Calculate the percentage of the distance traveled for ramping
-            double distancePercentage = distanceTraveledY_MM / targetDistanceMM;
+            double distancePercentage = distanceTraveledY_CM / targetDistanceCM;
 
             // Ramp up phase: gradually increase power from STRAFE_MIN_SPEED to STRAFE_SPEED
             if (distancePercentage < STRAFE_RAMP_PERCENTAGE) {
@@ -392,7 +373,7 @@ public abstract class AutoBase2 extends LinearOpMode {
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         // Track initial encoder position for the X (side) odometry wheel
-        double initialEncoderPositionY = sideWheel.getCurrentPosition();
+        double initialEncoderPositionY = positionTracker.getYPositionCM();
 
         // Convert target distance from millimeters to encoder counts
         double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
@@ -401,8 +382,8 @@ public abstract class AutoBase2 extends LinearOpMode {
             double elapsedTime = runtime.milliseconds();
 
             // Calculate current encoder position for the X (side) wheel and the distance traveled
-            double currentEncoderPositionY = sideWheel.getCurrentPosition();
-            double distanceTraveledY_MM = (initialEncoderPositionY - currentEncoderPositionY) * WHEEL_CIRCUMFERENCE_MM / ENCODER_COUNTS_PER_REVOLUTION;
+            double currentEncoderPositionY = positionTracker.getYPositionCM();
+            double distanceTraveledY_MM = (initialEncoderPositionY - currentEncoderPositionY) * WHEEL_CIRCUMFERENCE_CM / ENCODER_COUNTS_PER_REVOLUTION;
 
             // Check if the robot has traveled the desired distance
             if (distanceTraveledY_MM >= targetDistanceMM) {
@@ -467,8 +448,9 @@ public abstract class AutoBase2 extends LinearOpMode {
 
     public void moveToPosition(double targetX, double targetY, int sleepMS) {
         // Get current position using odometry
-        double currentX = frontWheel.getCurrentPosition();  // Assume this function gets the current X position
-        double currentY = sideWheel.getCurrentPosition();  // Assume this function gets the current Y position
+
+        double currentX = positionTracker.getXPositionCM();  // Assume this function gets the current X position
+        double currentY = positionTracker.getYPositionCM(); // Assume this function gets the current Y position
 
         // Calculate the difference in X and Y
         double deltaX = targetX - currentX;
