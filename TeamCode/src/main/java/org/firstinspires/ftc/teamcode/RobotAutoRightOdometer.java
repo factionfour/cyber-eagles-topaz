@@ -9,7 +9,7 @@ public class RobotAutoRightOdometer extends AutoBase2 {
     public void runOpMode() {
         initializeHardware();
 
-        setInitialPosition(400);
+        positionTracker.resetPosition(400,0);
 
         telemetry.addData("Path", "Start");
         telemetry.update();

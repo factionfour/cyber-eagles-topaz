@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+/*
 
 enum HookState {
     IDLE,          // Waiting for button press
@@ -49,6 +50,7 @@ enum manualExtensionState {
     IDLE,          // Waiting for button press
     MOVE_EXTENSION
 }
+*/
 
 //enum pickupSpecimenEdgeState {
 //    IDLE,          // Waiting for button press
@@ -175,7 +177,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         telemetry.addData(">", "Charlie 2 is READY.  Press START.");    //
     }
 
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit START
+     //* Code to run REPEATEDLY after the driver hits INIT, but before they hit START
 
 
     @Override
@@ -183,7 +185,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
     }
 
-     * Code to run ONCE when the driver hits START
+    //* Code to run ONCE when the driver hits START
 
 
     @Override
@@ -191,7 +193,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
 
     }
 
-     * Code to run REPEATEDLY after the driver hits START but before they hit STOP
+     //* Code to run REPEATEDLY after the driver hits START but before they hit STOP
 
 
     @Override
@@ -320,7 +322,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         }
         // --- END WHEEL SERVO CONTROL ---
 
-
+/*
         // --- AUTOMATED MOVEMENT BUTTONS
         if (gamepad2.y) {
             //SPECIMEN HOOK START
@@ -454,7 +456,7 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         }
         else {
             samplePickupState = samplePickupState.IDLE; // Transition to next step
-        }
+        }*/
         // --- END AUTOMATED MOVEMENT BUTTONS
 
         // --- STOP & EMERGENCY ACTIONS

@@ -1,28 +1,11 @@
 package org.firstinspires.ftc.teamcode;
-
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
-
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp(name="Topaz Teleop V3", group="Robot")
 
 public class RobotTeleopTank_Iterative_Std extends TeleopBase {
-
-
     @Override
     public void init() {
         initializeHardware();
-    }
-
-
-    @Override
-    public void init_loop() {
-
-    }
-
-    @Override
-    public void start() {
-
     }
 
     @Override
@@ -141,8 +124,6 @@ public class RobotTeleopTank_Iterative_Std extends TeleopBase {
             }
         }
         // --- END AUTOMATED MOVEMENT BUTTONS
-
-
 
         addTelemetry();
     }

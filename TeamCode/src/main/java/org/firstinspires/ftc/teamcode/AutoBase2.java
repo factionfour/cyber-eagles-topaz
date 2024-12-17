@@ -107,8 +107,7 @@ public abstract class AutoBase2 extends LinearOpMode {
     double ROTATE_ERROR_DEGREES =3;
 
     private ElapsedTime runtime = new ElapsedTime();
-    double initRobotHeading = 0;
-    double currentRobotHeading = 0;
+    public RobotPositionTracker positionTracker;
 
     public void initializeHardware() {
         frontleftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
@@ -148,6 +147,7 @@ public abstract class AutoBase2 extends LinearOpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
+        positionTracker = new RobotPositionTracker(hardwareMap);
         initRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         currentRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
@@ -155,28 +155,6 @@ public abstract class AutoBase2 extends LinearOpMode {
     }
 
 
-
-    public void setInitialPosition(int xPos) {
-        INITIAL_ENCODER_POSITION_X = xPos;
-        currentEncoderPositionX = xPos;
-        // Convert the desired target position (in MM) to encoder counts
-        double targetEncoderCounts = (xPos / WHEEL_CIRCUMFERENCE_MM) * ENCODER_COUNTS_PER_REVOLUTION;
-
-        // Get the current encoder position
-        int currentPosition = sideWheel.getCurrentPosition();
-
-        // Calculate the offset (how far off the current position is from the target position)
-        int offset = (int) targetEncoderCounts - currentPosition;
-
-        // Reset and set the encoder's position to the new value (desired target position)
-        sideWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Reset the encoder
-        sideWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); // Set back to running mode
-
-        // Set the encoder's new position to the desired target position (MM from right)
-        sideWheel.setTargetPosition(currentPosition + offset); // Apply the offset
-
-        moveArmEncoder(ARM_MIN_POSITION,0);
-    }
 
     //drive the robot forward a specific time
     public void driveForward(double targetDistanceMM, int sleepMS) {
@@ -331,9 +309,6 @@ public abstract class AutoBase2 extends LinearOpMode {
 
         // Get the initial heading (yaw) from the IMU before the strafe
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-
-        // Track initial encoder position for the X (side) odometry wheel
-        double initialEncoderPositionY = sideWheel.getCurrentPosition();
 
         // Convert target distance from millimeters to encoder counts
         double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
