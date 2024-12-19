@@ -99,6 +99,9 @@ public abstract class TeleopBase extends OpMode {
     int tmpExtensionPositionHolder = 0;
     long tmpActionStartTime = 0;
 
+    public RobotPositionTracker positionTracker;
+
+
     public void initializeHardware() {
         frontleftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
@@ -134,18 +137,17 @@ public abstract class TeleopBase extends OpMode {
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
 
-        imu = hardwareMap.get(IMU.class, "imu");
-        imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
-
-        initRobotHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        positionTracker = new RobotPositionTracker(hardwareMap);
         telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
         //waitForStart();
     }
 
     public void addTelemetry() {
-        telemetry.addData("front",  "%.2f", currentForward);
-        telemetry.addData("turn", "%.2f", currentTurn);
-        telemetry.addData("strafe", "%.2f", currentStrafe);
+        telemetry.addData("X",  "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("Y",  "%.2f", positionTracker.getYPositionCM());
+        //telemetry.addData("front",  "%.2f", currentForward);
+        //telemetry.addData("turn", "%.2f", currentTurn);
+        //telemetry.addData("strafe", "%.2f", currentStrafe);
         telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
         telemetry.addData("Arm Target Position", armTargetPosition);
         telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);

@@ -23,9 +23,10 @@ public class RobotPositionTracker {
     // Robot position and heading
     private double xPositionCM = 0;        // X position in cm
     private double yPositionCM = 0;        // Y position in cm
-    private double lastHeading = 0;        // Last recorded heading in radians
+    public double lastHeading = 0;        // Last recorded heading in radians
 
     private double currentHeading = 0;
+    private double currentHeadingDegrees = 0;
     // Conversion factors
     private static final double ENCODER_TICKS_PER_REV = 8192; // Example for Gobilda encoder
     private static final double WHEEL_DIAMETER_CM = 5.0;      // Diameter of the dead wheel in cm
@@ -46,7 +47,8 @@ public class RobotPositionTracker {
         // Initialize the dead wheel encoders
         leftDeadWheel = hardwareMap.get(DcMotor.class, "leftDeadWheel");
         rightDeadWheel = hardwareMap.get(DcMotor.class, "rightDeadWheel");
-
+        sideWheel = hardwareMap.get(DcMotorEx.class,"SideOdem");
+        forwardWheel = hardwareMap.get(DcMotorEx.class,"FrontOdem");
         // Reset and set encoders to RUN_WITHOUT_ENCODER mode
         leftDeadWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftDeadWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -71,6 +73,7 @@ public class RobotPositionTracker {
 
         // Get the current heading from the IMU
         currentHeading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
+        currentHeadingDegrees = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         // Calculate encoder deltas
         int deltaLeft = leftEncoder - lastLeftEncoder;

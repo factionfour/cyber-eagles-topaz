@@ -290,22 +290,18 @@ public abstract class AutoBase2 extends LinearOpMode {
 
         // Get the initial heading (yaw) from the IMU before the strafe
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-
-        // Convert target distance from millimeters to encoder counts
-        double targetEncoderCounts = getEncoderCounts(targetDistanceCM);
+        double initialPositionY = positionTracker.getXPositionCM();
 
         while (opModeIsActive()) {
             double elapsedTime = runtime.milliseconds();
-
             // Calculate current encoder position for the X (side) wheel and the distance traveled
-            double currentEncoderPositionY = positionTracker.getYPositionCM();
-            double distanceTraveledY_CM = (currentEncoderPositionY - initialEncoderPositionY) * WHEEL_CIRCUMFERENCE_CM / ENCODER_COUNTS_PER_REVOLUTION;
+            positionTracker.updatePosition();
+            double distanceTraveledY_CM = initialPositionY - positionTracker.getYPositionCM();
 
             // Check if the robot has traveled the desired distance
             if (distanceTraveledY_CM >= targetDistanceCM) {
-                break;  // Exit the loop if target distance is reached
+                break;  // Exit the loop if target distance is reached  // Exit the loop if target distance is reached
             }
-
             // Calculate the percentage of the distance traveled for ramping
             double distancePercentage = distanceTraveledY_CM / targetDistanceCM;
 
@@ -363,7 +359,7 @@ public abstract class AutoBase2 extends LinearOpMode {
     }
 
 
-    public void strafeRight(double targetDistanceMM, int sleepMS) {
+    public void strafeRight(double targetDistanceCM, int sleepMS) {
         long startTime = System.currentTimeMillis();
         double currentPower = STRAFE_MIN_SPEED;
         double correctionPower = 0;  // Initialize correction power to 0 initially
@@ -371,27 +367,20 @@ public abstract class AutoBase2 extends LinearOpMode {
 
         // Get the initial heading (yaw) from the IMU before the strafe
         double initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-
-        // Track initial encoder position for the X (side) odometry wheel
-        double initialEncoderPositionY = positionTracker.getYPositionCM();
-
-        // Convert target distance from millimeters to encoder counts
-        double targetEncoderCounts = getEncoderCounts(targetDistanceMM);
-
+        // Track initial encoder position for the Y (side) odometry wheel
+        double initialPositionY = positionTracker.getYPositionCM();
         while (opModeIsActive()) {
             double elapsedTime = runtime.milliseconds();
-
             // Calculate current encoder position for the X (side) wheel and the distance traveled
-            double currentEncoderPositionY = positionTracker.getYPositionCM();
-            double distanceTraveledY_MM = (initialEncoderPositionY - currentEncoderPositionY) * WHEEL_CIRCUMFERENCE_CM / ENCODER_COUNTS_PER_REVOLUTION;
+            double distanceTraveledY_CM = initialPositionY - positionTracker.getYPositionCM();
 
             // Check if the robot has traveled the desired distance
-            if (distanceTraveledY_MM >= targetDistanceMM) {
-                break;  // Exit the loop if target distance is reached
+            if (distanceTraveledY_CM >= targetDistanceCM) {
+                break;  // Exit the loop if target distance is reached  // Exit the loop if target distance is reached
             }
 
             // Calculate the percentage of the distance traveled for ramping
-            double distancePercentage = distanceTraveledY_MM / targetDistanceMM;
+            double distancePercentage = distanceTraveledY_CM / targetDistanceCM;
 
             // Ramp up phase: gradually increase power from STRAFE_MIN_SPEED to STRAFE_SPEED
             if (distancePercentage < STRAFE_RAMP_PERCENTAGE) {
@@ -494,9 +483,10 @@ public abstract class AutoBase2 extends LinearOpMode {
         runtime.reset();
 
         // Initial heading from IMU
-        double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        //double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        positionTracker.updatePosition();
+        double startHeading = positionTracker.lastHeading;
         double currentAngle;
-        targetAngle += zeroAngle;
         double currentError;
         double lastError = 0;
         double derivative;
@@ -504,10 +494,12 @@ public abstract class AutoBase2 extends LinearOpMode {
 
         while (opModeIsActive()) {
             // Get the current angle from the IMU
-            currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-            currentRobotHeading = currentAngle;
+            positionTracker.updatePosition();
+
+            //currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
             // Calculate the error between target and current angle
-            currentError = targetAngle - currentAngle;
+            currentError = targetAngle - positionTracker.lastHeading;
 
             // Normalize the error to the range [-180, 180]
             currentError = (currentError + 360) % 360; // Ensure positive range
@@ -535,7 +527,7 @@ public abstract class AutoBase2 extends LinearOpMode {
 
             // Log telemetry for debugging
             telemetry.addData("Target Angle", targetAngle);
-            telemetry.addData("Current Angle", currentAngle);
+            telemetry.addData("Current Angle", positionTracker.lastHeading);
             telemetry.addData("Angle Error", currentError);
             telemetry.addData("Motor Power", motorPower);
             telemetry.update();
@@ -565,21 +557,19 @@ public abstract class AutoBase2 extends LinearOpMode {
         sleep(200);
         runtime.reset();
 
-        // Initial heading from IMU
-        double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-        double currentAngle;
-        double targetAbsoluteAngle = zeroAngle - targetAngle; // Subtract the targetAngle for a right turn
+        positionTracker.updatePosition();
+        double startAngle = positionTracker.lastHeading;
+
+        double targetAbsoluteAngle = startAngle - targetAngle; // Subtract the targetAngle for a right turn
         double currentError;
         double lastError = 0;
         double derivative;
         double motorPower;
 
         while (opModeIsActive()) {
-            // Get the current angle from the IMU
-            currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-            currentRobotHeading = currentAngle;
+            positionTracker.updatePosition();
             // Calculate the error between target and current angle
-            currentError = targetAbsoluteAngle - currentAngle;
+            currentError = targetAbsoluteAngle - positionTracker.lastHeading;
             // Normalize the error to the range [-180, 180]
             currentError = (currentError + 360) % 360; // Ensure positive range
             if (currentError > 180) currentError -= 360; // Wrap to [-180, 180]
@@ -604,7 +594,7 @@ public abstract class AutoBase2 extends LinearOpMode {
 
             // Log telemetry for debugging
             telemetry.addData("Target Absolute Angle", targetAbsoluteAngle);
-            telemetry.addData("Current Angle", currentAngle);
+            telemetry.addData("Current Angle", positionTracker.lastHeading);
             telemetry.addData("Angle Error", currentError);
             telemetry.addData("Motor Power", motorPower);
             telemetry.update();
@@ -889,7 +879,4 @@ public abstract class AutoBase2 extends LinearOpMode {
         return false; // Exit if opMode ends prematurely
     }
 
-    public double getEncoderCounts(double targetDistance) {
-        return targetDistance / WHEEL_CIRCUMFERENCE * ENCODER_COUNTS_PER_REVOLUTION;
-    }
 }
