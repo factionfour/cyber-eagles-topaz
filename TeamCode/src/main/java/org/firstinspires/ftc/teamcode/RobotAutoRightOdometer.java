@@ -4,7 +4,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name="Topaz: Auto Drive Position Right V3", group="Robot")
-public class RobotAutoRightOdometer extends AutoBase2 {
+public class RobotAutoRightOdometer extends AutoBase3 {
     @Override
     public void runOpMode() {
         initializeHardware();

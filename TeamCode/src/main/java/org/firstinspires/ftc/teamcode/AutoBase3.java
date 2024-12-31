@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-public abstract class AutoBase2 extends LinearOpMode {
+public abstract class AutoBase3 extends LinearOpMode {
     // define each motor and servo
     public DcMotor frontleftDrive = null;
     public DcMotor backleftDrive = null;

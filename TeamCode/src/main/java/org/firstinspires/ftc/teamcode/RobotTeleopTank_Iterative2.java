@@ -627,3 +627,48 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         extensionArmMotor.setPower(currentExtensionPower);
     }
 }
+
+enum HookState {
+    IDLE,          // Waiting for button press
+    POSITION_ROBOT,
+    PLACE_ARM,         // Second movement
+    MOVE_OUT,
+    HOOK_ARM,
+    COMPLETE       // Process complete
+}
+
+enum HookReleaseState {
+    IDLE,          // Waiting for button press
+    RETRACT_EXTENSION,         // First movement
+    COMPLETE       // Process complete
+}
+
+enum pickupSampleGroundState {
+    IDLE,          // Waiting for button press
+    POSITION_ROBOT,
+    MOVE_ARM,
+    INTAKE
+}
+
+enum releaseSampleFirstBucketState {
+    IDLE,          // Waiting for button press
+    POSITION_ROBOT,
+    MOVE_ARM,
+    COMPLETE       // Process complete
+}
+
+enum manualArmState {
+    IDLE,          // Waiting for button press
+    MOVE_ARM
+}
+
+enum manualExtensionState {
+    IDLE,          // Waiting for button press
+    MOVE_EXTENSION
+}
+
+enum manualServoState {
+    IDLE,          // Waiting for button press
+    INPUT,
+    OUTPUT
+}

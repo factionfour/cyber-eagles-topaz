@@ -77,8 +77,8 @@ public class RobotPositionTracker {
 
         // Update last encoder positions
 
-         = pos.getX(DistanceUnit.CM);
-        lastYPosCM = pos.getY(DistanceUnit.CM);
+        currentPositionXCM = pos.getX(DistanceUnit.CM);
+        currentPositionYCM = pos.getY(DistanceUnit.CM);
 
         // Calculate heading change
         double deltaHeading = currentHeading - lastHeading;
@@ -98,26 +98,28 @@ public class RobotPositionTracker {
 
     // Reset the robot's position
     public void resetPosition(double startXCM, double startYCM) {
-        xPositionCM = startXCM;
-        yPositionCM = startYCM;
-        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES))
-                odo.setPosition()
+        initXPositionCM = startXCM;
+        initYPositionCM = startYCM;
+        currentPositionXCM = startXCM;
+        currentPositionYCM = startYCM;
+        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+        odo.setPosition(pos);
 
     }
 
-    // Set destination
-    public void setDestination(double x, double y) {
-        destX = x;
-        destY = y;
-    }
-
-    public double getDistanceToDestination() {
-        double deltaX = destX - xPositionCM;
-        double deltaY = destY - yPositionCM;
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    }
-
-    public boolean isDestinationReached() {
-        return getDistanceToDestination() <= DESTINATION_TOLERANCE_CM;
-    }
+//    // Set destination
+//    public void setDestination(double x, double y) {
+//        destX = x;
+//        destY = y;
+//    }
+//
+//    public double getDistanceToDestination() {
+//        double deltaX = destX - currentPositionXCM;
+//        double deltaY = destY - currentPositionYCM;
+//        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+//    }
+//
+//    public boolean isDestinationReached() {
+//        return getDistanceToDestination() <= DESTINATION_TOLERANCE_CM;
+//    }
 }
