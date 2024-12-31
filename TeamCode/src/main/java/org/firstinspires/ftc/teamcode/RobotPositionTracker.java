@@ -21,10 +21,8 @@ public class RobotPositionTracker {
 
     public double initHeading = 0;
     public double initHeadingDegrees = 0;
-    public double lastHeading = 0;
-    public double lastHeadingDegrees = 0;// Last recorded heading in radians
-    private double currentHeading = 0;
-    private double currentHeadingDegrees = 0;
+    public double currentHeading = 0;
+    public double currentHeadingDegrees = 0;
 
     // Robot position and heading
     public double currentPositionXCM = 0;        // X position in cm
@@ -44,9 +42,9 @@ public class RobotPositionTracker {
     double destX = 0;
     double destY = 0;
 
-    public RobotPositionTracker(HardwareMap hardwareMap) {
+    public RobotPositionTracker(GoBildaPinpointDriver myOdo, IMU myImu) {
         // Initialize the dead wheel encoders
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo = myOdo;
         //TODO:UPDATE THESE
         odo.setOffsets(-84.0, -168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -54,7 +52,7 @@ public class RobotPositionTracker {
         odo.resetPosAndIMU();
 
         // Initialize the IMU
-        imu = hardwareMap.get(IMU.class, "imu");
+        imu = myImu;
         odo.recalibrateIMU();
         Pose2D pos = odo.getPosition();
 
@@ -80,10 +78,6 @@ public class RobotPositionTracker {
         currentPositionXCM = pos.getX(DistanceUnit.CM);
         currentPositionYCM = pos.getY(DistanceUnit.CM);
 
-        // Calculate heading change
-        double deltaHeading = currentHeading - lastHeading;
-
-
     }
 
     // Get the current X position in cm
@@ -96,6 +90,10 @@ public class RobotPositionTracker {
         return currentPositionYCM;
     }
 
+    public double getHeading() {
+        return currentHeading;
+    }
+
     // Reset the robot's position
     public void resetPosition(double startXCM, double startYCM) {
         initXPositionCM = startXCM;
@@ -106,6 +104,12 @@ public class RobotPositionTracker {
         odo.setPosition(pos);
 
     }
+
+
+}
+
+
+
 
 //    // Set destination
 //    public void setDestination(double x, double y) {
@@ -122,4 +126,3 @@ public class RobotPositionTracker {
 //    public boolean isDestinationReached() {
 //        return getDistanceToDestination() <= DESTINATION_TOLERANCE_CM;
 //    }
-}

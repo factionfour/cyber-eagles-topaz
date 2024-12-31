@@ -20,11 +20,6 @@ public abstract class AutoBase3 extends LinearOpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
-    //wheel travel constants - for odometer
-
-
-    private int INITIAL_ENCODER_POSITION_X;
-    private int INITIAL_ENCODER_POSITION_Y;
 
     // Arm motor limits
     int armTargetPosition = 0;
@@ -133,8 +128,8 @@ public abstract class AutoBase3 extends LinearOpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
-        positionTracker = new RobotPositionTracker(hardwareMap);
-        telemetry.addData(">", "Charlie 2 is READY for auto mode.  Press START.");
+        positionTracker = new RobotPositionTracker(hardwareMap.get(GoBildaPinpointDriver.class,"odo"),hardwareMap.get(IMU.class, "imu"));
+        telemetry.addData(">", "Charlie 3 is READY for auto mode.  Press START.");
         waitForStart();
     }
 
@@ -485,7 +480,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         // Initial heading from IMU
         //double zeroAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         positionTracker.updatePosition();
-        double startHeading = positionTracker.lastHeading;
+        double startHeading = positionTracker.currentHeading;
         double currentAngle;
         double currentError;
         double lastError = 0;
@@ -499,7 +494,7 @@ public abstract class AutoBase3 extends LinearOpMode {
             //currentAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
             // Calculate the error between target and current angle
-            currentError = targetAngle - positionTracker.lastHeading;
+            currentError = targetAngle - positionTracker.currentHeading;
 
             // Normalize the error to the range [-180, 180]
             currentError = (currentError + 360) % 360; // Ensure positive range
@@ -527,7 +522,7 @@ public abstract class AutoBase3 extends LinearOpMode {
 
             // Log telemetry for debugging
             telemetry.addData("Target Angle", targetAngle);
-            telemetry.addData("Current Angle", positionTracker.lastHeading);
+            telemetry.addData("Current Angle", positionTracker.currentHeading);
             telemetry.addData("Angle Error", currentError);
             telemetry.addData("Motor Power", motorPower);
             telemetry.update();
@@ -558,7 +553,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         runtime.reset();
 
         positionTracker.updatePosition();
-        double startAngle = positionTracker.lastHeading;
+        double startAngle = positionTracker.currentHeading;
 
         double targetAbsoluteAngle = startAngle - targetAngle; // Subtract the targetAngle for a right turn
         double currentError;
@@ -569,7 +564,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         while (opModeIsActive()) {
             positionTracker.updatePosition();
             // Calculate the error between target and current angle
-            currentError = targetAbsoluteAngle - positionTracker.lastHeading;
+            currentError = targetAbsoluteAngle - positionTracker.currentHeading;
             // Normalize the error to the range [-180, 180]
             currentError = (currentError + 360) % 360; // Ensure positive range
             if (currentError > 180) currentError -= 360; // Wrap to [-180, 180]
@@ -594,7 +589,7 @@ public abstract class AutoBase3 extends LinearOpMode {
 
             // Log telemetry for debugging
             telemetry.addData("Target Absolute Angle", targetAbsoluteAngle);
-            telemetry.addData("Current Angle", positionTracker.lastHeading);
+            telemetry.addData("Current Angle", positionTracker.currentHeading);
             telemetry.addData("Angle Error", currentError);
             telemetry.addData("Motor Power", motorPower);
             telemetry.update();

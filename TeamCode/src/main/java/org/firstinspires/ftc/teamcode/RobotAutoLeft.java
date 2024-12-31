@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Topaz: Auto Drive Position Left", group="Robot")
+@Autonomous(name="Topaz: Auto Drive Position Left V1", group="Robot")
 public class RobotAutoLeft extends AutoBase {
     @Override
     public void runOpMode() {

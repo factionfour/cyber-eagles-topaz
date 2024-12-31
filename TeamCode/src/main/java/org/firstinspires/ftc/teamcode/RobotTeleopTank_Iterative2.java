@@ -10,55 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-/*
 
-enum HookState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    MOVE_ARM,         // Second movement
-    EXTEND_EXTENSION,         // Third movement
-    COMPLETE       // Process complete
-}
-
-enum HookReleaseState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    COMPLETE       // Process complete
-}
-
-enum pickupSampleGroundState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    MOVE_ARM,
-    EXTEND_EXTENSION,
-    COMPLETE       // Process complete
-}
-
-enum releaseSampleFirstBucketState {
-    IDLE,          // Waiting for button press
-    MOVE_ARM,
-    EXTEND_EXTENSION,
-    COMPLETE       // Process complete
-}
-
-enum manualArmState {
-    IDLE,          // Waiting for button press
-    MOVE_ARM
-}
-
-enum manualExtensionState {
-    IDLE,          // Waiting for button press
-    MOVE_EXTENSION
-}
-*/
-
-//enum pickupSpecimenEdgeState {
-//    IDLE,          // Waiting for button press
-//    RETRACT_EXTENSION,         // First movement
-//    MOVE_ARM,
-//    EXTEND_EXTENSION,
-//    COMPLETE       // Process complete
-//}
 
 @TeleOp(name="Topaz Teleop V2 (Start @ 0)", group="Robot")
 
@@ -626,49 +578,51 @@ public class RobotTeleopTank_Iterative2 extends OpMode {
         currentExtensionPower =0;
         extensionArmMotor.setPower(currentExtensionPower);
     }
-}
 
-enum HookState {
-    IDLE,          // Waiting for button press
-    POSITION_ROBOT,
-    PLACE_ARM,         // Second movement
-    MOVE_OUT,
-    HOOK_ARM,
-    COMPLETE       // Process complete
-}
 
-enum HookReleaseState {
-    IDLE,          // Waiting for button press
-    RETRACT_EXTENSION,         // First movement
-    COMPLETE       // Process complete
-}
+    public enum HookState {
+        IDLE,          // Waiting for button press
+        POSITION_ROBOT,
+        PLACE_ARM,         // Second movement
+        MOVE_OUT,
+        HOOK_ARM,
+        COMPLETE       // Process complete
+    }
 
-enum pickupSampleGroundState {
-    IDLE,          // Waiting for button press
-    POSITION_ROBOT,
-    MOVE_ARM,
-    INTAKE
-}
+    public enum HookReleaseState {
+        IDLE,          // Waiting for button press
+        RETRACT_EXTENSION,         // First movement
+        COMPLETE       // Process complete
+    }
 
-enum releaseSampleFirstBucketState {
-    IDLE,          // Waiting for button press
-    POSITION_ROBOT,
-    MOVE_ARM,
-    COMPLETE       // Process complete
-}
+    public enum pickupSampleGroundState {
+        IDLE,          // Waiting for button press
+        POSITION_ROBOT,
+        MOVE_ARM,
+        INTAKE
+    }
 
-enum manualArmState {
-    IDLE,          // Waiting for button press
-    MOVE_ARM
-}
+    public enum releaseSampleFirstBucketState {
+        IDLE,          // Waiting for button press
+        POSITION_ROBOT,
+        MOVE_ARM,
+        COMPLETE       // Process complete
+    }
 
-enum manualExtensionState {
-    IDLE,          // Waiting for button press
-    MOVE_EXTENSION
-}
+    public enum manualArmState {
+        IDLE,          // Waiting for button press
+        MOVE_ARM
+    }
 
-enum manualServoState {
-    IDLE,          // Waiting for button press
-    INPUT,
-    OUTPUT
+    public enum manualExtensionState {
+        IDLE,          // Waiting for button press
+        MOVE_EXTENSION
+    }
+
+    public enum manualServoState {
+        IDLE,          // Waiting for button press
+        INPUT,
+        OUTPUT
+    }
+
 }

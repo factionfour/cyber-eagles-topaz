@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Topaz: Auto Drive Position Right", group="Robot")
+@Autonomous(name="Topaz: Auto Drive Position Right V1", group="Robot")
 public class RobotAutoRight extends AutoBase {
     @Override
     public void runOpMode() {
