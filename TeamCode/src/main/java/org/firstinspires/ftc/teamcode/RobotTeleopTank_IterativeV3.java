@@ -21,6 +21,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
+    public Servo Wrist;
 
     double DRIVING_SLOW =0.5;
 
@@ -167,9 +168,10 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         long currentTime = System.currentTimeMillis();
 
         driveWheels(gamepad1.left_stick_y,gamepad1.right_stick_x,gamepad1.left_stick_x);
-        moveIntake(gamepad2.left_bumper,gamepad2.right_bumper);
+//        moveIntake(gamepad2.left_bumper,gamepad2.right_bumper);
         moveArm(gamepad2.left_stick_y);
         moveExtension(gamepad2.right_stick_y);
+        moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
 
         // --- STOP & EMERGENCY ACTIONS
         if (gamepad2.back) {
@@ -209,6 +211,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
         addTelemetry();
     }
+
+
 
     public void addTelemetry() {
         telemetry.addData("X",  "%.2f", positionTracker.getXPositionCM());
@@ -330,6 +334,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         }
 
     }
+
 
     // Helper method to calculate drive power based on distance
     private double calculateDrivePower(double distance) {
@@ -514,6 +519,26 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         }
         // --- END WHEEL SERVO CONTROL ---
     }
+
+    public void moveWrist(boolean up,boolean down) {
+        if (up || down) {
+            if (up) {
+                Wrist.setPosition(SERVO_FORWARD);
+
+            }
+        if (down) {
+                Wrist.setPosition(SERVO_BACKWARD);
+
+            }
+        }else {
+        if (tmpServoState == manualServoState.INPUT || tmpServoState == manualServoState.OUTPUT) {
+            tmpServoState = manualServoState.IDLE;
+            Wrist.setPosition(SERVO_STOPPED);  // Neutral
+
+        }
+        }
+    }
+
     public double calcArmPower() {
         // Adjust arm motor power based on vertical arm position
         double horizontalArmPower = ARM_BASE_POWER;
@@ -733,4 +758,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         OUTPUT
     }
 
+
+
+
 }
+
