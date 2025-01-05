@@ -21,7 +21,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
-    public Servo Wrist;
+//    public Servo Wrist;
 
     double DRIVING_SLOW =0.5;
 
@@ -60,8 +60,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     int HOOK_EXTENSION_POSITION = 1800;
     int HOOK_ARM_HEIGHT = 750;
     int HOOK_RADIANS = 0;
-    int HOOK_POS_X = 550;
-    int HOOK_POS_Y = 200;
+    int HOOK_POS_X = 100;
+    int HOOK_POS_Y = 0;
 
     int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 670;
@@ -144,6 +144,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Initialize wheel servos
         leftWheelServo = hardwareMap.get(Servo.class, "servo_one");
         rightWheelServo = hardwareMap.get(Servo.class, "servo_two");
+//        Wrist = hardwareMap.get(Servo.class, "wrist");
+
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
 
@@ -167,39 +169,32 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public void loop() {
         long currentTime = System.currentTimeMillis();
 
-        driveWheels(gamepad1.left_stick_y,gamepad1.right_stick_x,gamepad1.left_stick_x);
-//        moveIntake(gamepad2.left_bumper,gamepad2.right_bumper);
+        driveWheels(-gamepad1.left_stick_y,gamepad1.right_stick_x,gamepad1.left_stick_x);
+        moveIntake(gamepad2.left_bumper,gamepad2.right_bumper);
         moveArm(gamepad2.left_stick_y);
         moveExtension(gamepad2.right_stick_y);
-        moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
+//        moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
 
         // --- STOP & EMERGENCY ACTIONS
         if (gamepad2.back) {
             emergencyReset();
         }
 
-        if (gamepad2.y) {
+        if (gamepad1.y) {
             specimenHook();
         }
         else {
             specimenHookState = HookState.IDLE; // Transition to next step
         }
 
-        if (gamepad2.y) {
-            specimenHook();
-        }
-        else {
-            specimenHookState = HookState.IDLE; // Transition to next step
-        }
-
-        if (gamepad2.b) {
+        if (gamepad1.x) {
             sampleRelease();
         }
         else {
             sampleReleaseState = releaseSampleFirstBucketState.IDLE; // Transition to next step
         }
 
-        if (gamepad2.a) {
+        if (gamepad1.a) {
             samplePickupGround();
         }
         else {
@@ -270,7 +265,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         backrightDrive.setPower(backRightPower);
 
         long currentTime = System.currentTimeMillis();
-
+        positionTracker.updatePosition();
     }
 
     public boolean moveToPosition(double targetXCM, double targetYCM, double targetHeadingRadians) {
@@ -290,7 +285,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Normalize deltaHeading to [-π, π]
         if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
         if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
-
+        telemetry.addData("X TARGET",targetXCM);
+        telemetry.addData("Y TARGET", targetYCM);
         // Step 1: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM) {
             // Calculate power components for forward and strafe motion
@@ -304,6 +300,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 strafePower /= maxPower;
             }
 
+            telemetry.addData("X DISTANCE REMAINING",deltaX);
+            telemetry.addData("Y DISTANCE REMAINING", deltaY);
             // Drive the robot with both forward and strafe power
             driveWheels(forwardPower, 0, strafePower);
             return false;
@@ -315,18 +313,19 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Stop the robot once the position is reached
         driveWheels(0, 0, 0);
 
-        // Step 2: Turn to the target heading
-        if (Math.abs(deltaHeading) > HEADING_TOLERANCE_RADIANS) {
-            // Calculate turn power (proportional control)
-            double turnPower = calculateTurnPower(deltaHeading);
-
-            // Drive the robot with turn power
-            driveWheels(0, turnPower, 0);
-        }
-        else {
-            atTargetRad = true;
-        }
-        if (atTargetPos && atTargetRad) {
+//        // Step 2: Turn to the target heading
+//        if (Math.abs(deltaHeading) > HEADING_TOLERANCE_RADIANS) {
+//            // Calculate turn power (proportional control)
+//            double turnPower = calculateTurnPower(deltaHeading);
+//            telemetry.addData("ROTATE DELTA",deltaHeading);
+//            // Drive the robot with turn power
+//            driveWheels(0, turnPower, 0);
+//        }
+//        else {
+//            atTargetRad = true;
+//        }
+        telemetry.update();
+        if (atTargetPos) { //&& atTargetRad) {
             return true;
         }
         else {
@@ -346,7 +345,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         double power = Math.max(minPower, Math.min(maxPower, Math.abs(distance) * kDrive));
 
         // Set the correct sign for direction
-        return (distance < 0) ? -power : power;
+        return (distance < 0) ? power : -power;
     }
 
     // Helper method to calculate turn power based on heading difference
@@ -519,25 +518,23 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         }
         // --- END WHEEL SERVO CONTROL ---
     }
+//
+//    public void moveWrist(boolean up,boolean down) {
+//        if (up || down) {
+//            if (up) {
+//                Wrist.setPosition(SERVO_FORWARD);
+//            }
+//        if (down) {
+//                Wrist.setPosition(SERVO_BACKWARD);
+//            }
+//        }else {
+//        if (tmpServoState == manualServoState.INPUT || tmpServoState == manualServoState.OUTPUT) {
+//            tmpServoState = manualServoState.IDLE;
+//            Wrist.setPosition(SERVO_STOPPED);  // Neutral
 
-    public void moveWrist(boolean up,boolean down) {
-        if (up || down) {
-            if (up) {
-                Wrist.setPosition(SERVO_FORWARD);
-
-            }
-        if (down) {
-                Wrist.setPosition(SERVO_BACKWARD);
-
-            }
-        }else {
-        if (tmpServoState == manualServoState.INPUT || tmpServoState == manualServoState.OUTPUT) {
-            tmpServoState = manualServoState.IDLE;
-            Wrist.setPosition(SERVO_STOPPED);  // Neutral
-
-        }
-        }
-    }
+//        }
+//        }
+//    }
 
     public double calcArmPower() {
         // Adjust arm motor power based on vertical arm position

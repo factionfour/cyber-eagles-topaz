@@ -27,11 +27,13 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
+    public Servo Wrist = null;
+
 
     double DRIVING_SLOW =0.5;
 
     // Arm motor limits and power
-    int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
+    int ARM_MIN_POSITION = 100;    // Minimum encoder position (fully retracted)
     int ARM_MAX_POSITION = 850; // Maximum encoder position (fully extended)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
@@ -40,6 +42,14 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
     double ARM_RAMP_TICKS = 50;
     double ARM_MANUAL_MAX_SPEED = 40;
 
+    double CLAW_MAX_POSITION = 100;
+    double CLAW_MIN_POSITION = 100;
+
+    double WRIST_MIN_POSITION = 0.1;
+    double WRIST_MAX_POSITION = 0.7;
+
+    float wristTargetposition = 0;
+    float wristCurrentposition = 0;
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
@@ -126,6 +136,9 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
 
+        Wrist = hardwareMap.get(Servo.class, "Wrist");
+        Wrist.setPosition(0.5);
+
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
@@ -171,7 +184,7 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
     public void loop() {
         long timeHeld;
 
-        double forward = -gamepad1.left_stick_y; // Forward/backward
+        double forward = gamepad1.left_stick_y; // Forward/backward
         double turn = gamepad1.right_stick_x;   // Turn
         double strafe = gamepad1.left_stick_x;  // Strafe
 
@@ -280,17 +293,8 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
                 extensionArmMotor.setPower(0);
             }
         }
-        // --- END EXTENSION ARM MOTOR CONTROL ---
-        if (gamepad2.left_bumper) {
-            leftWheelServo.setPosition(SERVO_BACKWARD);  // Spin inward
-            rightWheelServo.setPosition(SERVO_FORWARD); // Spin inward
-        } else if (gamepad2.right_bumper) {
-            leftWheelServo.setPosition(SERVO_FORWARD);  // Spin outward
-            rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
-        } else {
-            leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
-            rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
-        }
+
+
         // --- END WHEEL SERVO CONTROL ---
 //
 //
@@ -303,7 +307,7 @@ public class RobotTeleopTank_Iterative3 extends OpMode {
 //            }
 //
 //            // Execute multi-step process based on current state
-//            switch (specimenHookState) {
+//            switch (specimewhil;enHookState) {
 //                case RETRACT_EXTENSION:
 //                    if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
 //                        specimenHookState = HookState.MOVE_ARM; // Transition to next step
