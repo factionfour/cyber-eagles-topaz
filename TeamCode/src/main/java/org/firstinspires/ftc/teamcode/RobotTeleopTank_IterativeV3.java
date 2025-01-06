@@ -23,7 +23,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public IMU imu;
 //    public Servo Wrist;
 
-    double DRIVING_SLOW =0.5;
+    double DRIVING_SLOW =0.7;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
@@ -48,22 +48,31 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
     //tolernances
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
-    double POSITION_TOLERANCE_CM = 2.0;
-    double HEADING_TOLERANCE_RADIANS = 0.05; // Approximately 2.9 degrees
+    double POSITION_TOLERANCE_CM = 1.5;
+    double HEADING_TOLERANCE_DEGREES = 3;
 
     //servo limits
     double SERVO_STOPPED = 0.5;
     double SERVO_FORWARD = 1;
     double SERVO_BACKWARD = 0;
 
+    //PID turning variables
+    private double Kp = 0.7; // Proportional gain
+    private double Ki = 0.05; // Integral gain
+    private double Kd = 0.2; // Derivative gain
+    private double lastTurnError = 0; // Last error
+    private double integralTurnError = 0; // Integral of the error
+    private double lastPIDTime = 0; // Last time the PID calculation was done
+
+
     //pre-defined positions
-    int HOOK_EXTENSION_POSITION = 1800;
+    int HOOK_EXTENSION_POSITION = 2100;
     int HOOK_ARM_HEIGHT = 750;
-    int HOOK_RADIANS = 0;
-    int HOOK_POS_X = 100;
+    int HOOK_DEGREES = 10;
+    int HOOK_POS_X = 20;
     int HOOK_POS_Y = 0;
 
-    int HOOK_RELEASE_EXTENSION_POSITION = 1400;
+  /*  int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 670;
     int HOOK_RELEASE_RADIANS = 0;
     int HOOK_RELEASE_POS_X = 550;
@@ -74,16 +83,16 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     int PICKUP_SPECIMEN_RADIANS = 0;
     int PICKUP_SPECIMEN_POS_X = 550;
     int PICKUP_SPECIMEN_POS_Y = 200;
-
+*/
     int PICKUP_SAMPLE_ARM_HEIGHT = 150;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 800;
-    int PICKUP_SAMPLE_RADIANS = 0;
+    int PICKUP_SAMPLE_DEGREES = 0;
     int PICKUP_SAMPLE_POS_X = 550;
     int PICKUP_SAMPLE_POS_Y = 200;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 400;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 2000;
-    int RELEASE_SAMPLE_RADIANS = 0;
+    int RELEASE_SAMPLE_DEGREES = 0;
     int RELEASE_SAMPLE_POS_X = 550;
     int RELEASE_SAMPLE_POS_Y = 200;
 
@@ -101,15 +110,17 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     manualExtensionState tmpExtensionState = manualExtensionState.IDLE;
     HookState specimenHookState = HookState.IDLE;
     HookReleaseState specimenReleaseState = HookReleaseState.IDLE;
-    manualServoState tmpServoState = manualServoState.IDLE;
-
     pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
     releaseSampleFirstBucketState sampleReleaseState = releaseSampleFirstBucketState.IDLE;
+
+    manualServoState tmpServoState = manualServoState.IDLE;
+    driveToPositionState tmpDriveState = driveToPositionState.IDLE;
 
     int tmpArmPositionHolder = 0;
     int tmpExtensionPositionHolder = 0;
     long tmpActionStartTime = 0;
     RobotPositionTracker positionTracker;
+
 
     @Override
     public void init() {
@@ -169,12 +180,6 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public void loop() {
         long currentTime = System.currentTimeMillis();
 
-        driveWheels(-gamepad1.left_stick_y,gamepad1.right_stick_x,gamepad1.left_stick_x);
-        moveIntake(gamepad2.left_bumper,gamepad2.right_bumper);
-        moveArm(gamepad2.left_stick_y);
-        moveExtension(gamepad2.right_stick_y);
-//        moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
-
         // --- STOP & EMERGENCY ACTIONS
         if (gamepad2.back) {
             emergencyReset();
@@ -203,7 +208,13 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 samplePickupState = samplePickupState.IDLE;
             }
         }
-
+        if (!isActionRunning()) {
+            driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true);
+            moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
+            moveArm(gamepad2.left_stick_y);
+            moveExtension(gamepad2.right_stick_y);
+            //moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
+        }
         addTelemetry();
     }
 
@@ -215,7 +226,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         telemetry.addData("front",  "%.2f", currentForward);
         telemetry.addData("turn", "%.2f", currentTurn);
         telemetry.addData("strafe", "%.2f", currentStrafe);
-        telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
+        /*telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
         telemetry.addData("Arm Target Position", armTargetPosition);
         telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
         telemetry.addData("Arm Calculated Power", currentArmPower);
@@ -225,19 +236,24 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         telemetry.addData("Extension Calculated Power", currentExtensionPower);
         telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
         telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
-        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());
+        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
         telemetry.update();
     }
 
-    public void driveWheels(double tmpForward, double tmpTurn, double tmpStrafe) {
+    public void driveWheels(double tmpForward, double tmpTurn, double tmpStrafe, boolean human) {
         currentForward = tmpForward;
         currentTurn = tmpTurn;
         currentStrafe = tmpStrafe;
 
-        // Apply dead zone and smoothing
-        currentForward = Math.abs(currentForward) > 0.05 ? Math.pow(currentForward, 3) : 0.0;
-        currentTurn = Math.abs(currentTurn) > 0.05 ? Math.pow(currentTurn, 3) : 0.0;
-        currentStrafe = Math.abs(currentStrafe) > 0.05 ? Math.pow(currentStrafe, 3) : 0.0;
+        if (human) {
+            // Apply dead zone and smoothing
+            currentForward = Math.abs(currentForward) > 0.05 ? Math.pow(currentForward, 3) : 0.0;
+            currentTurn = Math.abs(currentTurn) > 0.05 ? Math.pow(currentTurn, 3) : 0.0;
+            currentStrafe = Math.abs(currentStrafe) > 0.05 ? Math.pow(currentStrafe, 3) : 0.0;
+        }
+        telemetry.addData("calc currentForward", currentForward);
+        telemetry.addData("calc currentTurn", currentTurn);
+        telemetry.addData("calc currentStrafe", currentStrafe);
 
         // Combine inputs for omnidirectional control
         double frontLeftPower = -currentForward + -currentTurn + -currentStrafe;
@@ -248,8 +264,12 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Normalize power values to avoid exceeding 1.0
         double maxPower = Math.max(Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower)),
                 Math.max(Math.abs(backLeftPower), Math.abs(backRightPower)));
-
-        maxPower = maxPower * DRIVING_SLOW;
+        if (human) {
+            frontLeftPower = frontLeftPower * DRIVING_SLOW;
+            frontRightPower = frontRightPower * DRIVING_SLOW;
+            backLeftPower = backLeftPower * DRIVING_SLOW;
+            backRightPower = backRightPower * DRIVING_SLOW;
+        }
         // If the maxPower exceeds 1.0, normalize all power values by dividing by maxPower
         if (maxPower > 1.0) {
             frontLeftPower /= maxPower;
@@ -264,11 +284,21 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         backleftDrive.setPower(backLeftPower);
         backrightDrive.setPower(backRightPower);
 
+        telemetry.addData("frontLeftPower", frontLeftPower);
+        telemetry.addData("frontRightPower", frontRightPower);
+        telemetry.addData("backLeftPower", backLeftPower);
+        telemetry.addData("backRightPower", backRightPower);
         long currentTime = System.currentTimeMillis();
         positionTracker.updatePosition();
     }
 
-    public boolean moveToPosition(double targetXCM, double targetYCM, double targetHeadingRadians) {
+    public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees) {
+        if (tmpDriveState == driveToPositionState.IDLE) {
+            tmpDriveState = driveToPositionState.DRIVE;
+        }
+        // Convert targetHeading from degrees to radians
+        double targetHeadingRadians = Math.toRadians(targetHeadingDegrees);
+
         // Update the robot's current position and heading
         positionTracker.updatePosition();
         double currentX = positionTracker.getXPositionCM();
@@ -277,21 +307,33 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         boolean atTargetPos = false;
         boolean atTargetRad = false;
         // Calculate differences to target
-        double deltaX = targetXCM - currentX;
-        double deltaY = targetYCM - currentY;
+        double deltaX = (targetXCM - currentX);
+        double deltaY = (targetYCM - currentY);
         double distanceToTarget = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         double deltaHeading = targetHeadingRadians - currentHeading;
 
-        // Normalize deltaHeading to [-π, π]
         if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
         if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
+
         telemetry.addData("X TARGET",targetXCM);
         telemetry.addData("Y TARGET", targetYCM);
+        telemetry.addData("Current Heading", Math.toDegrees(currentHeading));
+        telemetry.addData("Target Heading", targetHeadingDegrees);
+        telemetry.addData("delta X",deltaX);
+        telemetry.addData("delta Y", deltaY);
+        telemetry.addData("Delta Heading", Math.toDegrees(deltaHeading));
+        telemetry.addData("DRIVE STATE", tmpDriveState);
         // Step 1: Move to the target position
-        if (distanceToTarget > POSITION_TOLERANCE_CM) {
+        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
             // Calculate power components for forward and strafe motion
-            double forwardPower = calculateDrivePower(deltaY); // Forward is Y-axis
-            double strafePower = calculateDrivePower(deltaX);  // Strafe is X-axis
+            double forwardPower = calculateDrivePower(deltaX); // Forward is X-axis
+            if (Math.abs(deltaX) < POSITION_TOLERANCE_CM) {
+                forwardPower = 0;
+            }
+            double strafePower = calculateDrivePower(deltaY);  // Strafe is Y-axis
+            if (Math.abs(deltaY) < POSITION_TOLERANCE_CM) {
+                strafePower = 0;
+            }
 
             // Normalize power values to ensure they don't exceed the max allowed
             double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
@@ -299,34 +341,41 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 forwardPower /= maxPower;
                 strafePower /= maxPower;
             }
-
-            telemetry.addData("X DISTANCE REMAINING",deltaX);
-            telemetry.addData("Y DISTANCE REMAINING", deltaY);
+            telemetry.addData("forwardPower", forwardPower);
+            telemetry.addData("strafePower", -strafePower);
             // Drive the robot with both forward and strafe power
-            driveWheels(forwardPower, 0, strafePower);
+            driveWheels(forwardPower, 0, -strafePower, false);
             return false;
         }
         else {
             atTargetPos = true;
+            if (tmpDriveState == driveToPositionState.DRIVE) {
+                tmpDriveState = driveToPositionState.TURN;
+                driveWheels(0, 0, 0,false);
+            }
         }
 
         // Stop the robot once the position is reached
-        driveWheels(0, 0, 0);
+        //driveWheels(0, 0, 0);
 
-//        // Step 2: Turn to the target heading
-//        if (Math.abs(deltaHeading) > HEADING_TOLERANCE_RADIANS) {
-//            // Calculate turn power (proportional control)
-//            double turnPower = calculateTurnPower(deltaHeading);
-//            telemetry.addData("ROTATE DELTA",deltaHeading);
-//            // Drive the robot with turn power
-//            driveWheels(0, turnPower, 0);
-//        }
-//        else {
-//            atTargetRad = true;
-//        }
-        telemetry.update();
-        if (atTargetPos) { //&& atTargetRad) {
+        // Step 2: Turn to the target heading
+        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
+            // Calculate turn power (proportional control)
+            double turnPower = calculateTurnPower(deltaHeading);
+            // Drive the robot with turn power
+            telemetry.addData("turnPower", -turnPower);
+            driveWheels(0, -turnPower, 0, false);
+        }
+        else {
+            atTargetRad = true;
+            if (tmpDriveState == driveToPositionState.TURN) {
+                tmpDriveState = driveToPositionState.COMPLETE;
+                driveWheels(0, 0, 0, false);
+            }
+        }
+        if (atTargetPos && atTargetRad) { //&& atTargetRad) {
             return true;
+            //return false;
         }
         else {
             return false;
@@ -337,28 +386,55 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
     // Helper method to calculate drive power based on distance
     private double calculateDrivePower(double distance) {
-        double maxPower = 1.0; // Maximum power
-        double minPower = 0.2; // Minimum power for precision
-        double kDrive = 0.05;  // Proportional control factor
+        double maxPower = 0.7; // Maximum power
+        double minPower = 0.2; // Increased minimum power for precision
+        double kDrive = 0.1;  // Proportional control factor
+        double slowDownThreshold = 15.0; // Distance in cm where slowdown begins
 
         // Calculate power proportional to distance
-        double power = Math.max(minPower, Math.min(maxPower, Math.abs(distance) * kDrive));
+        double power = Math.abs(distance) > slowDownThreshold
+                ? maxPower // Full speed for larger distances
+                : Math.max(minPower, Math.min(maxPower, Math.abs(distance) * kDrive));
 
         // Set the correct sign for direction
-        return (distance < 0) ? power : -power;
+        return (distance < 0) ? -power : power;
     }
 
-    // Helper method to calculate turn power based on heading difference
+//    // Helper method to calculate turn power based on heading difference
+//    private double calculateTurnPower(double deltaHeading) {
+//        double maxTurnPower = 0.7; // Maximum turning power
+//        double minTurnPower = 0.01; // Minimum turning power for precision
+//        double kTurn = 0.5;        // Proportional control factor for turning
+//
+//        // Calculate turn power proportional to heading difference
+//        double power = Math.max(minTurnPower, Math.min(maxTurnPower, Math.abs(deltaHeading) * kTurn));
+//
+//        // Set the correct sign for turn direction
+//        return (deltaHeading < 0) ? -power : power;
+//    }
+
+    // Method to calculate turn power using PID
     private double calculateTurnPower(double deltaHeading) {
-        double maxTurnPower = 0.8; // Maximum turning power
-        double minTurnPower = 0.2; // Minimum turning power for precision
-        double kTurn = 0.5;        // Proportional control factor for turning
+        // Calculate the error
+        double error = deltaHeading;
+        long currentTime = System.currentTimeMillis();
+        double deltaTime = (currentTime - lastPIDTime) / 1000.0; // Time difference in seconds
 
-        // Calculate turn power proportional to heading difference
-        double power = Math.max(minTurnPower, Math.min(maxTurnPower, Math.abs(deltaHeading) * kTurn));
+        // Update integral (sum of past errors) and derivative (rate of change of error)
+        integralTurnError += error * deltaTime;
+        double derivative = (error - lastTurnError) / deltaTime;
 
-        // Set the correct sign for turn direction
-        return (deltaHeading < 0) ? -power : power;
+        // Calculate the PID output
+        double pidOutput = Kp * error + Ki * integralTurnError + Kd * derivative;
+
+        // Update last error and last time
+        lastTurnError = error;
+        lastPIDTime = currentTime;
+
+        // Clamp the output to a range, typically -1 to 1
+        pidOutput = Math.max(-1.0, Math.min(1.0, pidOutput));
+
+        return pidOutput;
     }
 
 
@@ -613,7 +689,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     }
 
     private void specimenHook() {
-
+        telemetry.addData("CURRENT ACTION STATE",specimenHookState);
         //SPECIMEN HOOK
         if (specimenHookState == HookState.IDLE) {
             specimenHookState = HookState.POSITION_ROBOT; // Start first step
@@ -624,7 +700,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Execute multi-step process based on current state
         switch (specimenHookState) {
             case POSITION_ROBOT:
-                if (moveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_RADIANS)) {
+                if (driveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_DEGREES)) {
                     specimenHookState = HookState.PLACE_ARM; // Transition to next step
                 }
                 break;
@@ -657,6 +733,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     }
 
     private void sampleRelease() {
+        telemetry.addData("CURRENT ACTION STATE",specimenHookState);
         //SAMPLE RELEASE TO FIRST BUCKET
         if (sampleReleaseState == releaseSampleFirstBucketState.IDLE) {
             sampleReleaseState = releaseSampleFirstBucketState.POSITION_ROBOT; // Start first step
@@ -667,8 +744,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Execute multi-step process based on current state
         switch (sampleReleaseState) {
             case POSITION_ROBOT:
-                if (moveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_RADIANS)) {
-                    //TODO: BUILD CODE TO MOVE ROBOT TO SPECIFIC POSITION IN MAP BASED ON TELEMETRY
+                if (driveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_DEGREES)) {
                     sampleReleaseState = releaseSampleFirstBucketState.MOVE_ARM; // Transition to next step
                 }
                 break;
@@ -685,6 +761,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     }
 
     private void samplePickupGround() {
+        telemetry.addData("CURRENT ACTION STATE",specimenHookState);
         //SAMPLE PICKUP FROM GROUND
         if (samplePickupState == pickupSampleGroundState.IDLE.IDLE) {
             samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Start first step
@@ -695,7 +772,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Execute multi-step process based on current state
         switch (samplePickupState) {
             case POSITION_ROBOT:
-                if (moveToPosition(PICKUP_SAMPLE_POS_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_RADIANS)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
                 }
                 break;
@@ -708,6 +785,19 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 moveIntake(false,false);
                 break;
         }
+    }
+
+    private boolean isActionRunning() {
+        boolean returnVal = false;
+        if (samplePickupState != pickupSampleGroundState.IDLE ||
+            sampleReleaseState != releaseSampleFirstBucketState.IDLE ||
+            specimenHookState != HookState.IDLE) {
+            returnVal = true;
+        }
+        else {
+            tmpDriveState = driveToPositionState.IDLE;
+        }
+        return returnVal;
     }
 
     public enum HookState {
@@ -753,6 +843,13 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         IDLE,          // Waiting for button press
         INPUT,
         OUTPUT
+    }
+
+    public enum driveToPositionState {
+        IDLE,          // Waiting for button press
+        DRIVE,
+        TURN,
+        COMPLETE
     }
 
 

@@ -17,7 +17,7 @@ public class RobotPositionTracker {
     //private final DcMotor leftDeadWheel;   // Left dead wheel motor
     //private final DcMotor rightDeadWheel;  // Right dead wheel motor
     private IMU imu;                 // IMU for heading
-    private final ElapsedTime runtime;     // Timer for elapsed time
+    //private final ElapsedTime runtime;     // Timer for elapsed time
 
     public double initHeading = 0;
     public double initHeadingDegrees = 0;
@@ -29,13 +29,13 @@ public class RobotPositionTracker {
     public double currentPositionYCM = 0;        // Y position in cm
     public double initXPositionCM;
     public double initYPositionCM;
-
-    // Conversion factors
-    private static final double ENCODER_TICKS_PER_REV = 8192; // Example for Gobilda encoder
-    private static final double WHEEL_DIAMETER_CM = 5.0;      // Diameter of the dead wheel in cm
-    private static final double WHEEL_CIRCUMFERENCE_CM = Math.PI * WHEEL_DIAMETER_CM;
-    private static final double TICKS_TO_CM = WHEEL_CIRCUMFERENCE_CM / ENCODER_TICKS_PER_REV;
-    private static final double DESTINATION_TOLERANCE_CM = 2.0;  // tolerance for destination
+//
+//    // Conversion factors
+//    private static final double ENCODER_TICKS_PER_REV = 8192; // Example for Gobilda encoder
+//    private static final double WHEEL_DIAMETER_CM = 5.0;      // Diameter of the dead wheel in cm
+//    private static final double WHEEL_CIRCUMFERENCE_CM = Math.PI * WHEEL_DIAMETER_CM;
+//    private static final double TICKS_TO_CM = WHEEL_CIRCUMFERENCE_CM / ENCODER_TICKS_PER_REV;
+//    private static final double DESTINATION_TOLERANCE_CM = 2.0;  // tolerance for destination
 
     //Robot movement destination  -- NOT YET USED
     double destHeading = 0;
@@ -48,7 +48,7 @@ public class RobotPositionTracker {
         //TODO:UPDATE THESE
         odo.setOffsets(-84.0, -168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
 
         // Initialize the IMU
@@ -61,7 +61,7 @@ public class RobotPositionTracker {
         initXPositionCM = pos.getX(DistanceUnit.CM);
         initYPositionCM = pos.getY(DistanceUnit.CM);
 
-        runtime = new ElapsedTime();
+        //runtime = new ElapsedTime();
     }
 
     // Update the robot's position
@@ -102,27 +102,5 @@ public class RobotPositionTracker {
         currentPositionYCM = startYCM;
         Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         odo.setPosition(pos);
-
     }
-
-
 }
-
-
-
-
-//    // Set destination
-//    public void setDestination(double x, double y) {
-//        destX = x;
-//        destY = y;
-//    }
-//
-//    public double getDistanceToDestination() {
-//        double deltaX = destX - currentPositionXCM;
-//        double deltaY = destY - currentPositionYCM;
-//        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-//    }
-//
-//    public boolean isDestinationReached() {
-//        return getDistanceToDestination() <= DESTINATION_TOLERANCE_CM;
-//    }
