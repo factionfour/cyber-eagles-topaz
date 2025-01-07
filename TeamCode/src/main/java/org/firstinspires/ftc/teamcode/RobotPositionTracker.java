@@ -46,7 +46,7 @@ public class RobotPositionTracker {
         // Initialize the dead wheel encoders
         odo = myOdo;
         //TODO:UPDATE THESE
-        odo.setOffsets(-84.0, -168.0);
+        odo.setOffsets(102.0, 111.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
@@ -92,6 +92,10 @@ public class RobotPositionTracker {
 
     public double getHeading() {
         return currentHeading;
+    }
+
+    public double getHeadingDegrees() {
+        return currentHeadingDegrees;
     }
 
     // Reset the robot's position

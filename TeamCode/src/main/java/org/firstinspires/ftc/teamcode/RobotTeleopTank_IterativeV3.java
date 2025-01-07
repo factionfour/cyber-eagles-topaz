@@ -26,8 +26,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     double DRIVING_SLOW =0.7;
 
     // Arm motor limits and power
-    int ARM_MIN_POSITION =100;    // Minimum encoder position (fully retracted)
-    int ARM_MAX_POSITION = 850; // Maximum encoder position (fully extended)
+    int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
+    int ARM_MAX_POSITION = 1300; // Maximum encoder position (fully Raised)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
     double ARM_MAX_SPEED = 0.8;
@@ -68,9 +68,9 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     //pre-defined positions
     int HOOK_EXTENSION_POSITION = 2100;
     int HOOK_ARM_HEIGHT = 750;
-    int HOOK_DEGREES = 10;
-    int HOOK_POS_X = 20;
-    int HOOK_POS_Y = 0;
+    int HOOK_DEGREES = 0;
+    int HOOK_POS_X = 35;
+    int HOOK_POS_Y = 35;
 
   /*  int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 670;
@@ -81,20 +81,20 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     int PICKUP_SPECIMEN_EXTENSION_POSITION = 600;
     int PICKUP_SPECIMEN_ARM_HEIGHT = 150;
     int PICKUP_SPECIMEN_RADIANS = 0;
-    int PICKUP_SPECIMEN_POS_X = 550;
-    int PICKUP_SPECIMEN_POS_Y = 200;
+    int PICKUP_SPECIMEN_POS_X = 0;
+    int PICKUP_SPECIMEN_POS_Y = 0;
 */
-    int PICKUP_SAMPLE_ARM_HEIGHT = 150;
-    int PICKUP_SAMPLE_EXTENSION_POSITION = 800;
-    int PICKUP_SAMPLE_DEGREES = 0;
-    int PICKUP_SAMPLE_POS_X = 550;
-    int PICKUP_SAMPLE_POS_Y = 200;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 620;
+    int PICKUP_SAMPLE_EXTENSION_POSITION = 2013;
+    int PICKUP_SAMPLE_DEGREES = -180;
+    int PICKUP_SAMPLE_POS_X = 26;
+    int PICKUP_SAMPLE_POS_Y = -98;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 400;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2000;
-    int RELEASE_SAMPLE_DEGREES = 0;
-    int RELEASE_SAMPLE_POS_X = 550;
-    int RELEASE_SAMPLE_POS_Y = 200;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 1040;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2205;
+    int RELEASE_SAMPLE_DEGREES = 137;
+    int RELEASE_SAMPLE_POS_X = -4;
+    int RELEASE_SAMPLE_POS_Y = 162;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -208,6 +208,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 samplePickupState = samplePickupState.IDLE;
             }
         }
+
         if (!isActionRunning()) {
             driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true);
             moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
@@ -223,20 +224,21 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public void addTelemetry() {
         telemetry.addData("X",  "%.2f", positionTracker.getXPositionCM());
         telemetry.addData("Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("degrees", positionTracker.getHeadingDegrees());
         telemetry.addData("front",  "%.2f", currentForward);
         telemetry.addData("turn", "%.2f", currentTurn);
         telemetry.addData("strafe", "%.2f", currentStrafe);
-        /*telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
-        telemetry.addData("Arm Target Position", armTargetPosition);
-        telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
-        telemetry.addData("Arm Calculated Power", currentArmPower);
-        telemetry.addData("Arm Motor Busy", armMotor.isBusy());
+        telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
+//        telemetry.addData("Arm Target Position", armTargetPosition);
+//        telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
+//        telemetry.addData("Arm Calculated Power", currentArmPower);
+//        telemetry.addData("Arm Motor Busy", armMotor.isBusy());
         telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
-        telemetry.addData("Extension Target Position", extensionTargetPosition);
-        telemetry.addData("Extension Calculated Power", currentExtensionPower);
-        telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
-        telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
-        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
+//        telemetry.addData("Extension Target Position", extensionTargetPosition);
+//        telemetry.addData("Extension Calculated Power", currentExtensionPower);
+//        telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
+//        telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
+//        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
         telemetry.update();
     }
 
@@ -515,6 +517,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         double currentSpeed = 0;
         if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
             complete = true;
+            extensionArmMotor.setPower(0);
         }
         else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
@@ -548,6 +551,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         double currentSpeed = 0;
         if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
             complete = true;
+            armMotor.setPower(0);
         }
         else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
