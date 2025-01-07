@@ -334,7 +334,6 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
             if (Math.abs(deltaY) < POSITION_TOLERANCE_CM) {
                 strafePower = 0;
             }
-
             // Normalize power values to ensure they don't exceed the max allowed
             double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
             if (maxPower > 1.0) {
