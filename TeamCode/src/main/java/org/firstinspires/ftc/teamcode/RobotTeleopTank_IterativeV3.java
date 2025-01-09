@@ -24,6 +24,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 //    public Servo Wrist;
 
     double DRIVING_SLOW =0.7;
+    double DRIVING_SLOW_AUTO = 0.6;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
@@ -92,9 +93,9 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 1040;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 2205;
-    int RELEASE_SAMPLE_DEGREES = 137;
-    int RELEASE_SAMPLE_POS_X = -4;
-    int RELEASE_SAMPLE_POS_Y = 162;
+    int RELEASE_SAMPLE_DEGREES = 135;
+    int RELEASE_SAMPLE_POS_X = 62;
+    int RELEASE_SAMPLE_POS_Y = 170;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -272,6 +273,12 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
             backLeftPower = backLeftPower * DRIVING_SLOW;
             backRightPower = backRightPower * DRIVING_SLOW;
         }
+        if (!human) {
+            frontLeftPower = frontLeftPower * DRIVING_SLOW_AUTO;
+            frontRightPower = frontRightPower * DRIVING_SLOW_AUTO;
+            backLeftPower = backLeftPower * DRIVING_SLOW_AUTO;
+            backRightPower = backRightPower * DRIVING_SLOW_AUTO;
+        }
         // If the maxPower exceeds 1.0, normalize all power values by dividing by maxPower
         if (maxPower > 1.0) {
             frontLeftPower /= maxPower;
@@ -342,6 +349,11 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 forwardPower /= maxPower;
                 strafePower /= maxPower;
             }
+            // Reverse directions if the robot has rotated more than 90 degrees
+            if (Math.abs(deltaHeading) > Math.PI / 2) { // More than 90 degrees
+                forwardPower = -forwardPower; // Reverse the forward direction
+                strafePower = -strafePower;   // Reverse the strafe direction
+            }
             telemetry.addData("forwardPower", forwardPower);
             telemetry.addData("strafePower", -strafePower);
             // Drive the robot with both forward and strafe power
@@ -355,7 +367,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
                 driveWheels(0, 0, 0,false);
             }
         }
-
+        atTargetRad = true;//DEBUG ONLY
         // Stop the robot once the position is reached
         //driveWheels(0, 0, 0);
 
@@ -363,6 +375,9 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
             // Calculate turn power (proportional control)
             double turnPower = calculateTurnPower(deltaHeading);
+        if (Math.abs(deltaHeading) > Math.PI / 2) {
+            turnPower = -turnPower; // Reverse turn direction if heading change exceeds 90 degrees
+        }
             // Drive the robot with turn power
             telemetry.addData("turnPower", -turnPower);
             driveWheels(0, -turnPower, 0, false);
@@ -389,7 +404,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     private double calculateDrivePower(double distance) {
         double maxPower = 0.7; // Maximum power
         double minPower = 0.2; // Increased minimum power for precision
-        double kDrive = 0.1;  // Proportional control factor
+        double kDrive = 0.5;  // Proportional control factor
         double slowDownThreshold = 15.0; // Distance in cm where slowdown begins
 
         // Calculate power proportional to distance
