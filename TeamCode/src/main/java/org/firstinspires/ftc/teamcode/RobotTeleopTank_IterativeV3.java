@@ -21,6 +21,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     public Servo leftWheelServo = null;
     public Servo rightWheelServo = null;
     public IMU imu;
+    public Servo Wrist = null;
 //    public Servo Wrist;
 
     double DRIVING_SLOW =0.7;
@@ -116,6 +117,8 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
     manualServoState tmpServoState = manualServoState.IDLE;
     driveToPositionState tmpDriveState = driveToPositionState.IDLE;
+    wristServoState tempServoState = wristServoState.IDLE;
+
 
     int tmpArmPositionHolder = 0;
     int tmpExtensionPositionHolder = 0;
@@ -156,10 +159,11 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // Initialize wheel servos
         leftWheelServo = hardwareMap.get(Servo.class, "servo_one");
         rightWheelServo = hardwareMap.get(Servo.class, "servo_two");
-//        Wrist = hardwareMap.get(Servo.class, "wrist");
+        Wrist = hardwareMap.get(Servo.class, "wrist");
 
         leftWheelServo.setPosition(0.5); // Neutral position
         rightWheelServo.setPosition(0.5); // Neutral position
+        Wrist.setPosition(0.5);
 
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
@@ -212,10 +216,10 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
         if (!isActionRunning()) {
             driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true);
-            moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
+//            moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
             moveArm(gamepad2.left_stick_y);
             moveExtension(gamepad2.right_stick_y);
-            //moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
+            moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
         }
         addTelemetry();
     }
@@ -230,6 +234,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         telemetry.addData("turn", "%.2f", currentTurn);
         telemetry.addData("strafe", "%.2f", currentStrafe);
         telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
+        telemetry.addData("Wrist servo",Wrist.getPosition());
 //        telemetry.addData("Arm Target Position", armTargetPosition);
 //        telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
 //        telemetry.addData("Arm Calculated Power", currentArmPower);
@@ -398,6 +403,10 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         }
 
     }
+
+
+
+
 
 
     // Helper method to calculate drive power based on distance
@@ -613,22 +622,24 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         // --- END WHEEL SERVO CONTROL ---
     }
 //
-//    public void moveWrist(boolean up,boolean down) {
-//        if (up || down) {
-//            if (up) {
-//                Wrist.setPosition(SERVO_FORWARD);
-//            }
-//        if (down) {
-//                Wrist.setPosition(SERVO_BACKWARD);
-//            }
-//        }else {
-//        if (tmpServoState == manualServoState.INPUT || tmpServoState == manualServoState.OUTPUT) {
-//            tmpServoState = manualServoState.IDLE;
-//            Wrist.setPosition(SERVO_STOPPED);  // Neutral
+    public void moveWrist(boolean up,boolean down) {
+        if (up || down) {
+            if (up) {
+                tempServoState = wristServoState.INPUT;
+                Wrist.setPosition(0.7);
+            }
+        if (down) {
+                tempServoState = wristServoState.OUTPUT;
+                Wrist.setPosition(0.3);
+            }
+        }else {
+        if (tempServoState == wristServoState.INPUT || tempServoState == wristServoState.OUTPUT) {
+            tempServoState = wristServoState.IDLE;
+            Wrist.setPosition(SERVO_STOPPED);  // Neutral
 
-//        }
-//        }
-//    }
+        }
+        }
+    }
 
     public double calcArmPower() {
         // Adjust arm motor power based on vertical arm position
@@ -858,6 +869,12 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     }
 
     public enum manualServoState {
+        IDLE,          // Waiting for button press
+        INPUT,
+        OUTPUT
+    }
+
+    public enum wristServoState {
         IDLE,          // Waiting for button press
         INPUT,
         OUTPUT
