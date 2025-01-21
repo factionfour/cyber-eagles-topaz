@@ -51,6 +51,7 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
     //tolernances
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
     double POSITION_TOLERANCE_CM = 1.5;
+    double POSITION_ONEDIRECTION_TOLERANCE_CM = 5;
     double HEADING_TOLERANCE_DEGREES = 3;
 
     //servo limits
@@ -339,15 +340,36 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
         telemetry.addData("DRIVE STATE", tmpDriveState);
         // Step 1: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
+            double forwardPower = 0;
+            double strafePower = 0;
             // Calculate power components for forward and strafe motion
-            double forwardPower = calculateDrivePower(deltaX); // Forward is X-axis
-            if (Math.abs(deltaX) < POSITION_TOLERANCE_CM) {
-                forwardPower = 0;
+//            double forwardPower = calculateDrivePower(deltaX); // Forward is X-axis
+//            if (Math.abs(deltaX) < POSITION_TOLERANCE_CM) {
+//                forwardPower = 0;
+//            }
+//            double strafePower = calculateDrivePower(deltaY);  // Strafe is Y-axis
+//            if (Math.abs(deltaY) < POSITION_TOLERANCE_CM) {
+//                strafePower = 0;
+//            }
+
+            if (distanceToTarget > POSITION_ONEDIRECTION_TOLERANCE_CM) {
+                // Normal behavior: Apply both forward and strafe power
+                if (Math.abs(deltaX) > POSITION_TOLERANCE_CM) {
+                    forwardPower = calculateDrivePower(deltaX); // Forward is X-axis
+                }
+                if (Math.abs(deltaY) > POSITION_TOLERANCE_CM) {
+                    strafePower = calculateDrivePower(deltaY);  // Strafe is Y-axis
+                }
+            } else {
+                // Within 5 cm: Prioritize one direction at a time
+                if (Math.abs(deltaX) > POSITION_TOLERANCE_CM && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    forwardPower = calculateDrivePower(deltaX); // Prioritize forward
+                } else if (Math.abs(deltaY) > POSITION_TOLERANCE_CM) {
+                    strafePower = calculateDrivePower(deltaY); // Prioritize strafe
+                }
             }
-            double strafePower = calculateDrivePower(deltaY);  // Strafe is Y-axis
-            if (Math.abs(deltaY) < POSITION_TOLERANCE_CM) {
-                strafePower = 0;
-            }
+
+
             // Normalize power values to ensure they don't exceed the max allowed
             double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
             if (maxPower > 1.0) {

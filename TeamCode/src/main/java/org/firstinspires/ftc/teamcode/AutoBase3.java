@@ -429,6 +429,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         // Sleep for the specified time
         sleep(sleepMS);
     }
+/*
 
     public void moveToPosition(double targetX, double targetY, int sleepMS) {
         // Get current position using odometry
@@ -470,6 +471,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         // Optional sleep to allow the robot to settle
         sleep(sleepMS);
     }
+*/
 
 
     //turn robot left a specific degrees (from current position)
@@ -611,6 +613,7 @@ public abstract class AutoBase3 extends LinearOpMode {
         // Optional delay after turning
         sleep(sleepMS);
     }
+
 
     //raise or lower the robot's arm to a specific height
     public void moveArmEncoder(int targetPosition, int sleepMS) {
