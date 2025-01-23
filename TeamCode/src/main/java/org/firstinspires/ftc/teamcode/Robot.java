@@ -4,12 +4,12 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 public class Robot {
     // define each motor and servo
     private HardwareMap hardwareMap = null;
@@ -24,6 +24,7 @@ public class Robot {
     public Servo rightWheelServo = null;
     public IMU imu;
     public Servo Wrist = null;
+    public DigitalChannel touchsensor;
 
     double DRIVING_SLOW =0.7;
     double DRIVING_SLOW_AUTO = 0.7;
@@ -84,23 +85,23 @@ public class Robot {
     int PICKUP_SPECIMEN_POS_X = 0;
     int PICKUP_SPECIMEN_POS_Y = 0;
 */
-    int HOOK_EXTENSION_POSITION = 0;//2100;
-    int HOOK_ARM_HEIGHT =0; //750;
+    int HOOK_EXTENSION_POSITION = 2100;
+    int HOOK_ARM_HEIGHT = 750;
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 35;
     int HOOK_POS_Y = 35;
 
-    int PICKUP_SAMPLE_ARM_HEIGHT =0;// 620;
-    int PICKUP_SAMPLE_EXTENSION_POSITION =0;// 2013;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 620;
+    int PICKUP_SAMPLE_EXTENSION_POSITION = 2013;
     int PICKUP_SAMPLE_DEGREES = -180;
     int PICKUP_SAMPLE_POS_X = 26;
-    int PICKUP_SAMPLE_POS_Y = -30;//-98;
+    int PICKUP_SAMPLE_POS_Y = -98;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 0;//1040;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 0;//2205;
-    int RELEASE_SAMPLE_DEGREES = 0;//135;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 1040;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2205;
+    int RELEASE_SAMPLE_DEGREES = 135;
     int RELEASE_SAMPLE_POS_X = 35;
-    int RELEASE_SAMPLE_POS_Y = 17;//170;
+    int RELEASE_SAMPLE_POS_Y = 170;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -170,6 +171,8 @@ public class Robot {
         rightWheelServo.setPosition(0.5); // Neutral position
         Wrist.setPosition(0.5);
 
+        touchsensor = hardwareMap.get(DigitalChannel.class, "touchsensor");
+
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
@@ -182,6 +185,7 @@ public class Robot {
         telemetry.addData("Current X",  "%.2f", positionTracker.getXPositionCM());
         telemetry.addData("Current Y",  "%.2f", positionTracker.getYPositionCM());
         telemetry.addData("Current degrees", positionTracker.getHeadingDegrees());
+        telemetry.addData("Button pressed", touchsensor.getState());
         //telemetry.addData("front",  "%.2f", currentForward);
        //telemetry.addData("turn", "%.2f", currentTurn);
         //telemetry.addData("strafe", "%.2f", currentStrafe);
@@ -293,6 +297,7 @@ public class Robot {
         telemetry.addData("Delta Y", deltaY);
         telemetry.addData("Delta Heading", Math.toDegrees(deltaHeading));
         telemetry.addData("DRIVE STATE", tmpDriveState);
+
 
         // Step 1: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
@@ -789,7 +794,7 @@ public class Robot {
                 // Move the intake motor
                 moveIntake(true, false);
                 // Check if the time limit has been exceeded or if the button was pressed
-                if (elapsedTime > 6000) {
+                if (elapsedTime > 6000 || touchsensor.getState()) {
                     telemetry.addData("INTAKE", "6 seconds elapsed, moving to COMPLETE");
                     samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
                 }
