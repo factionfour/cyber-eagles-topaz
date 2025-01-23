@@ -542,6 +542,13 @@ public class Robot {
         return complete;
     }
 
+    public int getCurrentExtensionPosition() {
+        return extensionArmMotor.getCurrentPosition();
+    }
+
+    public int getCurrentArmPosition() {
+        return armMotor.getCurrentPosition();
+    }
     //raise or lower the robot's arm to a specific height
     public Boolean moveArmEncoder(int startPosition, int targetPosition) {
         Boolean complete = false;
