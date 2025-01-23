@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 public class Robot {
     // define each motor and servo
     private HardwareMap hardwareMap = null;
@@ -24,7 +25,7 @@ public class Robot {
     public Servo rightWheelServo = null;
     public IMU imu;
     public Servo Wrist = null;
-    public DigitalChannel touchsensor;
+    public TouchSensor touchsensor;
 
     double DRIVING_SLOW =0.7;
     double DRIVING_SLOW_AUTO = 0.7;
@@ -103,6 +104,22 @@ public class Robot {
     int RELEASE_SAMPLE_POS_X = 35;
     int RELEASE_SAMPLE_POS_Y = 170;
 
+    int PUSH_FIRST_BLOCK_POS_X_1 = 100;
+    int PUSH_FIRST_BLOCK_POS_Y_1 = -200;
+    int PUSH_FIRST_BLOCK_POS_X_2 = 500;
+    int PUSH_FIRST_BLOCK_POS_Y_2 = -200;
+    int PUSH_FIRST_BLOCK_POS_X_3 = 500;
+    int PUSH_FIRST_BLOCK_POS_Y_3 = -300;
+    int PUSH_FIRST_BLOCK_POS_X_4 = 40;
+    int PUSH_FIRST_BLOCK_POS_Y_4 = -300;
+
+    int PUSH_SECOND_BLOCK_POS_X_1 = 500;
+    int PUSH_SECOND_BLOCK_POS_Y_1 = -300;
+    int PUSH_SECOND_BLOCK_POS_X_2 = 500;
+    int PUSH_SECOND_BLOCK_POS_Y_2 = -400;
+    int PUSH_SECOND_BLOCK_POS_X_3 = 40;
+    int PUSH_SECOND_BLOCK_POS_Y_3 = -400;
+
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
     double currentArmPower = 0;
@@ -171,7 +188,7 @@ public class Robot {
         rightWheelServo.setPosition(0.5); // Neutral position
         Wrist.setPosition(0.5);
 
-        touchsensor = hardwareMap.get(DigitalChannel.class, "touchsensor");
+        touchsensor = hardwareMap.get(TouchSensor.class, "touchsensor");
 
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
@@ -185,7 +202,7 @@ public class Robot {
         telemetry.addData("Current X",  "%.2f", positionTracker.getXPositionCM());
         telemetry.addData("Current Y",  "%.2f", positionTracker.getYPositionCM());
         telemetry.addData("Current degrees", positionTracker.getHeadingDegrees());
-        telemetry.addData("Button pressed", touchsensor.getState());
+        telemetry.addData("Button pressed", touchsensor.isPressed());
         //telemetry.addData("front",  "%.2f", currentForward);
        //telemetry.addData("turn", "%.2f", currentTurn);
         //telemetry.addData("strafe", "%.2f", currentStrafe);
@@ -801,7 +818,7 @@ public class Robot {
                 // Move the intake motor
                 moveIntake(true, false);
                 // Check if the time limit has been exceeded or if the button was pressed
-                if (elapsedTime > 6000 || touchsensor.getState()) {
+                if (elapsedTime > 6000 || touchsensor.isPressed()) {
                     telemetry.addData("INTAKE", "6 seconds elapsed, moving to COMPLETE");
                     samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
                 }

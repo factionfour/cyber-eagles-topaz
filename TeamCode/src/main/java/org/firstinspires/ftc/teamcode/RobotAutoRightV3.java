@@ -28,23 +28,39 @@ public class RobotAutoRightV3 extends AutoBase4 {
 
         //step 3: move to the push position
         performActionsWithDelays(
-                () -> moveArmEncoder(TRAVEL_ARM_HEIGHT,0),0,
-                () -> moveExtensionEncoder(TRAVEL_EXTENSION_HEIGHT,0), 150,
-                () -> strafeRight(1525,200),0,
+                () -> robot.moveArmEncoder(robot.getCurrentArmPosition(),0),0,
+                () -> robot.moveExtensionEncoder(robot.getCurrentExtensionPosition(),0), 150,
+                () -> robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_SECOND_BLOCK_POS_Y_1,0),0,
                 () -> {}, 0,
                 () -> {});
 
-        //step 4: push first block
-        rotateToHeading(positionTracker.initHeading,100);//straighten out
-        driveForward(1350,100);
-        strafeRight(400,100);
-        driveBackward(1500,100);
-        rotateToHeading(positionTracker.initHeading,100);//straighten out
+        performActionsWithDelays(
+                () -> robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0),0,
+                () -> {}, 0,
+                () ->{}, 0,
+                () -> {}, 0,
+                () -> {});
 
-        //step 5: push second block
-        driveForward(1500,1000);
-        strafeRight(400,200);
-        driveBackward(1500,1500);
+
+        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0);
+        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_3,robot.PUSH_FIRST_BLOCK_POS_Y_3,0);
+        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_4,robot.PUSH_FIRST_BLOCK_POS_Y_4,0);
+
+        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_1,robot.PUSH_SECOND_BLOCK_POS_Y_1,0);
+        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0);
+        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0);
+
+        //step 4: push first block
+//        rotateToHeading(positionTracker.initHeading,100);//straighten out
+//        driveForward(1350,100);
+//        strafeRight(400,100);
+//        driveBackward(1500,100);
+//        rotateToHeading(positionTracker.initHeading,100);//straighten out
+//
+//        //step 5: push second block
+//        driveForward(1500,1000);
+//        strafeRight(400,200);
+//        driveBackward(1500,1500);
 //        rotateToHeading(initRobotHeading,200);//straighten out
 //
 //        //retrieve first block
