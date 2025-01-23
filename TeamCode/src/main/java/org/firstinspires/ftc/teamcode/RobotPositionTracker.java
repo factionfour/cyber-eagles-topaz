@@ -10,6 +10,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 
 public class RobotPositionTracker {
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
@@ -106,5 +109,33 @@ public class RobotPositionTracker {
         currentPositionYCM = startYCM;
         Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         odo.setPosition(pos);
+    }
+
+    public void resetPosition(double startXCM, double startYCM, double startRadians) {
+        initXPositionCM = startXCM;
+        initYPositionCM = startYCM;
+        currentPositionXCM = startXCM;
+        currentPositionYCM = startYCM;
+        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,startRadians);
+        odo.setPosition(pos);
+    }
+
+    public void saveRobotPosition(android.content.Context appContext) {
+        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putFloat("robot_x", (float) currentPositionXCM);
+        editor.putFloat("robot_y", (float) currentPositionYCM);
+        editor.putFloat("robot_heading", (float) currentHeading);
+        editor.apply(); // Commit changes asynchronously
+    }
+
+    public void loadRobotPosition(android.content.Context appContext) {
+        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+        double x = prefs.getFloat("robot_x", 0); // Default to 0 if not set
+        double y = prefs.getFloat("robot_y", 0);
+        double heading = prefs.getFloat("robot_heading", 0);
+
+        resetPosition(x,y,heading);
+
     }
 }

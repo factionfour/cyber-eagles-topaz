@@ -3,12 +3,13 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Topaz: Auto Drive Position Right V3", group="Robot")
-public class RobotAutoRightV3 extends AutoBase4 {
+@Autonomous(name="Topaz: Auto Drive Position Right V4", group="Robot")
+public class RobotAutoRightV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
 
+        robot.positionTracker.resetPosition(0,400);
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays(
@@ -85,7 +86,7 @@ public class RobotAutoRightV3 extends AutoBase4 {
 
         //park the robot
         //driveForward(200,200);//park outside the sample cage
-
+        robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();

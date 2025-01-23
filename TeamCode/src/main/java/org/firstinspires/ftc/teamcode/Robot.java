@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 public class Robot {
     // define each motor and servo
-    private HardwareMap hardwareMap = null;
+    public HardwareMap hardwareMap = null;
     private Telemetry telemetry;
     public DcMotor frontleftDrive = null;
     public DcMotor backleftDrive = null;
@@ -150,7 +150,6 @@ public class Robot {
     public void init(HardwareMap hwMap, Telemetry telem) {
         hardwareMap = hwMap;
         telemetry = telem;
-
         // Define and Initialize wheel Motors
         frontleftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
@@ -363,43 +362,44 @@ public class Robot {
             telemetry.addData("Turn Power", turnPower);
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
-                tmpDriveState = driveToPositionState.ADJUST;
-            }
-        }
-
-        // Step 3: Adjust position if needed (after a turn)
-        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
-            // Calculate the angle to the target relative to the robot's position
-            double angleToTarget = Math.atan2(deltaY, deltaX);
-            double relativeAngleToTarget = angleToTarget - currentHeading;
-
-            // Normalize the relative angle to the range [-π, π]
-            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
-            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
-
-            // Calculate forward and strafe powers based on the relative angle
-            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-
-            // Normalize power values to prevent exceeding max power
-            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-            if (maxPower > 1.0) {
-                forwardPower /= maxPower;
-                strafePower /= maxPower;
-            }
-
-            // Send adjusted power to the drive system
-            driveWheels(forwardPower, 0, -strafePower, false);
-
-            telemetry.addData("Forward Power", forwardPower);
-            telemetry.addData("Strafe Power", -strafePower);
-
-        } else {
-            if (tmpDriveState == driveToPositionState.ADJUST) {
+               // tmpDriveState = driveToPositionState.ADJUST;
                 tmpDriveState = driveToPositionState.COMPLETE;
-                driveWheels(0, 0, 0, false); // Stop movement
             }
         }
+
+//        // Step 3: Adjust position if needed (after a turn)
+//        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
+//            // Calculate the angle to the target relative to the robot's position
+//            double angleToTarget = Math.atan2(deltaY, deltaX);
+//            double relativeAngleToTarget = angleToTarget - currentHeading;
+//
+//            // Normalize the relative angle to the range [-π, π]
+//            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
+//            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
+//
+//            // Calculate forward and strafe powers based on the relative angle
+//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+//
+//            // Normalize power values to prevent exceeding max power
+//            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+//            if (maxPower > 1.0) {
+//                forwardPower /= maxPower;
+//                strafePower /= maxPower;
+//            }
+//
+//            // Send adjusted power to the drive system
+//            driveWheels(forwardPower, 0, -strafePower, false);
+//
+//            telemetry.addData("Forward Power", forwardPower);
+//            telemetry.addData("Strafe Power", -strafePower);
+//
+//        } else {
+//            if (tmpDriveState == driveToPositionState.ADJUST) {
+//                tmpDriveState = driveToPositionState.COMPLETE;
+//                driveWheels(0, 0, 0, false); // Stop movement
+//            }
+//        }
 
         // Return true if both position and heading are at the target
         return tmpDriveState == driveToPositionState.COMPLETE;
@@ -427,8 +427,8 @@ public class Robot {
     }
 
     private double calculateTurnPower(double deltaHeading) {
-        double maxTurnPower = 0.7; // Maximum turning power
-        double minTurnPower = 0.2; // Minimum turning power for precision
+        double maxTurnPower = 0.5; // Maximum turning power
+        double minTurnPower = 0.15; // Minimum turning power for precision
         double slowDownThreshold = Math.toRadians(20.0); // Angle threshold for starting to slow down
         double stopThreshold = Math.toRadians(HEADING_TOLERANCE_DEGREES); // Final threshold to stop turning
 

@@ -25,7 +25,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
     @Override
     public void start() {
-
+        robot.positionTracker.loadRobotPosition(robot.hardwareMap.appContext);
     }
 
     @Override
