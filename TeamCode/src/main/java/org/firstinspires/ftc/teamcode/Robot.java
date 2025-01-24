@@ -305,6 +305,10 @@ public class Robot {
         if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
         if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
 
+        if (Math.abs(deltaHeading) < Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
+            deltaHeading = 0; // Snap to 0 to avoid unnecessary small rotations
+        }
+
         telemetry.addData("X TARGET", targetXCM);
         telemetry.addData("Y TARGET", targetYCM);
         telemetry.addData("Current Heading", Math.toDegrees(currentHeading));
@@ -362,6 +366,7 @@ public class Robot {
             telemetry.addData("Turn Power", turnPower);
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
+                driveWheels(0, 0, 0, false);
                // tmpDriveState = driveToPositionState.ADJUST;
                 tmpDriveState = driveToPositionState.COMPLETE;
             }
