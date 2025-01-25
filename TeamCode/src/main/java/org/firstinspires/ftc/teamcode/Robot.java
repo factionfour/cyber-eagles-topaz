@@ -11,8 +11,9 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+
 public class Robot {
-    // define each motor and servo
+    // define each motor, servo, imu and touch sensor
     public HardwareMap hardwareMap = null;
     private Telemetry telemetry;
     public DcMotor frontleftDrive = null;
@@ -86,39 +87,40 @@ public class Robot {
     int PICKUP_SPECIMEN_POS_X = 0;
     int PICKUP_SPECIMEN_POS_Y = 0;
 */
-    int HOOK_EXTENSION_POSITION = 2100;
-    int HOOK_ARM_HEIGHT = 750;
+    int HOOK_EXTENSION_POSITION = 1651;
+    int HOOK_ARM_HEIGHT = 761;
     int HOOK_DEGREES = 0;
-    int HOOK_POS_X = 35;
-    int HOOK_POS_Y = 35;
+    int HOOK_POS_X = 58;
+    int HOOK_POS_Y = 158;
 
-    int PICKUP_SAMPLE_ARM_HEIGHT = 620;
-    int PICKUP_SAMPLE_EXTENSION_POSITION = 2013;
-    int PICKUP_SAMPLE_DEGREES = -180;
-    int PICKUP_SAMPLE_POS_X = 26;
-    int PICKUP_SAMPLE_POS_Y = -98;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 286;
+    int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
+    int PICKUP_SAMPLE_DEGREES = 180;
+    int PICKUP_SAMPLE_POS_X = 45;
+    int PICKUP_SAMPLE_POS_Y = 37;
+    int PICKUP_SAMPLE_POS2_X = 38;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 1040;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2205;
-    int RELEASE_SAMPLE_DEGREES = 135;
-    int RELEASE_SAMPLE_POS_X = 35;
-    int RELEASE_SAMPLE_POS_Y = 170;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 747;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 1849;
+    int RELEASE_SAMPLE_DEGREES = 133;
+    int RELEASE_SAMPLE_POS_X = 38;
+    int RELEASE_SAMPLE_POS_Y = 282;
 
-    int PUSH_FIRST_BLOCK_POS_X_1 = 100;
-    int PUSH_FIRST_BLOCK_POS_Y_1 = -200;
-    int PUSH_FIRST_BLOCK_POS_X_2 = 500;
-    int PUSH_FIRST_BLOCK_POS_Y_2 = -200;
-    int PUSH_FIRST_BLOCK_POS_X_3 = 500;
-    int PUSH_FIRST_BLOCK_POS_Y_3 = -300;
-    int PUSH_FIRST_BLOCK_POS_X_4 = 40;
-    int PUSH_FIRST_BLOCK_POS_Y_4 = -300;
+    int PUSH_FIRST_BLOCK_POS_X_1 = 521;
+    int PUSH_FIRST_BLOCK_POS_Y_1 = 69;
+    int PUSH_FIRST_BLOCK_POS_X_2 = 132;
+    int PUSH_FIRST_BLOCK_POS_Y_2 = 69;
+    int PUSH_FIRST_BLOCK_POS_X_3 = 132;
+    int PUSH_FIRST_BLOCK_POS_Y_3 = 47;
+    int PUSH_FIRST_BLOCK_POS_X_4 = 8;
+    int PUSH_FIRST_BLOCK_POS_Y_4 = 47;
 
-    int PUSH_SECOND_BLOCK_POS_X_1 = 500;
-    int PUSH_SECOND_BLOCK_POS_Y_1 = -300;
-    int PUSH_SECOND_BLOCK_POS_X_2 = 500;
-    int PUSH_SECOND_BLOCK_POS_Y_2 = -400;
-    int PUSH_SECOND_BLOCK_POS_X_3 = 40;
-    int PUSH_SECOND_BLOCK_POS_Y_3 = -400;
+    int PUSH_SECOND_BLOCK_POS_X_1 = 132;
+    int PUSH_SECOND_BLOCK_POS_Y_1 = 47;
+    int PUSH_SECOND_BLOCK_POS_X_2 = 132;
+    int PUSH_SECOND_BLOCK_POS_Y_2 = 22;
+    int PUSH_SECOND_BLOCK_POS_X_3 = 20;
+    int PUSH_SECOND_BLOCK_POS_Y_3 = 17;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -155,7 +157,7 @@ public class Robot {
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
-
+        // Set directions to each Motor
         frontleftDrive.setDirection(DcMotor.Direction.FORWARD);
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
         backrightDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -193,33 +195,33 @@ public class Robot {
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         positionTracker = new RobotPositionTracker(hardwareMap.get(GoBildaPinpointDriver.class,"odo"),hardwareMap.get(IMU.class, "imu"));
-          //
+
     }
 
-
+//  Telemetry
     public void addTelemetry() {
         telemetry.addData("Current X",  "%.2f", positionTracker.getXPositionCM());
         telemetry.addData("Current Y",  "%.2f", positionTracker.getYPositionCM());
         telemetry.addData("Current degrees", positionTracker.getHeadingDegrees());
         telemetry.addData("Button pressed", touchsensor.isPressed());
-        //telemetry.addData("front",  "%.2f", currentForward);
-       //telemetry.addData("turn", "%.2f", currentTurn);
-        //telemetry.addData("strafe", "%.2f", currentStrafe);
-       // telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
-//telemetry.addData("Wrist servo",Wrist.getPosition());
-//        telemetry.addData("Arm Target Position", armTargetPosition);
+//        telemetry.addData("front",  "%.2f", currentForward);
+//        telemetry.addData("turn", "%.2f", currentTurn);
+//        telemetry.addData("strafe", "%.2f", currentStrafe);
+        telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
+//        telemetry.addData("Wrist servo",Wrist.getPosition());
+        telemetry.addData("Arm Target Position", armTargetPosition);
 //        telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
 //        telemetry.addData("Arm Calculated Power", currentArmPower);
 //        telemetry.addData("Arm Motor Busy", armMotor.isBusy());
-        //telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
-//        telemetry.addData("Extension Target Position", extensionTargetPosition);
+        telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
+        telemetry.addData("Extension Target Position", extensionTargetPosition);
 //        telemetry.addData("Extension Calculated Power", currentExtensionPower);
 //        telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
 //        telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
 //        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
         telemetry.update();
     }
-//
+
     public void driveWheels(double tmpForward, double tmpTurn, double tmpStrafe, boolean human) {
         currentForward = tmpForward;
         currentTurn = tmpTurn;
@@ -367,44 +369,44 @@ public class Robot {
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
                 driveWheels(0, 0, 0, false);
-               // tmpDriveState = driveToPositionState.ADJUST;
-                tmpDriveState = driveToPositionState.COMPLETE;
+                tmpDriveState = driveToPositionState.ADJUST;
+                //tmpDriveState = driveToPositionState.COMPLETE;
             }
         }
 
-//        // Step 3: Adjust position if needed (after a turn)
-//        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
-//            // Calculate the angle to the target relative to the robot's position
-//            double angleToTarget = Math.atan2(deltaY, deltaX);
-//            double relativeAngleToTarget = angleToTarget - currentHeading;
-//
-//            // Normalize the relative angle to the range [-π, π]
-//            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
-//            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
-//
-//            // Calculate forward and strafe powers based on the relative angle
-//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-//
-//            // Normalize power values to prevent exceeding max power
-//            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-//            if (maxPower > 1.0) {
-//                forwardPower /= maxPower;
-//                strafePower /= maxPower;
-//            }
-//
-//            // Send adjusted power to the drive system
-//            driveWheels(forwardPower, 0, -strafePower, false);
-//
-//            telemetry.addData("Forward Power", forwardPower);
-//            telemetry.addData("Strafe Power", -strafePower);
-//
-//        } else {
-//            if (tmpDriveState == driveToPositionState.ADJUST) {
-//                tmpDriveState = driveToPositionState.COMPLETE;
-//                driveWheels(0, 0, 0, false); // Stop movement
-//            }
-//        }
+        // Step 3: Adjust position if needed (after a turn)
+        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
+            // Calculate the angle to the target relative to the robot's position
+            double angleToTarget = Math.atan2(deltaY, deltaX);
+            double relativeAngleToTarget = angleToTarget - currentHeading;
+
+            // Normalize the relative angle to the range [-π, π]
+            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
+            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
+
+            // Calculate forward and strafe powers based on the relative angle
+            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+
+            // Normalize power values to prevent exceeding max power
+            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+            if (maxPower > 1.0) {
+                forwardPower /= maxPower;
+                strafePower /= maxPower;
+            }
+
+            // Send adjusted power to the drive system
+            driveWheels(forwardPower, 0, -strafePower, false);
+
+            telemetry.addData("Forward Power", forwardPower);
+            telemetry.addData("Strafe Power", -strafePower);
+
+        } else {
+            if (tmpDriveState == driveToPositionState.ADJUST) {
+                tmpDriveState = driveToPositionState.COMPLETE;
+                driveWheels(0, 0, 0, false); // Stop movement
+            }
+        }
 
         // Return true if both position and heading are at the target
         return tmpDriveState == driveToPositionState.COMPLETE;
@@ -500,7 +502,8 @@ public class Robot {
         else {
             if (tmpArmState == manualArmState.MOVE_ARM) {
                 tmpArmState = manualArmState.IDLE;
-                armMotor.setPower(calcArmPower());
+                //armMotor.setPower(calcArmPower());
+                armMotor.setPower(ARM_BASE_POWER);
             }
         }
     }
@@ -693,8 +696,8 @@ public class Robot {
     public void setDefaultPower() {
         armMotor.setTargetPosition(armTargetPosition);
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        currentArmPower = calcArmPower();
-        armMotor.setPower(currentArmPower);
+        //currentArmPower = calcArmPower();
+        armMotor.setPower(ARM_BASE_POWER);
 
         extensionArmMotor.setTargetPosition(extensionTargetPosition);
         extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -812,7 +815,7 @@ public class Robot {
                 }
                 break;
             case MOVE_ARM:
-                if (moveArmEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,0)) { // && moveWrist) {
+                if (moveArmEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
                     tmpActionStartTime = System.currentTimeMillis();
                     samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
                 }
@@ -823,8 +826,8 @@ public class Robot {
                 // Move the intake motor
                 moveIntake(true, false);
                 // Check if the time limit has been exceeded or if the button was pressed
-                if (elapsedTime > 6000 || touchsensor.isPressed()) {
-                    telemetry.addData("INTAKE", "6 seconds elapsed, moving to COMPLETE");
+                if ((elapsedTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS2_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                    //telemetry.addData("INTAKE", "8 seconds elapsed, moving to COMPLETE");
                     samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
                 }
                 break;

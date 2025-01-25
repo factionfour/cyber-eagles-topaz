@@ -31,7 +31,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
         performActionsWithDelays(
                 () -> robot.moveArmEncoder(robot.getCurrentArmPosition(),0),0,
                 () -> robot.moveExtensionEncoder(robot.getCurrentExtensionPosition(),0), 150,
-                () -> robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_SECOND_BLOCK_POS_Y_1,0),0,
+                () -> robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
                 () -> {}, 0,
                 () -> {});
 
