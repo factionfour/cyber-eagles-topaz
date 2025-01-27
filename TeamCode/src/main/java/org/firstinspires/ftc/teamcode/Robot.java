@@ -371,46 +371,43 @@ public class Robot {
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
                 driveWheels(0, 0, 0, false);
-                //tmpDriveState = driveToPositionState.ADJUST;
-                tmpDriveState = driveToPositionState.COMPLETE;
+                tmpDriveState = driveToPositionState.ADJUST;
+                //tmpDriveState = driveToPositionState.COMPLETE;
                 //tmpDriveState = driveToPositionState.DRIVE;
             }
         }
 
-//
-//        // Step 3: Adjust position if needed (after a turn)
-//        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
-//            // Calculate the angle to the target relative to the robot's position
-//            double angleToTarget = Math.atan2(deltaY, deltaX);
-//            double relativeAngleToTarget = angleToTarget - currentHeading;
-//
-//            // Normalize the relative angle to the range [-π, π]
-//            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
-//            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
-//
-//            // Calculate forward and strafe powers based on the relative angle
-//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-//
-//            // Normalize power values to prevent exceeding max power
-//            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-//            if (maxPower > 1.0) {
-//                forwardPower /= maxPower;
-//                strafePower /= maxPower;
-//            }
-//
-//            // Send adjusted power to the drive system
-//            driveWheels(forwardPower, 0, -strafePower, false);
-//
-//            telemetry.addData("Forward Power", forwardPower);
-//            telemetry.addData("Strafe Power", -strafePower);
-//
-//        } else {
-//            if (tmpDriveState == driveToPositionState.ADJUST) {
-//                tmpDriveState = driveToPositionState.COMPLETE;
-//                driveWheels(0, 0, 0, false); // Stop movement
-//            }
-//        }
+
+        // Step 3: Adjust position if needed (after a turn)
+        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
+            // Calculate the angle to the target relative to the robot's position
+            double angleToTarget = Math.atan2(deltaY, deltaX);
+            double relativeAngleToTarget = angleToTarget - currentHeading;
+
+            // Normalize the relative angle to the range [-π, π]
+            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
+            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
+
+            // Calculate forward and strafe powers based on the relative angle
+            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+
+            // Normalize power values to prevent exceeding max power
+            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+            if (maxPower > 1.0) {
+                forwardPower /= maxPower;
+                strafePower /= maxPower;
+            }
+
+            // Send adjusted power to the drive system
+            driveWheels(forwardPower, 0, -strafePower, false);
+
+        } else {
+            if (tmpDriveState == driveToPositionState.ADJUST) {
+                tmpDriveState = driveToPositionState.COMPLETE;
+                driveWheels(0, 0, 0, false); // Stop movement
+            }
+        }
 
         // Return true if both position and heading are at the target
         return tmpDriveState == driveToPositionState.COMPLETE;
@@ -789,6 +786,17 @@ public class Robot {
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                 }
                 break;
+            case OUTTAKE:
+                long outtakeTime = System.currentTimeMillis() - tmpActionStartTime;
+                telemetry.addData("OUTTAKE", "Elapsed Time: " + outtakeTime + " ms");
+                // Move the intake motor
+                moveIntake(true, false);
+                //if ((intakeTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                if (outtakeTime > 1000) {
+                    moveIntake(false, false);
+                    sampleReleaseState = releaseSampleFirstBucketState.COMPLETE; // Transition to next step
+                }
+                break;
             case COMPLETE:
                 setDefaultPower();
                 break;
@@ -882,6 +890,7 @@ public class Robot {
         IDLE,          // Waiting for button press
         POSITION_ROBOT,
         MOVE_ARM,
+        OUTTAKE,
         COMPLETE       // Process complete
     }
 
