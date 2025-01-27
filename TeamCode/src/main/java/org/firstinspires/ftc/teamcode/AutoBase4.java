@@ -41,6 +41,16 @@ public abstract class AutoBase4 extends LinearOpMode {
         };
     }
 
+    public Callable<Boolean> moveIntakeTimedAction(boolean inward, boolean outward, int milliseconds, LinearOpMode opMode) {
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                return robot.moveIntakeTimed(inward, outward, milliseconds, opMode);  // This method returns true when complete
+            }
+        };
+    }
+
+
     // Action 2: Example method to control a different action
     public Callable<Boolean> moveArmEncoderAction(int startPosition, int targetPosition) {
         return new Callable<Boolean>() {

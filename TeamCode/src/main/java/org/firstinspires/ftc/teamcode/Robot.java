@@ -1,6 +1,7 @@
 
 package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -11,6 +12,7 @@ import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Robot {
     // define each motor, servo, imu and touch sensor
@@ -623,6 +625,40 @@ public class Robot {
         }
         // --- END WHEEL SERVO CONTROL ---
     }
+
+    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, LinearOpMode opMode) {
+        // Create an instance of ElapsedTime to track the duration
+        ElapsedTime timer = new ElapsedTime();
+        boolean complete = false;
+        // --- WHEEL SERVO CONTROL ---
+        if (inward || outward) {
+            if (inward) {
+                tmpServoState = manualServoState.INPUT;
+                leftWheelServo.setPosition(SERVO_BACKWARD);  // Spin inward
+                rightWheelServo.setPosition(SERVO_FORWARD);  // Spin inward
+            } else if (outward) {
+                tmpServoState = manualServoState.OUTPUT;
+                leftWheelServo.setPosition(SERVO_FORWARD);   // Spin outward
+                rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
+            }
+
+            // Reset and start the timer
+            timer.reset();
+
+            // Continue running until the specified duration has elapsed
+            while (opMode.opModeIsActive() && timer.milliseconds() < milliseconds) {
+                // Optionally, include idle() or sleep() to prevent CPU overuse
+                // idle();
+            }
+
+            // Time has elapsed; stop the servos
+            tmpServoState = manualServoState.IDLE;
+            leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
+            rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
+            complete = true;
+        }
+        return complete;
+    }
 //
     public void moveWrist(boolean up,boolean down) {
         if (up || down) {
@@ -719,6 +755,9 @@ public class Robot {
         extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         extensionArmMotor.setTargetPosition(0);
         extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+
     }
 
     public void specimenHook() {

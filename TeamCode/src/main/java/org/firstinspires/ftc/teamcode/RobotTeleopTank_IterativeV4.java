@@ -37,6 +37,12 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.emergencyReset();
         }
 
+        //RESET THE POSITION (DO IN THE CORNER)
+        if (gamepad1.back) {
+            robot.positionTracker.resetPosition(0,0,robot.positionTracker.currentHeading);
+            robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
+        }
+
         if (gamepad1.y) {
             robot.specimenHook();
         }

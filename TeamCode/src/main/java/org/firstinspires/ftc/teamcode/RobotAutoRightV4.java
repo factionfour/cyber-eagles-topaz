@@ -18,28 +18,42 @@ public class RobotAutoRightV4 extends AutoBase4 {
             null,0,null);
 
 //        //step 2: release hook
-//        performActionsWithDelays("RELEASE HOOK",
-//                () -> robot.moveIntake(false,true),150,
-//                () -> robot.moveExtensionEncoder(robot.getCurrentExtensionPosition(),0),0,
-//                () -> {},0,
-//                () -> {},0,
-//                () -> {});
-//
-//        //step 3: move to the push position
-//        performActionsWithDelays("MOVE TO PUSH 1",
-//                () -> robot.moveArmEncoder(robot.getCurrentArmPosition(),0),0,
-//                () -> robot.moveExtensionEncoder(robot.getCurrentExtensionPosition(),0), 150,
-//                () -> robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
-//                () -> {}, 0,
-//                () -> {});
-//
-//        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0);
-//        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_3,robot.PUSH_FIRST_BLOCK_POS_Y_3,0);
-//        robot.driveToPosition(robot.PUSH_FIRST_BLOCK_POS_X_4,robot.PUSH_FIRST_BLOCK_POS_Y_4,0);
-//
-//        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_1,robot.PUSH_SECOND_BLOCK_POS_Y_1,0);
-//        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0);
-//        robot.driveToPosition(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0);
+        performActionsWithDelays("RELEASE HOOK",
+                moveIntakeTimedAction (false, true,150, this),0,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),0,
+                null,0,null,0,null);
+
+//        //step 3:start the push of the blocks
+        performActionsWithDelays("PUSH 1 - STEP 1",
+                moveArmEncoderAction(robot.getCurrentArmPosition(),0), 0,
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
+                null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 1 - STEP 2",
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0),0,
+                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 1 - STEP 3",
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_3,robot.PUSH_FIRST_BLOCK_POS_Y_3,0),0,
+                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 1 - STEP 4",
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_4,robot.PUSH_FIRST_BLOCK_POS_Y_4,0),0,
+                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 2 - STEP 1",
+                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_1,robot.PUSH_SECOND_BLOCK_POS_Y_1,0),0,
+                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 2 - STEP 2",
+                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0),0,
+                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PUSH 2 - STEP 3",
+                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0),0,
+                null,0,null,0,null,0,null);
+
+        //TODO: IF THERE IS TIME, HOOK ANOTHER BLOCK?
 
         //park the robot
         robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
