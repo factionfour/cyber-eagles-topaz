@@ -36,8 +36,8 @@ public class Robot {
     int ARM_MAX_POSITION = 1300; // Maximum encoder position (fully Raised)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
-    double ARM_MAX_SPEED = 0.8;
-    double ARM_MIN_SPEED = 0.2;
+    double ARM_MAX_SPEED = 0.9;
+    double ARM_MIN_SPEED = 0.3;
     double ARM_RAMP_TICKS = 50;
     double ARM_MANUAL_MAX_SPEED = 40;
 
@@ -48,7 +48,7 @@ public class Robot {
     double EXTENSION_EXTRA_FORCE = 0.6;
 
     double EXTENSION_MIN_SPEED = 0.3; // How far to move per iterationfsampleRelease
-    double EXTENSION_MAX_SPEED = 0.7; // How far to move per iteration
+    double EXTENSION_MAX_SPEED = 0.9; // How far to move per iteration
     double EXTENSION_RAMP_TICKS = 50;
     double EXTENSION_MANUAL_MAX_SPEED = 100;
 
@@ -74,7 +74,6 @@ public class Robot {
 
     //pre-defined positions
 
-
   /*  int HOOK_RELEASE_EXTENSION_POSITION = 1400;
     int HOOK_RELEASE_ARM_HEIGHT = 670;
     int HOOK_RELEASE_RADIANS = 0;
@@ -98,7 +97,8 @@ public class Robot {
     int PICKUP_SAMPLE_DEGREES = 180;
     int PICKUP_SAMPLE_POS_X = 45;
     int PICKUP_SAMPLE_POS_Y = 37;
-    int PICKUP_SAMPLE_POS2_X = 38;
+    int PICKUP_SAMPLE_POS_INTAKE_X = 38;
+    int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 747;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 1849;
@@ -286,7 +286,8 @@ public class Robot {
     }
     public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees) {
         if (tmpDriveState == driveToPositionState.IDLE) {
-            tmpDriveState = driveToPositionState.DRIVE;
+            //tmpDriveState = driveToPositionState.DRIVE;
+            tmpDriveState = driveToPositionState.TURN;
         }
         // Convert targetHeading from degrees to radians
         double targetHeadingRadians = Math.toRadians(targetHeadingDegrees);
@@ -312,16 +313,35 @@ public class Robot {
         }
 
         telemetry.addData("X TARGET", targetXCM);
+        telemetry.addData("X DELTA ", deltaX);
         telemetry.addData("Y TARGET", targetYCM);
+        telemetry.addData("Y DELTA", deltaY);
         telemetry.addData("Current Heading", Math.toDegrees(currentHeading));
         telemetry.addData("Target Heading", targetHeadingDegrees);
-        telemetry.addData("Delta X", deltaX);
-        telemetry.addData("Delta Y", deltaY);
-        telemetry.addData("Delta Heading", Math.toDegrees(deltaHeading));
+        telemetry.addData("Target Delta Heading", Math.toDegrees(deltaHeading));
         telemetry.addData("DRIVE STATE", tmpDriveState);
 
+        // Step 1: Adjust heading if needed
+        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
+            double turnPower = calculateTurnPower(deltaHeading);
 
-        // Step 1: Move to the target position
+            // Ensure turnPower is applied in the correct direction
+            turnPower *= Math.signum(deltaHeading);
+
+            // Apply turn power
+            driveWheels(0, turnPower, 0, false);
+
+            telemetry.addData("Turn Power", turnPower);
+        } else {
+            if (tmpDriveState == driveToPositionState.TURN) {
+                driveWheels(0, 0, 0, false);
+                //tmpDriveState = driveToPositionState.ADJUST;
+                //tmpDriveState = driveToPositionState.COMPLETE;
+                tmpDriveState = driveToPositionState.DRIVE;
+            }
+        }
+
+        // Step 2: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
             // Calculate the angle to the target relative to the robot's position
             double angleToTarget = Math.atan2(deltaY, deltaX);
@@ -350,63 +370,45 @@ public class Robot {
         } else {
             if (tmpDriveState == driveToPositionState.DRIVE) {
 
-                tmpDriveState = driveToPositionState.TURN;
-                driveWheels(0, 0, 0, false); // Stop movement
-            }
-        }
-
-        // Step 2: Adjust heading if needed
-        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
-            double turnPower = calculateTurnPower(deltaHeading);
-
-            // Ensure turnPower is applied in the correct direction
-            turnPower *= Math.signum(deltaHeading);
-
-            // Apply turn power
-            driveWheels(0, turnPower, 0, false);
-
-            telemetry.addData("Turn Power", turnPower);
-        } else {
-            if (tmpDriveState == driveToPositionState.TURN) {
-                driveWheels(0, 0, 0, false);
-                tmpDriveState = driveToPositionState.ADJUST;
-                //tmpDriveState = driveToPositionState.COMPLETE;
-            }
-        }
-
-        // Step 3: Adjust position if needed (after a turn)
-        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
-            // Calculate the angle to the target relative to the robot's position
-            double angleToTarget = Math.atan2(deltaY, deltaX);
-            double relativeAngleToTarget = angleToTarget - currentHeading;
-
-            // Normalize the relative angle to the range [-π, π]
-            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
-            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
-
-            // Calculate forward and strafe powers based on the relative angle
-            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-
-            // Normalize power values to prevent exceeding max power
-            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-            if (maxPower > 1.0) {
-                forwardPower /= maxPower;
-                strafePower /= maxPower;
-            }
-
-            // Send adjusted power to the drive system
-            driveWheels(forwardPower, 0, -strafePower, false);
-
-            telemetry.addData("Forward Power", forwardPower);
-            telemetry.addData("Strafe Power", -strafePower);
-
-        } else {
-            if (tmpDriveState == driveToPositionState.ADJUST) {
+                //tmpDriveState = driveToPositionState.TURN;
                 tmpDriveState = driveToPositionState.COMPLETE;
                 driveWheels(0, 0, 0, false); // Stop movement
             }
         }
+//
+//        // Step 3: Adjust position if needed (after a turn)
+//        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
+//            // Calculate the angle to the target relative to the robot's position
+//            double angleToTarget = Math.atan2(deltaY, deltaX);
+//            double relativeAngleToTarget = angleToTarget - currentHeading;
+//
+//            // Normalize the relative angle to the range [-π, π]
+//            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
+//            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
+//
+//            // Calculate forward and strafe powers based on the relative angle
+//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+//
+//            // Normalize power values to prevent exceeding max power
+//            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+//            if (maxPower > 1.0) {
+//                forwardPower /= maxPower;
+//                strafePower /= maxPower;
+//            }
+//
+//            // Send adjusted power to the drive system
+//            driveWheels(forwardPower, 0, -strafePower, false);
+//
+//            telemetry.addData("Forward Power", forwardPower);
+//            telemetry.addData("Strafe Power", -strafePower);
+//
+//        } else {
+//            if (tmpDriveState == driveToPositionState.ADJUST) {
+//                tmpDriveState = driveToPositionState.COMPLETE;
+//                driveWheels(0, 0, 0, false); // Stop movement
+//            }
+//        }
 
         // Return true if both position and heading are at the target
         return tmpDriveState == driveToPositionState.COMPLETE;
@@ -434,17 +436,10 @@ public class Robot {
     }
 
     private double calculateTurnPower(double deltaHeading) {
-        double maxTurnPower = 0.5; // Maximum turning power
+        double maxTurnPower = 0.6; // Maximum turning power
         double minTurnPower = 0.15; // Minimum turning power for precision
         double slowDownThreshold = Math.toRadians(20.0); // Angle threshold for starting to slow down
         double stopThreshold = Math.toRadians(HEADING_TOLERANCE_DEGREES); // Final threshold to stop turning
-
-        // Normalize deltaHeading to the range [-π, π] to avoid large jumps across 180 degrees
-        if (deltaHeading > Math.PI) {
-            deltaHeading -= 2 * Math.PI; // Normalize to [-π, π]
-        } else if (deltaHeading < -Math.PI) {
-            deltaHeading += 2 * Math.PI;
-        }
 
         // If within the final tolerance range, stop turning
         if (Math.abs(deltaHeading) <= stopThreshold) {
@@ -485,7 +480,7 @@ public class Robot {
                 //this code may not work correctly
                 dynamicArmMinPosition = (int) (100 + (extensionPosition - 900) * (200 - 100) / (EXTENSION_MAX_POSITION - 900));
             } else if (extensionPosition < 900 && extensionPosition > EXTENSION_MIN_POSITION) {
-                dynamicArmMinPosition = 100;
+                dynamicArmMinPosition = ARM_MIN_POSITION;
             } else {
                 dynamicArmMinPosition = 0;
             }
@@ -641,11 +636,11 @@ public class Robot {
                 Wrist.setPosition(0.3);
             }
         }else {
-        if (tempServoState == wristServoState.INPUT || tempServoState == wristServoState.OUTPUT) {
-            tempServoState = wristServoState.IDLE;
-            Wrist.setPosition(SERVO_STOPPED);  // Neutral
+            if (tempServoState == wristServoState.INPUT || tempServoState == wristServoState.OUTPUT) {
+                tempServoState = wristServoState.IDLE;
+                Wrist.setPosition(SERVO_STOPPED);  // Neutral
 
-        }
+            }
         }
     }
 
@@ -821,18 +816,22 @@ public class Robot {
                 }
                 break;
             case INTAKE:
-                long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
-                telemetry.addData("INTAKE", "Elapsed Time: " + elapsedTime + " ms");
+                long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
+                telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
                 moveIntake(true, false);
-                // Check if the time limit has been exceeded or if the button was pressed
-                if ((elapsedTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS2_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
-                    //telemetry.addData("INTAKE", "8 seconds elapsed, moving to COMPLETE");
+                //if ((intakeTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                if (intakeTime > 8000 && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
                     samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
                 }
                 break;
+            case NOPICKUP:
+                long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
+                driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
+                if (noPickupTime > 5000) {
+                    samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
+                }
             case COMPLETE:
-
                 setDefaultPower();
                 break;
         }
@@ -871,6 +870,7 @@ public class Robot {
         POSITION_ROBOT,
         MOVE_ARM,
         INTAKE,
+        NOPICKUP,
         COMPLETE
     }
 

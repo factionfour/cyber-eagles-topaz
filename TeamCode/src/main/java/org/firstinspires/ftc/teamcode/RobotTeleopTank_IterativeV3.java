@@ -220,10 +220,10 @@ public class RobotTeleopTank_IterativeV3 extends OpMode {
 
         if (!isActionRunning()) {
             driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true);
-//            moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
+            moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
             moveArm(gamepad2.left_stick_y);
             moveExtension(gamepad2.right_stick_y);
-            moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
+            //moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
         }
         addTelemetry();
     }
