@@ -98,7 +98,7 @@ public class Robot {
     int PICKUP_SAMPLE_DEGREES = 180;
     int PICKUP_SAMPLE_POS_X = 45;
     int PICKUP_SAMPLE_POS_Y = 37;
-    int PICKUP_SAMPLE_POS_INTAKE_X = 38;
+    int PICKUP_SAMPLE_POS_INTAKE_X = 35;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 747;
@@ -869,17 +869,21 @@ public class Robot {
                 telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
                 moveIntake(true, false);
-                //if ((intakeTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
-                if (intakeTime > 8000 && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                //if ((intakeTime > 3000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                if (intakeTime > 3000 && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
                     moveIntake(false, false);
-                    samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
+                    if (touchsensor.isPressed()) {
+                        samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
+                    }
+                    else {
+                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+                    }
                 }
                 break;
             case NOPICKUP:
-                moveIntake(false, false);
                 long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
                 driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
-                if (noPickupTime > 5000) {
+                if (noPickupTime > 3000) {
                     samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
                 }
             case COMPLETE:
