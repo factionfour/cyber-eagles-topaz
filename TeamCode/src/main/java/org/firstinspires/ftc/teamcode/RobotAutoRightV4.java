@@ -12,12 +12,10 @@ public class RobotAutoRightV4 extends AutoBase4 {
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays("DRIVE TO POSITION",
-
-            () -> robot.driveToPosition(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES),0,
-            () -> robot.moveArmEncoder(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
-            () -> robot.moveExtensionEncoder(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
-            () -> {},0,
-            () -> {});
+            driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES),0,
+            moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
+            moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
+            null,0,null);
 
 //        //step 2: release hook
 //        performActionsWithDelays("RELEASE HOOK",
