@@ -54,9 +54,8 @@ public class Robot {
 
     //tolernances
     int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
-    double POSITION_TOLERANCE_CM = 1.5;
-    double POSITION_ONEDIRECTION_TOLERANCE_CM = 10;
-    double HEADING_TOLERANCE_DEGREES = 3;
+    double POSITION_TOLERANCE_CM = 1;
+    double HEADING_TOLERANCE_DEGREES = 2;
 
     //servo limits
     double SERVO_STOPPED = 0.5;
@@ -286,8 +285,8 @@ public class Robot {
     }
     public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees) {
         if (tmpDriveState == driveToPositionState.IDLE) {
-            //tmpDriveState = driveToPositionState.DRIVE;
-            tmpDriveState = driveToPositionState.TURN;
+            tmpDriveState = driveToPositionState.DRIVE;
+            //tmpDriveState = driveToPositionState.TURN;
         }
         // Convert targetHeading from degrees to radians
         double targetHeadingRadians = Math.toRadians(targetHeadingDegrees);
@@ -321,27 +320,9 @@ public class Robot {
         telemetry.addData("Target Delta Heading", Math.toDegrees(deltaHeading));
         telemetry.addData("DRIVE STATE", tmpDriveState);
 
-        // Step 1: Adjust heading if needed
-        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
-            double turnPower = calculateTurnPower(deltaHeading);
 
-            // Ensure turnPower is applied in the correct direction
-            turnPower *= Math.signum(deltaHeading);
 
-            // Apply turn power
-            driveWheels(0, turnPower, 0, false);
-
-            telemetry.addData("Turn Power", turnPower);
-        } else {
-            if (tmpDriveState == driveToPositionState.TURN) {
-                driveWheels(0, 0, 0, false);
-                //tmpDriveState = driveToPositionState.ADJUST;
-                //tmpDriveState = driveToPositionState.COMPLETE;
-                tmpDriveState = driveToPositionState.DRIVE;
-            }
-        }
-
-        // Step 2: Move to the target position
+        // Step 1: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
             // Calculate the angle to the target relative to the robot's position
             double angleToTarget = Math.atan2(deltaY, deltaX);
@@ -370,11 +351,32 @@ public class Robot {
         } else {
             if (tmpDriveState == driveToPositionState.DRIVE) {
 
-                //tmpDriveState = driveToPositionState.TURN;
-                tmpDriveState = driveToPositionState.COMPLETE;
+                tmpDriveState = driveToPositionState.TURN;
+                //tmpDriveState = driveToPositionState.COMPLETE;
                 driveWheels(0, 0, 0, false); // Stop movement
             }
         }
+
+        // Step 2: Adjust heading if needed
+        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
+            double turnPower = calculateTurnPower(deltaHeading);
+
+            // Ensure turnPower is applied in the correct direction
+            turnPower *= Math.signum(deltaHeading);
+
+            // Apply turn power
+            driveWheels(0, -turnPower, 0, false);
+
+            telemetry.addData("Turn Power", -turnPower);
+        } else {
+            if (tmpDriveState == driveToPositionState.TURN) {
+                driveWheels(0, 0, 0, false);
+                //tmpDriveState = driveToPositionState.ADJUST;
+                tmpDriveState = driveToPositionState.COMPLETE;
+                //tmpDriveState = driveToPositionState.DRIVE;
+            }
+        }
+
 //
 //        // Step 3: Adjust position if needed (after a turn)
 //        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
@@ -418,7 +420,7 @@ public class Robot {
         double maxPower = 0.7; // Maximum power
         double minPower = 0.15; // Minimum power for precision (can be adjusted)
         double kDrive = 0.5;  // Proportional control factor
-        double slowDownThreshold = 10.0; // Distance in cm where slowdown begins
+        double slowDownThreshold = 15.0; // Distance in cm where slowdown begins
         double stopThreshold = 2.0; // Distance in cm where it should stop but still move
 
         // If the robot is within the stop threshold, apply a minimum power to move slowly
@@ -450,11 +452,11 @@ public class Robot {
         // If the robot is within the slow down threshold, apply the slow turn power
         if (Math.abs(deltaHeading) <= slowDownThreshold) {
             telemetry.addData("TURN ","SLOW");
-            return minTurnPower * Math.signum(deltaHeading); // Slow down the turn
+            return minTurnPower;// * Math.signum(deltaHeading); // Slow down the turn
         }
         telemetry.addData("TURN ","FULL");
         // Apply full turn power for larger heading differences
-        return maxTurnPower * Math.signum(deltaHeading); // Apply max turn power
+        return maxTurnPower;//maxTurnPower * Math.signum(deltaHeading); // Apply max turn power
     }
 
 
@@ -822,10 +824,12 @@ public class Robot {
                 moveIntake(true, false);
                 //if ((intakeTime > 8000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
                 if (intakeTime > 8000 && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                    moveIntake(false, false);
                     samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
                 }
                 break;
             case NOPICKUP:
+                moveIntake(false, false);
                 long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
                 driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
                 if (noPickupTime > 5000) {

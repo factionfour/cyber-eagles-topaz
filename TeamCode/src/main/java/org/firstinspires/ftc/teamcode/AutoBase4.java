@@ -12,12 +12,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public abstract class AutoBase4 extends LinearOpMode {
 
-    public Robot robot = new Robot();
+    public Robot robot;
 
-    public void initRobot() {
+    public void initializeHardware(double startXCM, double startYCM) {
+        robot = new Robot();
         robot.init(hardwareMap,telemetry);
-        telemetry.addData(">", "Charlie 3 is READY.  Press START.");    //
+        robot.positionTracker.resetPosition(startXCM,startYCM);
+        telemetry.addData(">", "Charlie 4 is READY.  Press START.");    //
+        waitForStart();
     }
+
     //shut down the robot (end of auto)
     public void closeRobot() {
        //TODO
