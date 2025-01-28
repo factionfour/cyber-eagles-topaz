@@ -190,7 +190,7 @@ public class Robot {
         rightWheelServo.setPosition(0.5); // Neutral position
         Wrist.setPosition(0.5);
 
-        touchsensor = hardwareMap.get(TouchSensor.class, "touchsensor");
+        touchsensor = hardwareMap.get(TouchSensor.class, "touch sensor");
 
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
@@ -285,6 +285,7 @@ public class Robot {
         long currentTime = System.currentTimeMillis();
         positionTracker.updatePosition();
     }
+
     public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees) {
         if (tmpDriveState == driveToPositionState.IDLE) {
             tmpDriveState = driveToPositionState.DRIVE;
@@ -411,12 +412,23 @@ public class Robot {
             }
         }
 
+//        boolean isComplete = false;
+//        if (tmpDriveState == driveToPositionState.COMPLETE) {
+//            isComplete = true;
+//            tmpDriveState = driveToPositionState.IDLE;
+//        }
+
         // Return true if both position and heading are at the target
+        //return isComplete;
         return tmpDriveState == driveToPositionState.COMPLETE;
     }
 
+    public void resetDrivePosition() {
+        tmpDriveState = driveToPositionState.IDLE;
+    }
+
     private double calculateDrivePower(double distance) {
-        double maxPower = 0.7; // Maximum power
+        double maxPower = 0.6; // Maximum power
         double minPower = 0.15; // Minimum power for precision (can be adjusted)
         double kDrive = 0.5;  // Proportional control factor
         double slowDownThreshold = 15.0; // Distance in cm where slowdown begins
@@ -773,6 +785,7 @@ public class Robot {
         switch (specimenHookState) {
             case POSITION_ROBOT:
                 if (driveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_DEGREES)) {
+                    resetDrivePosition();
                     specimenHookState = HookState.PLACE_ARM; // Transition to next step
                 }
                 break;
@@ -816,6 +829,7 @@ public class Robot {
         switch (sampleReleaseState) {
             case POSITION_ROBOT:
                 if (driveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_DEGREES)) {
+                    resetDrivePosition();
                     sampleReleaseState = releaseSampleFirstBucketState.MOVE_ARM; // Transition to next step
                 }
                 break;
@@ -854,37 +868,42 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (samplePickupState) {
             case POSITION_ROBOT:
-                if (driveToPosition(PICKUP_SAMPLE_POS_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
+                    resetDrivePosition();
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
                 }
                 break;
             case MOVE_ARM:
-                if (moveArmEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
+                if (moveArmEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
                     tmpActionStartTime = System.currentTimeMillis();
                     samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
                 }
                 break;
             case INTAKE:
                 long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
+                boolean atPos = false;
                 telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
                 moveIntake(true, false);
-                //if ((intakeTime > 3000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+
                 if (intakeTime > 3000 && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                    resetDrivePosition();
                     moveIntake(false, false);
                     if (touchsensor.isPressed()) {
                         samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to next step
-                    }
-                    else {
+                    } else {
                         samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
                     }
                 }
                 break;
             case NOPICKUP:
-                long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
-                driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
-                if (noPickupTime > 3000) {
-                    samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
+
+                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
+                    resetDrivePosition();
+                    long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
+                    if (noPickupTime > 3000) {
+                        samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
+                    }
                 }
             case COMPLETE:
                 setDefaultPower();
