@@ -32,6 +32,8 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
     public void loop() {
         long currentTime = System.currentTimeMillis();
 
+        robot.addTelemetry();
+
         // --- STOP & EMERGENCY ACTIONS
         if (gamepad2.back) {
             robot.emergencyReset();
@@ -75,7 +77,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.moveExtension(gamepad2.right_stick_y);
 //            robot.moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
         }
-        robot.addTelemetry();
+
     }
 
 }

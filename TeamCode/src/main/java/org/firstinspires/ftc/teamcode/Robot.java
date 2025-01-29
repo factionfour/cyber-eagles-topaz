@@ -189,25 +189,27 @@ public class Robot {
 
 //  Telemetry
     public void addTelemetry() {
-        telemetry.addData("Current X",  "%.2f", positionTracker.getXPositionCM());
-        telemetry.addData("Current Y",  "%.2f", positionTracker.getYPositionCM());
-        telemetry.addData("Current degrees", positionTracker.getHeadingDegrees());
-        telemetry.addData("Button pressed", touchsensor.isPressed());
+        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current deg", positionTracker.getHeadingDegrees());
+        //telemetry.addData("Button pressed", touchsensor.isPressed());
 //        telemetry.addData("front",  "%.2f", currentForward);
 //        telemetry.addData("turn", "%.2f", currentTurn);
 //        telemetry.addData("strafe", "%.2f", currentStrafe);
-        telemetry.addData("Arm Motor Position", armMotor.getCurrentPosition());
-//        telemetry.addData("Wrist servo",Wrist.getPosition());
-        telemetry.addData("Arm Target Position", armTargetPosition);
-//        telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
-//        telemetry.addData("Arm Calculated Power", currentArmPower);
-//        telemetry.addData("Arm Motor Busy", armMotor.isBusy());
-        telemetry.addData("Extension Current Position", extensionArmMotor.getCurrentPosition());
-        telemetry.addData("Extension Target Position", extensionTargetPosition);
-//        telemetry.addData("Extension Calculated Power", currentExtensionPower);
-//        telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
-//        telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
-//        telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
+
+        telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
+        telemetry.addData("EXTENSION - Target Position", extensionTargetPosition);
+        //telemetry.addData("Extension Calculated Power", currentExtensionPower);
+        //telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
+
+        telemetry.addData("ARM - Current Position", armMotor.getCurrentPosition());
+        telemetry.addData("ARM - Target Position", armTargetPosition);
+        //telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
+        //telemetry.addData("Arm Calculated Power", currentArmPower);
+
+        //telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
+        //telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
+
         telemetry.update();
     }
 
@@ -227,9 +229,7 @@ public class Robot {
             }
             currentStrafe = Math.abs(currentStrafe) > 0.05 ? Math.pow(currentStrafe, 3) : 0.0;
         }
-        telemetry.addData("calc currentForward", currentForward);
-        telemetry.addData("calc currentTurn", currentTurn);
-        telemetry.addData("calc currentStrafe", currentStrafe);
+
 
         // Combine inputs for omnidirectional control
         double frontLeftPower = -currentForward + -currentTurn + -currentStrafe;
@@ -265,11 +265,14 @@ public class Robot {
         frontrightDrive.setPower(frontRightPower);
         backleftDrive.setPower(backLeftPower);
         backrightDrive.setPower(backRightPower);
+        telemetry.addData("DRIVE POWER - forward", currentForward);
+        telemetry.addData("DRIVE POWER - Turn", currentTurn);
+        telemetry.addData("DRIVE POWER - Strafe", currentStrafe);
 
-        telemetry.addData("frontLeftPower", frontLeftPower);
-        telemetry.addData("frontRightPower", frontRightPower);
-        telemetry.addData("backLeftPower", backLeftPower);
-        telemetry.addData("backRightPower", backRightPower);
+        telemetry.addData("WHEEL POWER - frontLeft", frontLeftPower);
+        telemetry.addData("WHEEL POWER - frontRight", frontRightPower);
+        telemetry.addData("WHEEL POWER - backLeft", backLeftPower);
+        telemetry.addData("WHEEL POWER - backRight", backRightPower);
         long currentTime = System.currentTimeMillis();
         positionTracker.updatePosition();
     }
@@ -302,14 +305,16 @@ public class Robot {
             deltaHeading = 0; // Snap to 0 to avoid unnecessary small rotations
         }
 
-        telemetry.addData("X TARGET", targetXCM);
-        telemetry.addData("X DELTA ", deltaX);
-        telemetry.addData("Y TARGET", targetYCM);
-        telemetry.addData("Y DELTA", deltaY);
-        telemetry.addData("Current Heading", Math.toDegrees(currentHeading));
-        telemetry.addData("Target Heading", targetHeadingDegrees);
-        telemetry.addData("Target Delta Heading", Math.toDegrees(deltaHeading));
         telemetry.addData("DRIVE STATE", tmpDriveState);
+        telemetry.addData("TARGET POS - X", targetXCM);
+        telemetry.addData("TARGET POS - Y", targetYCM);
+        telemetry.addData("DELTA POS - X", deltaX);
+        telemetry.addData("DELTA POS - Y", deltaY);
+
+        //telemetry.addData("Current Heading", Math.toDegrees(currentHeading));
+        telemetry.addData("TARGET HEADING", targetHeadingDegrees);
+        telemetry.addData("TARGET HEADING DELTA", Math.toDegrees(deltaHeading));
+
 
         // Step 1: Move to the target position
         if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
@@ -340,8 +345,8 @@ public class Robot {
             // Send adjusted power to the drive system
             driveWheels(forwardPower, 0, -strafePower, false);
 
-            telemetry.addData("Forward Power", forwardPower);
-            telemetry.addData("Strafe Power", -strafePower);
+            //telemetry.addData("Forward Power", forwardPower);
+            //telemetry.addData("Strafe Power", -strafePower);
         } else {
             if (tmpDriveState == driveToPositionState.DRIVE) {
 
@@ -361,7 +366,7 @@ public class Robot {
             // Apply turn power
             driveWheels(0, -turnPower, 0, false);
 
-            telemetry.addData("Turn Power", -turnPower);
+            //telemetry.addData("Turn Power", -turnPower);
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
                 driveWheels(0, 0, 0, false);
@@ -432,7 +437,6 @@ public class Robot {
     }
 
     private double calculateTurnPower(double deltaHeading) {
-
         // If within the final tolerance range, stop turning
         if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
             telemetry.addData("TURN ","STOP");
