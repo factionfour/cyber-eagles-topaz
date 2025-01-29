@@ -26,7 +26,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
 //        //step 3:start the push of the blocks
         performActionsWithDelays("PUSH 1 - STEP 1",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),0), 0,
-                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_1,-robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_1,robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
                 null,0,null,0,null);
 
         performActionsWithDelays("PUSH 1 - STEP 2",
@@ -56,6 +56,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
         //TODO: IF THERE IS TIME, HOOK ANOTHER BLOCK?
 
         //park the robot
+
         robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();
         telemetry.addData("Path", "Complete");

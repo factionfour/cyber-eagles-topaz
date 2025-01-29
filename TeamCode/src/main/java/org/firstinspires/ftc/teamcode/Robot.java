@@ -83,6 +83,8 @@ public class Robot {
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
+    int POST_HOOK_POS_X = 40;
+    int POST_HOOK_POS_Y = 158;
 
     int PICKUP_SAMPLE_ARM_HEIGHT = 286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
@@ -113,6 +115,15 @@ public class Robot {
     int PUSH_SECOND_BLOCK_POS_Y_2 = 22;
     int PUSH_SECOND_BLOCK_POS_X_3 = 20;
     int PUSH_SECOND_BLOCK_POS_Y_3 = 17;
+
+    int PICKUP_BLOCK_POS_X = 132;//ESTIMATE ONLY
+    int PICKUP_BLOCK_POS_Y = 47;//ESTIMATE ONLY
+
+    int PARK_LEFT_AUTO_POS_1_X = 100;//ESTIMATE ONLY
+    int PARK_LEFT_AUTO_POS_1_Y = 250;//ESTIMATE ONLY
+
+    int PARK_LEFT_AUTO_POS_2_X = 200;//ESTIMATE ONLY
+    int PARK_LEFT_AUTO_POS_2_Y = 200;//ESTIMATE ONLY
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
