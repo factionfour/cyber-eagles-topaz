@@ -16,12 +16,13 @@ public class RobotAutoRightV4 extends AutoBase4 {
             moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
             moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
             null,0,null);
-
+            robot.resetDrivePosition();
 //        //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
+                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 0,
                 moveIntakeTimedAction (false, true,150, this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),0,
-                null,0,null,0,null);
+                null,0,null);
 
 //        //step 3:start the push of the blocks
         performActionsWithDelays("PUSH 1 - STEP 1",

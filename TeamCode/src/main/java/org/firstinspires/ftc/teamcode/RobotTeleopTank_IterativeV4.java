@@ -41,7 +41,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
         //RESET THE POSITION (DO IN THE CORNER)
         if (gamepad1.back) {
-            robot.positionTracker.resetPosition(0,0,robot.positionTracker.currentHeading);
+            robot.positionTracker.resetPosition(0,0,0);
             robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         }
 
@@ -77,7 +77,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.moveExtension(gamepad2.right_stick_y);
 //            robot.moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
         }
-
+        robot.updateTelemetry();
     }
 
 }

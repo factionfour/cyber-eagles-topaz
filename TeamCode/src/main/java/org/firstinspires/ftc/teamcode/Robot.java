@@ -1,18 +1,17 @@
 
 package org.firstinspires.ftc.teamcode;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Robot {
     // define each motor, servo, imu and touch sensor
@@ -55,7 +54,7 @@ public class Robot {
     double EXTENSION_MANUAL_MAX_SPEED = 100;
 
     //tolernances
-    int MOTOR_TOLERANCE = 10; // Acceptable error in encoder ticks
+    int MOTOR_TOLERANCE = 5; // Acceptable error in encoder ticks
     double POSITION_TOLERANCE_CM = 1;
     double HEADING_TOLERANCE_DEGREES = 2;
 
@@ -83,6 +82,7 @@ public class Robot {
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
+    int HOOK_ARM_HEIGHT_2 = 735;
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
@@ -94,11 +94,11 @@ public class Robot {
     int PICKUP_SAMPLE_POS_INTAKE_X = 35;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 747;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 1849;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 760;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 1840;
     int RELEASE_SAMPLE_DEGREES = 133;
-    int RELEASE_SAMPLE_POS_X = 38;
-    int RELEASE_SAMPLE_POS_Y = 282;
+    int RELEASE_SAMPLE_POS_X = 35;
+    int RELEASE_SAMPLE_POS_Y = 284;
 
     int PUSH_FIRST_BLOCK_POS_X_1 = 521;
     int PUSH_FIRST_BLOCK_POS_Y_1 = 69;
@@ -138,7 +138,7 @@ public class Robot {
     public manualArmState tmpArmState = manualArmState.IDLE;
     public manualExtensionState tmpExtensionState = manualExtensionState.IDLE;
     public HookState specimenHookState = HookState.IDLE;
-    public HookReleaseState specimenReleaseState = HookReleaseState.IDLE;
+    //public HookReleaseState specimenReleaseState = HookReleaseState.IDLE;
     public pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
     public releaseSampleFirstBucketState sampleReleaseState = releaseSampleFirstBucketState.IDLE;
 
@@ -221,6 +221,11 @@ public class Robot {
         //telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
         //telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
 
+
+        //telemetry.update();
+    }
+
+    public void updateTelemetry() {
         telemetry.update();
     }
 
@@ -337,13 +342,13 @@ public class Robot {
             if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
             if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
 
-            double drivePower = calculateDrivePower(distanceToTarget);
+            //double drivePower = calculateDrivePower(distanceToTarget);
 
             // Calculate forward and strafe powers based on the relative angle
-//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-            double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
-            double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
+            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+            //double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
+            //double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
 
 
             // Normalize power values to prevent exceeding max power
@@ -398,12 +403,12 @@ public class Robot {
             if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
             if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
 
-            double drivePower = calculateDrivePower(distanceToTarget);
+            //double drivePower = calculateDrivePower(distanceToTarget);
             // Calculate forward and strafe powers based on the relative angle
-//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-            double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
-            double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
+            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+            //double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
+            //double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
 
             // Normalize power values to prevent exceeding max power
             double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
@@ -429,23 +434,23 @@ public class Robot {
         tmpDriveState = driveToPositionState.IDLE;
     }
 
-    private double calculateDrivePower(double distance) {
-        // If within crawlThreshold, apply minimum power to keep moving
-        if (Math.abs(distance) <= DRIVE_CRAWL_THRESHOLD) {
-            return Math.signum(distance) * DRIVE_MIN_POWER;
-        }
-
-        // Scale power based on slowDownThreshold
-        double power;
-        if (Math.abs(distance) > DRIVE_SLOW_THRESHOLD) {
-            power = DRIVE_MAX_POWER; // Full speed when far away
-        } else {
-            power = Math.max(DRIVE_MIN_POWER, (Math.abs(distance) / DRIVE_SLOW_THRESHOLD) * DRIVE_MAX_POWER);
-        }
-
-        // Ensure power direction matches movement
-        return (distance < 0) ? -power : power;
-    }
+//    private double calculateDrivePower(double distance) {
+//        // If within crawlThreshold, apply minimum power to keep moving
+//        if (Math.abs(distance) <= DRIVE_CRAWL_THRESHOLD) {
+//            return Math.signum(distance) * DRIVE_MIN_POWER;
+//        }
+//
+//        // Scale power based on slowDownThreshold
+//        double power;
+//        if (Math.abs(distance) > DRIVE_SLOW_THRESHOLD) {
+//            power = DRIVE_MAX_POWER; // Full speed when far away
+//        } else {
+//            power = Math.max(DRIVE_MIN_POWER, (Math.abs(distance) / DRIVE_SLOW_THRESHOLD) * DRIVE_MAX_POWER);
+//        }
+//
+//        // Ensure power direction matches movement
+//        return (distance < 0) ? -power : power;
+//    }
 
     private double calculateTurnPower(double deltaHeading) {
         // If within the final tolerance range, stop turning
@@ -585,7 +590,7 @@ public class Robot {
         double currentSpeed = 0;
         if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
             complete = true;
-            armMotor.setPower(0);
+            armMotor.setPower(ARM_BASE_POWER);
         }
         else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
@@ -771,9 +776,10 @@ public class Robot {
         //SPECIMEN HOOK
         if (specimenHookState == HookState.IDLE) {
             specimenHookState = HookState.POSITION_ROBOT; // Start first step
-            tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
-            tmpArmPositionHolder = armMotor.getCurrentPosition();
+
         }
+        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+        tmpArmPositionHolder = armMotor.getCurrentPosition();
 
         // Execute multi-step process based on current state
         switch (specimenHookState) {
@@ -785,6 +791,11 @@ public class Robot {
                 break;
             case PLACE_ARM:
                 if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
+                    specimenHookState = HookState.DROP_ARM; // Transition to next step
+                }
+                break;
+            case DROP_ARM:
+                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT_2)) {
                     specimenHookState = HookState.MOVE_OUT; // Transition to next step
                     tmpActionStartTime = System.currentTimeMillis();
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
@@ -793,7 +804,7 @@ public class Robot {
             case MOVE_OUT:
                 long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
                 moveIntake(false, true);
-                if (elapsedTime > 500) {
+                if (elapsedTime > 300) {
                     specimenHookState = HookState.HOOK_ARM; // Transition to next step
                 }
                 break;
@@ -815,9 +826,10 @@ public class Robot {
         //SAMPLE RELEASE TO FIRST BUCKET
         if (sampleReleaseState == releaseSampleFirstBucketState.IDLE) {
             sampleReleaseState = releaseSampleFirstBucketState.POSITION_ROBOT; // Start first step
-            tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
-            tmpArmPositionHolder = armMotor.getCurrentPosition();
+
         }
+        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+        tmpArmPositionHolder = armMotor.getCurrentPosition();
 
         // Execute multi-step process based on current state
         switch (sampleReleaseState) {
@@ -829,18 +841,21 @@ public class Robot {
                 break;
             case MOVE_ARM:
                 if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
-                    sampleReleaseState = releaseSampleFirstBucketState.COMPLETE; // Transition to next step
+                    sampleReleaseState = releaseSampleFirstBucketState.OUTTAKE; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    tmpActionStartTime = System.currentTimeMillis();
                 }
                 break;
             case OUTTAKE:
                 long outtakeTime = System.currentTimeMillis() - tmpActionStartTime;
                 telemetry.addData("OUTTAKE", "Elapsed Time: " + outtakeTime + " ms");
                 // Move the intake motor
-                moveIntake(true, false);
+                moveIntake(false, true);
                 if (outtakeTime > 1500) {
                     moveIntake(false, false);
-                    sampleReleaseState = releaseSampleFirstBucketState.COMPLETE; // Transition to next step
+                    if (moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
+                        sampleReleaseState = releaseSampleFirstBucketState.COMPLETE; // Transition to complete step
+                    }
                 }
                 break;
             case COMPLETE:
@@ -854,9 +869,10 @@ public class Robot {
         //SAMPLE PICKUP FROM GROUND
         if (samplePickupState == pickupSampleGroundState.IDLE.IDLE) {
             samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Start first step
-            tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
-            tmpArmPositionHolder = armMotor.getCurrentPosition();
+
         }
+        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+        tmpArmPositionHolder = armMotor.getCurrentPosition();
 
         // Execute multi-step process based on current state
         switch (samplePickupState) {
@@ -924,15 +940,16 @@ public class Robot {
         POSITION_ROBOT,
         PLACE_ARM,         // Second movement
         MOVE_OUT,
+        DROP_ARM,
         HOOK_ARM,
         COMPLETE       // Process complete
     }
-
-    public enum HookReleaseState {
-        IDLE,          // Waiting for button press
-        RETRACT_EXTENSION,         // First movement
-        COMPLETE       // Process complete
-    }
+//
+//    public enum HookReleaseState {
+//        IDLE,          // Waiting for button press
+//        RETRACT_EXTENSION,         // First movement
+//        COMPLETE       // Process complete
+//    }
 
     public enum pickupSampleGroundState {
         IDLE,          // Waiting for button press
