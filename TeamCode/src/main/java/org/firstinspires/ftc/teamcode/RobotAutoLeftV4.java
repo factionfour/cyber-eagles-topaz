@@ -7,7 +7,8 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
-        initializeHardware(0,118);
+        initializeHardware();
+        waitForStart();
 
         // Step 1:  position to hook specimen
         performActionsWithDelays("DRIVE TO POSITION",
@@ -22,8 +23,8 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 moveIntakeTimedAction (false, true,150, this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),700,
                 driveToPositionAction(robot.POST_HOOK_POS_X,robot.POST_HOOK_POS_Y,0),0,
-                null,0, null);
-
+                null,0,null);
+        robot.resetDrivePosition();
 //        //step 3:pickup block from floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 1",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.PICKUP_SAMPLE_ARM_HEIGHT), 0,

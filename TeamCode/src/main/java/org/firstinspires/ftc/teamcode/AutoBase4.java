@@ -17,12 +17,14 @@ public abstract class AutoBase4 extends LinearOpMode {
 
     public Robot robot;
 
-    public void initializeHardware(double startXCM, double startYCM) {
+    public void initializeHardware(){//double startXCM, double startYCM, double startRadians) {
         robot = new Robot();
         robot.init(hardwareMap,telemetry);
-        robot.positionTracker.resetPosition(startXCM,startYCM);
+       ;
+        //robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
+        //robot.positionTracker.resetPosition(startYCM,startXCM,startRadians);
         telemetry.addData(">", "Charlie 4 is READY.  Press START.");    //
-        waitForStart();
+
     }
 
     //shut down the robot (end of auto)
@@ -94,7 +96,10 @@ public abstract class AutoBase4 extends LinearOpMode {
                 // Check if delay has passed and action is not yet completed
                 if (!actionCompleted[i] && elapsedTime >= sumDelays(delays, i)) {
                     try {
-                        if (actions[i] != null && actions[i].call()) {
+                        if (actions[i] == null) {
+                            actionCompleted[i] = true; // Mark as complete if call() returns true
+                        }
+                        else if (actions[i] != null && actions[i].call()) {
                             actionCompleted[i] = true; // Mark as complete if call() returns true
                         }
                     } catch (Exception e) {

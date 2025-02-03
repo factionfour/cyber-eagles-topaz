@@ -100,16 +100,16 @@ public class RobotPositionTracker {
     public double getHeadingDegrees() {
         return currentHeadingDegrees;
     }
-
-    // Reset the robot's position
-    public void resetPosition(double startXCM, double startYCM) {
-        initXPositionCM = startXCM;
-        initYPositionCM = startYCM;
-        currentPositionXCM = startXCM;
-        currentPositionYCM = startYCM;
-        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-        odo.setPosition(pos);
-    }
+//
+//    // Reset the robot's position
+//    public void resetPosition(double startXCM, double startYCM) {
+//        initXPositionCM = startXCM;
+//        initYPositionCM = startYCM;
+//        currentPositionXCM = startXCM;
+//        currentPositionYCM = startYCM;
+//        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+//        odo.setPosition(pos);
+//    }
 
     public void resetPosition(double startXCM, double startYCM, double startRadians) {
         initXPositionCM = startXCM;

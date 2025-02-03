@@ -7,8 +7,12 @@ public class RobotAutoRightV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
-        initializeHardware(0,118);
+        initializeHardware();
+        waitForStart();
 
+        robot.positionTracker.resetPosition(0,118,0);
+        sleep(1000);
+        robot.positionTracker.resetPosition(0,118,0);
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays("DRIVE TO POSITION",
@@ -19,39 +23,48 @@ public class RobotAutoRightV4 extends AutoBase4 {
             robot.resetDrivePosition();
 //        //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
-                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 0,
-                moveIntakeTimedAction (false, true,150, this),0,
-                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),0,
-                null,0,null);
+                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
+                moveIntakeTimedAction (false, true,300, this),0,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
+                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION),0,null);
 
+//        //step 3:start the push of the blocks
+        performActionsWithDelays("MOVE TO START PUSH",
+                driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_0,robot.PUSH_FIRST_BLOCK_POS_Y_0,0),0,
+                null,0,null,0,null,0,null);
+        robot.resetDrivePosition();
 //        //step 3:start the push of the blocks
         performActionsWithDelays("PUSH 1 - STEP 1",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),0), 0,
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_1,robot.PUSH_FIRST_BLOCK_POS_Y_1,0),0,
                 null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 1 - STEP 2",
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0),0,
                 null,0,null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 1 - STEP 3",
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_3,robot.PUSH_FIRST_BLOCK_POS_Y_3,0),0,
                 null,0,null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 1 - STEP 4",
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_4,robot.PUSH_FIRST_BLOCK_POS_Y_4,0),0,
                 null,0,null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 2 - STEP 1",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_1,robot.PUSH_SECOND_BLOCK_POS_Y_1,0),0,
                 null,0,null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 2 - STEP 2",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0),0,
                 null,0,null,0,null,0,null);
-
+        robot.resetDrivePosition();
         performActionsWithDelays("PUSH 2 - STEP 3",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0),0,
+                null,0,null,0,null,0,null);
+        robot.resetDrivePosition();
+        performActionsWithDelays("PUSH 2 - STEP 4",
+                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0),0,
                 null,0,null,0,null,0,null);
 
         //TODO: IF THERE IS TIME, HOOK ANOTHER BLOCK?

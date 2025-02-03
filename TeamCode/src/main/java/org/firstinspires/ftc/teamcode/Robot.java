@@ -30,7 +30,7 @@ public class Robot {
     public TouchSensor touchsensor;
 
     double DRIVING_SLOW =0.7;
-    double DRIVING_SLOW_AUTO = 0.7;
+    double DRIVING_SLOW_AUTO = 0.6;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
@@ -70,7 +70,7 @@ public class Robot {
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
 
     //turn speeds
-    double TURN_MAX_POWER = 0.6; // Maximum turning power
+    double TURN_MAX_POWER = 0.5; // Maximum turning power
     double TURN_MIN_POWER = 0.15; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(20.0); // Angle threshold for starting to slow down
 
@@ -82,7 +82,7 @@ public class Robot {
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
-    int HOOK_ARM_HEIGHT_2 = 735;
+    int HOOK_ARM_HEIGHT_2 = 680;
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
@@ -100,21 +100,24 @@ public class Robot {
     int RELEASE_SAMPLE_POS_X = 35;
     int RELEASE_SAMPLE_POS_Y = 284;
 
-    int PUSH_FIRST_BLOCK_POS_X_1 = 521;
-    int PUSH_FIRST_BLOCK_POS_Y_1 = 69;
+    int PUSH_FIRST_BLOCK_POS_X_0 = 68;
+    int PUSH_FIRST_BLOCK_POS_Y_0 = 64;
+
+    int PUSH_FIRST_BLOCK_POS_X_1 = 132;
+    int PUSH_FIRST_BLOCK_POS_Y_1 = 64;
     int PUSH_FIRST_BLOCK_POS_X_2 = 132;
-    int PUSH_FIRST_BLOCK_POS_Y_2 = 69;
-    int PUSH_FIRST_BLOCK_POS_X_3 = 132;
-    int PUSH_FIRST_BLOCK_POS_Y_3 = 47;
-    int PUSH_FIRST_BLOCK_POS_X_4 = 8;
-    int PUSH_FIRST_BLOCK_POS_Y_4 = 47;
+    int PUSH_FIRST_BLOCK_POS_Y_2 = 40;
+    int PUSH_FIRST_BLOCK_POS_X_3 = 10;
+    int PUSH_FIRST_BLOCK_POS_Y_3 = 40;
+    int PUSH_FIRST_BLOCK_POS_X_4 = 132;
+    int PUSH_FIRST_BLOCK_POS_Y_4 = 40;
 
     int PUSH_SECOND_BLOCK_POS_X_1 = 132;
-    int PUSH_SECOND_BLOCK_POS_Y_1 = 47;
-    int PUSH_SECOND_BLOCK_POS_X_2 = 132;
-    int PUSH_SECOND_BLOCK_POS_Y_2 = 22;
-    int PUSH_SECOND_BLOCK_POS_X_3 = 20;
-    int PUSH_SECOND_BLOCK_POS_Y_3 = 17;
+    int PUSH_SECOND_BLOCK_POS_Y_1 = 15;
+    int PUSH_SECOND_BLOCK_POS_X_2 = 22;
+    int PUSH_SECOND_BLOCK_POS_Y_2 = 15;
+    int PUSH_SECOND_BLOCK_POS_X_3 = 56;
+    int PUSH_SECOND_BLOCK_POS_Y_3 = 15;
 
     int PICKUP_BLOCK_POS_X = 132;//ESTIMATE ONLY
     int PICKUP_BLOCK_POS_Y = 47;//ESTIMATE ONLY
@@ -200,13 +203,15 @@ public class Robot {
 
 //  Telemetry
     public void addTelemetry() {
-        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
-        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
-        telemetry.addData("POSITION - Current deg", positionTracker.getHeadingDegrees());
+
         //telemetry.addData("Button pressed", touchsensor.isPressed());
 //        telemetry.addData("front",  "%.2f", currentForward);
 //        telemetry.addData("turn", "%.2f", currentTurn);
 //        telemetry.addData("strafe", "%.2f", currentStrafe);
+
+        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
 
         telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
         telemetry.addData("EXTENSION - Target Position", extensionTargetPosition);
@@ -322,6 +327,10 @@ public class Robot {
         }
 
         telemetry.addData("DRIVE STATE", tmpDriveState);
+        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
+
         telemetry.addData("TARGET POS - X", targetXCM);
         telemetry.addData("TARGET POS - Y", targetYCM);
         telemetry.addData("DELTA POS - X", deltaX);
@@ -878,7 +887,6 @@ public class Robot {
         switch (samplePickupState) {
             case POSITION_ROBOT:
                 if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
-                    resetDrivePosition();
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
                 }
                 break;
@@ -887,15 +895,15 @@ public class Robot {
                     tmpActionStartTime = System.currentTimeMillis();
                     samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
                 }
+                resetDrivePosition();
                 break;
             case INTAKE:
                 long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
                 boolean atPos = false;
                 telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
-                moveIntake(true, false);
 
-                if ((intakeTime > 5000 || touchsensor.isPressed()) && driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES)) {
+                if ((intakeTime > 5000 || touchsensor.isPressed())) {
                     resetDrivePosition();
                     moveIntake(false, false);
                     if (touchsensor.isPressed()) {
@@ -903,19 +911,23 @@ public class Robot {
                             samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
                         }
                     } else {
-                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+                        samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to the nopickup state
                     }
                 }
-                break;
-            case NOPICKUP:
-                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
-                    resetDrivePosition();
-                    long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
-                    if (noPickupTime > 3000) {
-                        samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
-                    }
+                else {
+                    moveIntake(true, false);
+                    driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
                 }
                 break;
+//            case NOPICKUP:
+//                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
+//                    resetDrivePosition();
+//                    long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
+//                    if (noPickupTime > 3000) {
+//                        samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
+//                    }
+//                }
+//                break;
             case COMPLETE:
                 setDefaultPower();
                 break;
