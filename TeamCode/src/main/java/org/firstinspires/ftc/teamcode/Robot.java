@@ -56,7 +56,7 @@ public class Robot {
     //tolernances
     int MOTOR_TOLERANCE = 5; // Acceptable error in encoder ticks
     double POSITION_TOLERANCE_CM = 1;
-    double HEADING_TOLERANCE_DEGREES = 2;
+    double HEADING_TOLERANCE_DEGREES = 1;
 
     //servo limits
     double SERVO_STOPPED = 0.5;
@@ -71,8 +71,8 @@ public class Robot {
 
     //turn speeds
     double TURN_MAX_POWER = 0.5; // Maximum turning power
-    double TURN_MIN_POWER = 0.15; // Minimum turning power for precision
-    double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(20.0); // Angle threshold for starting to slow down
+    double TURN_MIN_POWER = 0.1; // Minimum turning power for precision
+    double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(15.0); // Angle threshold for starting to slow down
 
     //pre-defined positions
     int DRIVE_ARM_POSITION = 200;
@@ -477,6 +477,30 @@ public class Robot {
         // Apply full turn power for larger heading differences
         return TURN_MAX_POWER;//maxTurnPower * Math.signum(deltaHeading); // Apply max turn power
     }
+//
+//    private double calculateTurnPower(double deltaHeading) {
+//        // If within the final tolerance range, stop turning
+//        if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
+//            telemetry.addData("TURN", "STOP");
+//            return 0.0; // Stop turning when within tolerance range
+//        }
+//
+//        // Scale deltaHeading to a power value
+//        double turnPower = deltaHeading / Math.toRadians(TURN_SLOWDOWN_THRESHOLD);
+//
+//        // Ensure the turn power is at least TURN_MIN_POWER
+//        if (Math.abs(turnPower) < TURN_MIN_POWER) {
+//            turnPower = TURN_MIN_POWER * Math.signum(deltaHeading); // Apply minimum power
+//        }
+//
+//        // Clamp the turn power to the maximum allowed value
+//        if (Math.abs(turnPower) > TURN_MAX_POWER) {
+//            turnPower = TURN_MAX_POWER * Math.signum(deltaHeading); // Ensure power does not exceed maximum
+//        }
+//
+//        telemetry.addData("TURN", "POWER: " + turnPower);
+//        return turnPower;
+//    }
 
 
     public void moveArm( float leftStickY) {
@@ -888,6 +912,7 @@ public class Robot {
             case POSITION_ROBOT:
                 if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
+                    resetDrivePosition();
                 }
                 break;
             case MOVE_ARM:
@@ -895,39 +920,38 @@ public class Robot {
                     tmpActionStartTime = System.currentTimeMillis();
                     samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
                 }
-                resetDrivePosition();
                 break;
             case INTAKE:
                 long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
                 boolean atPos = false;
                 telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
+                moveIntake(true, false);
+                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
 
-                if ((intakeTime > 5000 || touchsensor.isPressed())) {
+                if ((intakeTime > 3500 || touchsensor.isPressed())) {
                     resetDrivePosition();
                     moveIntake(false, false);
                     if (touchsensor.isPressed()) {
                         if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
                             samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
+                            resetDrivePosition();
                         }
                     } else {
-                        samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to the nopickup state
+                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+                        resetDrivePosition();
                     }
                 }
-                else {
-                    moveIntake(true, false);
-                    driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
+                break;
+            case NOPICKUP:
+                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
+                    resetDrivePosition();
+                    long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
+                    if (noPickupTime > 2000) {
+                        samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
+                    }
                 }
                 break;
-//            case NOPICKUP:
-//                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
-//                    resetDrivePosition();
-//                    long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
-//                    if (noPickupTime > 3000) {
-//                        samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Transition to next step
-//                    }
-//                }
-//                break;
             case COMPLETE:
                 setDefaultPower();
                 break;
