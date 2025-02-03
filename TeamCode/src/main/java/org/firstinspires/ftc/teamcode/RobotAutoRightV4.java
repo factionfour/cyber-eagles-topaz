@@ -8,11 +8,10 @@ public class RobotAutoRightV4 extends AutoBase4 {
     @Override
     public void runOpMode() {
         initializeHardware();
+        robot.positionTracker.resetPosition(0,118,0);
         waitForStart();
-
         robot.positionTracker.resetPosition(0,118,0);
         sleep(1000);
-        robot.positionTracker.resetPosition(0,118,0);
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays("DRIVE TO POSITION",

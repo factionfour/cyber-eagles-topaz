@@ -16,7 +16,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name="Button Test", group="Robot")
-
+@Disabled
 public class buttontest extends OpMode {
     public TouchSensor touchsensor;
    // public HardwareMap hardwareMap = null;
