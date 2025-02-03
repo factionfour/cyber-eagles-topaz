@@ -29,8 +29,9 @@ public class Robot {
     public Servo Wrist = null;
     public TouchSensor touchsensor;
 
-    double DRIVING_SLOW =0.7;
+    double DRIVING_SLOW_HUMAN =0.7;
     double DRIVING_SLOW_AUTO = 0.6;
+    double TURNING_SLOW_AUTO = 0.7;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
@@ -49,7 +50,7 @@ public class Robot {
     double EXTENSION_EXTRA_FORCE = 0.6;
 
     double EXTENSION_MIN_SPEED = 0.3; // How far to move per iterationfsampleRelease
-    double EXTENSION_MAX_SPEED = 0.9; // How far to move per iteration
+    double EXTENSION_MAX_SPEED = 0.95; // How far to move per iteration
     double EXTENSION_RAMP_TICKS = 50;
     double EXTENSION_MANUAL_MAX_SPEED = 100;
 
@@ -70,8 +71,8 @@ public class Robot {
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
 
     //turn speeds
-    double TURN_MAX_POWER = 0.5; // Maximum turning power
-    double TURN_MIN_POWER = 0.1; // Minimum turning power for precision
+    double TURN_MAX_POWER = 0.8; // Maximum turning power
+    double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(15.0); // Angle threshold for starting to slow down
 
     //pre-defined positions
@@ -89,10 +90,11 @@ public class Robot {
     int PICKUP_SAMPLE_ARM_HEIGHT = 260;//286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
     int PICKUP_SAMPLE_DEGREES = 180;
+
     int PICKUP_SAMPLE_POS_X = 45;
-    int PICKUP_SAMPLE_POS_Y = 37;
     int PICKUP_SAMPLE_POS_INTAKE_X = 35;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
+    int PICKUP_SAMPLE_POS_Y = 37;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 760;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 1840;
@@ -121,6 +123,7 @@ public class Robot {
 
     int PICKUP_BLOCK_POS_X = 132;//ESTIMATE ONLY
     int PICKUP_BLOCK_POS_Y = 47;//ESTIMATE ONLY
+    int PICKUP_BLOCK_POS_INTAKE_X = 140;//ESTIMATE ONLY
 
     int PARK_LEFT_AUTO_POS_1_X = 100;//ESTIMATE ONLY
     int PARK_LEFT_AUTO_POS_1_Y = 250;//ESTIMATE ONLY
@@ -262,16 +265,22 @@ public class Robot {
         double maxPower = Math.max(Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower)),
                 Math.max(Math.abs(backLeftPower), Math.abs(backRightPower)));
         if (human) {
-            frontLeftPower = frontLeftPower * DRIVING_SLOW;
-            frontRightPower = frontRightPower * DRIVING_SLOW;
-            backLeftPower = backLeftPower * DRIVING_SLOW;
-            backRightPower = backRightPower * DRIVING_SLOW;
+            frontLeftPower = frontLeftPower * DRIVING_SLOW_HUMAN;
+            frontRightPower = frontRightPower * DRIVING_SLOW_HUMAN;
+            backLeftPower = backLeftPower * DRIVING_SLOW_HUMAN;
+            backRightPower = backRightPower * DRIVING_SLOW_HUMAN;
         }
         if (!human && currentTurn == 0) {//do not slow down turns - only movement.
             frontLeftPower = frontLeftPower * DRIVING_SLOW_AUTO;
             frontRightPower = frontRightPower * DRIVING_SLOW_AUTO;
             backLeftPower = backLeftPower * DRIVING_SLOW_AUTO;
             backRightPower = backRightPower * DRIVING_SLOW_AUTO;
+        }
+        if (!human && currentTurn != 0) {//do not slow down turns - only movement.
+            frontLeftPower = frontLeftPower * TURNING_SLOW_AUTO;
+            frontRightPower = frontRightPower * TURNING_SLOW_AUTO;
+            backLeftPower = backLeftPower * TURNING_SLOW_AUTO;
+            backRightPower = backRightPower * TURNING_SLOW_AUTO;
         }
         // If the maxPower exceeds 1.0, normalize all power values by dividing by maxPower
         if (maxPower > 1.0) {
@@ -935,11 +944,9 @@ public class Robot {
                     if (touchsensor.isPressed()) {
                         if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
                             samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
-                            resetDrivePosition();
                         }
                     } else {
                         samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
-                        resetDrivePosition();
                     }
                 }
                 break;
@@ -969,6 +976,10 @@ public class Robot {
             tmpDriveState = driveToPositionState.IDLE;
         }
         return returnVal;
+    }
+
+    public boolean isSampleCaptured() {
+        return touchsensor.isPressed();
     }
 
     public enum HookState {
