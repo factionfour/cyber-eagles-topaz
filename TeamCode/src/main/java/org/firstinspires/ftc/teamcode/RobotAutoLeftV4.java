@@ -27,7 +27,6 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 moveIntakeTimedAction (false, true,300, this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
                 null,0,null);
-
         robot.resetDrivePosition();
 
         //step 3:move to pickup block from floor
@@ -35,7 +34,6 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION), 0,
                 driveToPositionAction(robot.PICKUP_BLOCK_POS_X,robot.PICKUP_BLOCK_POS_Y,0),0,
                 null,0,null,0,null);
-
         robot.resetDrivePosition();
 
         //step 4:move extension to pickup block from floor
@@ -84,7 +82,6 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
                 driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0),0,
                 null,0,null,0,null);
-
         robot.resetDrivePosition();
 
         performActionsWithDelays("PARK - STEP 2",
