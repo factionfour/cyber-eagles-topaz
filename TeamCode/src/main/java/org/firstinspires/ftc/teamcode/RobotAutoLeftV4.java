@@ -16,7 +16,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         // Step 1:  position to hook specimen
         performActionsWithDelays("DRIVE TO POSITION",
             driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES),0,
-            moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
+            moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 1000,
             moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
             null,0,null);
         robot.resetDrivePosition();
@@ -24,7 +24,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
-                moveIntakeTimedAction (false, true,300, this),0,
+                moveIntakeTimedAction (false, true,100, this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
                 null,0,null);
         robot.resetDrivePosition();
@@ -44,7 +44,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 5:pickup block from the floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 3",
                 driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0),0,
-                moveIntakeTimedAction (true, false,350, this),0,
+                moveIntakeTimedAction (true, false,600, this),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
@@ -85,9 +85,15 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         robot.resetDrivePosition();
 
         performActionsWithDelays("PARK - STEP 2",
-                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,0),0,
-                null,0,null,0,null,0,null);
+                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING),0,
+                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PARK_EXTENSION_POSITION),0,
+                null,0,null);
         robot.resetDrivePosition();
+
+        performActionsWithDelays("PARK - STEP 3",
+                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION_2), 500,
+                null,0,null,0,null,0,null);
 
         robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();
