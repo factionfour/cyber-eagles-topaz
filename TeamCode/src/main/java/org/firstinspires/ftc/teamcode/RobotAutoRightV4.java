@@ -23,14 +23,15 @@ public class RobotAutoRightV4 extends AutoBase4 {
 //        //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
-                moveIntakeTimedAction (false, true,300, this),0,
+                moveIntakeTimedAction (false, true,100, this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
-                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION),0,null);
+                null,0,null);
 
 //        //step 3:start the push of the blocks
         performActionsWithDelays("MOVE TO START PUSH",
+                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION),100,
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_0,robot.PUSH_FIRST_BLOCK_POS_Y_0,0),0,
-                null,0,null,0,null,0,null);
+                null,0,null,0,null);
         robot.resetDrivePosition();
 //        //step 3:start the push of the blocks
         performActionsWithDelays("PUSH 1 - STEP 1",
@@ -63,7 +64,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
                 null,0,null,0,null,0,null);
         robot.resetDrivePosition();
         performActionsWithDelays("PUSH 2 - STEP 4",
-                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0),0,
+                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_4,robot.PUSH_SECOND_BLOCK_POS_Y_2,0),0,
                 null,0,null,0,null,0,null);
 
         //TODO: IF THERE IS TIME, HOOK ANOTHER BLOCK?

@@ -79,11 +79,11 @@ public class Robot {
     int DRIVE_ARM_POSITION = 200;
 
     int HOOK_EXTENSION_POSITION = 1651;
-    int HOOK_ARM_HEIGHT = 761;
+    int HOOK_ARM_HEIGHT = 700;
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
-    int HOOK_ARM_HEIGHT_2 = 680;
+    int HOOK_ARM_HEIGHT_2 = 650;
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
@@ -120,10 +120,11 @@ public class Robot {
     int PUSH_SECOND_BLOCK_POS_Y_2 = 15;
     int PUSH_SECOND_BLOCK_POS_X_3 = 56;
     int PUSH_SECOND_BLOCK_POS_Y_3 = 15;
+    int PUSH_SECOND_BLOCK_POS_X_4 = 10;
 
-    int PICKUP_BLOCK_POS_X = 132;//ESTIMATE ONLY
-    int PICKUP_BLOCK_POS_Y = 47;//ESTIMATE ONLY
-    int PICKUP_BLOCK_POS_INTAKE_X = 140;//ESTIMATE ONLY
+    int PICKUP_BLOCK_POS_X = 44;//ESTIMATE ONLY
+    int PICKUP_BLOCK_POS_Y = 276;//ESTIMATE ONLY
+    int PICKUP_BLOCK_POS_INTAKE_X = 52;//ESTIMATE ONLY
 
     int PARK_LEFT_AUTO_POS_1_X = 100;//ESTIMATE ONLY
     int PARK_LEFT_AUTO_POS_1_Y = 250;//ESTIMATE ONLY
@@ -846,7 +847,7 @@ public class Robot {
             case MOVE_OUT:
                 long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
                 moveIntake(false, true);
-                if (elapsedTime > 300) {
+                if (elapsedTime > 100) {
                     specimenHookState = HookState.HOOK_ARM; // Transition to next step
                 }
                 break;
