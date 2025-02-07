@@ -32,6 +32,7 @@ public class Robot {
     double DRIVING_SLOW_HUMAN =0.7;
     double DRIVING_SLOW_AUTO = 0.6;
     double TURNING_SLOW_AUTO = 0.7;
+    double DRIVING_XSLOW_AUTO = 0.3;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
@@ -71,7 +72,7 @@ public class Robot {
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
 
     //turn speeds
-    double TURN_MAX_POWER = 0.8; // Maximum turning power
+    double TURN_MAX_POWER = 0.5; // Maximum turning power
     double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(15.0); // Angle threshold for starting to slow down
 
@@ -79,7 +80,7 @@ public class Robot {
     int DRIVE_ARM_POSITION = 200;
 
     int HOOK_EXTENSION_POSITION = 1651;
-    int HOOK_ARM_HEIGHT = 700;
+    int HOOK_ARM_HEIGHT = 750;
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
@@ -87,12 +88,12 @@ public class Robot {
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
-    int PICKUP_SAMPLE_ARM_HEIGHT = 260;//286;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 245;//286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
     int PICKUP_SAMPLE_DEGREES = 180;
 
-    int PICKUP_SAMPLE_POS_X = 45;
-    int PICKUP_SAMPLE_POS_INTAKE_X = 35;
+    int PICKUP_SAMPLE_POS_X = 50;
+    int PICKUP_SAMPLE_POS_INTAKE_X = 40;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
     int PICKUP_SAMPLE_POS_Y = 37;
 
@@ -243,7 +244,7 @@ public class Robot {
         telemetry.update();
     }
 
-    public void driveWheels(double tmpForward, double tmpTurn, double tmpStrafe, boolean human) {
+    public void driveWheels(double tmpForward, double tmpTurn, double tmpStrafe, boolean human, boolean slow) {
         currentForward = tmpForward;
         currentTurn = tmpTurn;
         currentStrafe = tmpStrafe;
@@ -282,12 +283,19 @@ public class Robot {
             backLeftPower = backLeftPower * DRIVING_SLOW_AUTO;
             backRightPower = backRightPower * DRIVING_SLOW_AUTO;
         }
-        if (!human && currentTurn != 0) {//do not slow down turns - only movement.
+        if (!human && currentTurn != 0  && !slow) {//do not slow down turns - only movement.
             frontLeftPower = frontLeftPower * TURNING_SLOW_AUTO;
             frontRightPower = frontRightPower * TURNING_SLOW_AUTO;
             backLeftPower = backLeftPower * TURNING_SLOW_AUTO;
             backRightPower = backRightPower * TURNING_SLOW_AUTO;
         }
+        if (!human && currentTurn == 0 && slow) {//slow for precise movements (e.g. pickups)
+            frontLeftPower = frontLeftPower * DRIVING_XSLOW_AUTO;
+            frontRightPower = frontRightPower * DRIVING_XSLOW_AUTO;
+            backLeftPower = backLeftPower * DRIVING_XSLOW_AUTO;
+            backRightPower = backRightPower * DRIVING_XSLOW_AUTO;
+        }
+
         // If the maxPower exceeds 1.0, normalize all power values by dividing by maxPower
         if (maxPower > 1.0) {
             frontLeftPower /= maxPower;
@@ -313,7 +321,7 @@ public class Robot {
         positionTracker.updatePosition();
     }
 
-    public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees) {
+    public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees, boolean driveSlow) {
         if (tmpDriveState == driveToPositionState.IDLE) {
             tmpDriveState = driveToPositionState.DRIVE;
             //tmpDriveState = driveToPositionState.TURN;
@@ -383,7 +391,7 @@ public class Robot {
             }
 
             // Send adjusted power to the drive system
-            driveWheels(forwardPower, 0, -strafePower, false);
+            driveWheels(forwardPower, 0, -strafePower, false, driveSlow);
 
             //telemetry.addData("Forward Power", forwardPower);
             //telemetry.addData("Strafe Power", -strafePower);
@@ -392,7 +400,7 @@ public class Robot {
 
                 tmpDriveState = driveToPositionState.TURN;
                 //tmpDriveState = driveToPositionState.COMPLETE;
-                driveWheels(0, 0, 0, false); // Stop movement
+                driveWheels(0, 0, 0, false, driveSlow); // Stop movement
             }
         }
 
@@ -404,12 +412,12 @@ public class Robot {
             turnPower *= Math.signum(deltaHeading);
 
             // Apply turn power
-            driveWheels(0, -turnPower, 0, false);
+            driveWheels(0, -turnPower, 0, false, false);
 
             //telemetry.addData("Turn Power", -turnPower);
         } else {
             if (tmpDriveState == driveToPositionState.TURN) {
-                driveWheels(0, 0, 0, false);
+                driveWheels(0, 0, 0, false, driveSlow);
                 tmpDriveState = driveToPositionState.ADJUST;
                 //tmpDriveState = driveToPositionState.COMPLETE;
                 //tmpDriveState = driveToPositionState.DRIVE;
@@ -442,12 +450,12 @@ public class Robot {
             }
 
             // Send adjusted power to the drive system
-            driveWheels(forwardPower, 0, -strafePower, false);
+            driveWheels(forwardPower, 0, -strafePower, false, driveSlow);
 
         } else {
             if (tmpDriveState == driveToPositionState.ADJUST) {
                 tmpDriveState = driveToPositionState.COMPLETE;
-                driveWheels(0, 0, 0, false); // Stop movement
+                driveWheels(0, 0, 0, false, driveSlow); // Stop movement
             }
         }
 
@@ -703,17 +711,23 @@ public class Robot {
 
             // Reset and start the timer
             timer.reset();
-            boolean isCaptured = false;
+            resetSampleCaptured();
             // Continue running until the specified duration has elapsed
-            while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || stopOnCapture && isCaptured)) {
-                // Optionally, include idle() or sleep() to prevent CPU overuse
-                // idle();
-                if (stopOnCapture) {
-                    checkSampleCaptured();
-                    if (isSampleCaptured()) {
-                        isCaptured = true;
+            boolean keepRunning = true;
+            //while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || (stopOnCapture && !isSampleCaptured()))) {
+            while (opMode.opModeIsActive() && keepRunning) {
+                keepRunning = false;
+                if (timer.milliseconds() < milliseconds) {
+                    keepRunning = true;
+                }
+                if (stopOnCapture && !keepRunning) {
+                    if (!isSampleCaptured()) {
+                        keepRunning = true;
                     }
                 }
+                // Optionally, include idle() or sleep() to prevent CPU overuse
+                // idle();
+                checkSampleCaptured();
             }
 
             // Time has elapsed; stop the servos
@@ -838,7 +852,7 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (specimenHookState) {
             case POSITION_ROBOT:
-                if (driveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_DEGREES) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     resetDrivePosition();
                     specimenHookState = HookState.PLACE_ARM; // Transition to next step
                 }
@@ -888,7 +902,7 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (sampleReleaseState) {
             case POSITION_ROBOT:
-                if (driveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_DEGREES) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     resetDrivePosition();
                     sampleReleaseState = releaseSampleFirstBucketState.MOVE_ARM; // Transition to next step
                 }
@@ -931,7 +945,7 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (samplePickupState) {
             case POSITION_ROBOT:
-                if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
                     resetDrivePosition();
                 }
@@ -951,7 +965,7 @@ public class Robot {
 
                 moveIntake(true, false);
                 checkSampleCaptured();
-                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
+                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
 
                 if ((intakeTime > 3500 || isSampleCaptured())) {
                     resetDrivePosition();
@@ -966,7 +980,7 @@ public class Robot {
                 }
                 break;
             case NOPICKUP:
-                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES,false)) {
                     resetDrivePosition();
                     long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
                     if (noPickupTime > 2000) {

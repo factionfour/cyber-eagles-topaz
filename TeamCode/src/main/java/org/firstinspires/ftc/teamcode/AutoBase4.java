@@ -34,11 +34,11 @@ public abstract class AutoBase4 extends LinearOpMode {
 
 
     // Action 1: Example method to drive to a position
-    public Callable<Boolean> driveToPositionAction(double targetXCM, double targetYCM, double targetHeadingDegrees) {
+    public Callable<Boolean> driveToPositionAction(double targetXCM, double targetYCM, double targetHeadingDegrees, boolean driveSlow) {
         return new Callable<Boolean>() {
             @Override
             public Boolean call() {
-                return robot.driveToPosition(targetXCM, targetYCM, targetHeadingDegrees);  // This method returns true when complete
+                return robot.driveToPosition(targetXCM, targetYCM, targetHeadingDegrees, driveSlow);  // This method returns true when complete
             }
         };
     }

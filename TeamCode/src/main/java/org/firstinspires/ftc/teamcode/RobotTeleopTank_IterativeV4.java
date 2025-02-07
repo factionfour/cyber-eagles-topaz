@@ -68,7 +68,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         }
 
         if (!robot.isActionRunning()) {
-            robot.driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true);
+            robot.driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true, false);
             robot.moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
             robot.moveArm(gamepad2.left_stick_y);
             robot.moveExtension(gamepad2.right_stick_y);

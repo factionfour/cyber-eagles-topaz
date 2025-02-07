@@ -15,7 +15,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
         // Step 1:  position to hook specimen
         performActionsWithDelays("DRIVE TO POSITION",
-            driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES),0,
+            driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES,false),0,
             moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 1000,
             moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
             null,0,null);
@@ -32,7 +32,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 3:move to pickup block from floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 1",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION), 0,
-                driveToPositionAction(robot.PICKUP_BLOCK_POS_X,robot.PICKUP_BLOCK_POS_Y,0),0,
+                driveToPositionAction(robot.PICKUP_BLOCK_POS_X,robot.PICKUP_BLOCK_POS_Y,0,false),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
@@ -43,8 +43,8 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
         //step 5:pickup block from the floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 3",
-                driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0),0,
-                moveIntakeTimedAction (true, false,1200, true,this),0,
+                driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0,true),0,
+                moveIntakeTimedAction (true, false,2500, true,this),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
@@ -53,7 +53,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
             performActionsWithDelays("DROP OFF SAMPLE - STEP 1",
                     moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0),300,
                     moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
-                    driveToPositionAction(robot.RELEASE_SAMPLE_POS_X,robot.RELEASE_SAMPLE_POS_Y,robot.RELEASE_SAMPLE_DEGREES),0,
+                    driveToPositionAction(robot.RELEASE_SAMPLE_POS_X,robot.RELEASE_SAMPLE_POS_Y,robot.RELEASE_SAMPLE_DEGREES,false),0,
                     null,0,null);
             robot.resetDrivePosition();
 
@@ -80,12 +80,12 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
                 moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
-                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0),0,
+                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
         performActionsWithDelays("PARK - STEP 2",
-                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING),0,
+                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING,false),0,
                 moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PARK_EXTENSION_POSITION),0,
                 null,0,null);
