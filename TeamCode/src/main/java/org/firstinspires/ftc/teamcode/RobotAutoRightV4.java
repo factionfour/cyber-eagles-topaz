@@ -23,7 +23,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
 //        //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
-                moveIntakeTimedAction (false, true,100, this),0,
+                moveIntakeTimedAction (false, true,100, false,this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
                 null,0,null);
 

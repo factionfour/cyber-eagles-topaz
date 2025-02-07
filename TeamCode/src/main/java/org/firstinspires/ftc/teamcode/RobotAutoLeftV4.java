@@ -24,7 +24,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 2: release hook
         performActionsWithDelays("RELEASE HOOK",
                 moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
-                moveIntakeTimedAction (false, true,100, this),0,
+                moveIntakeTimedAction (false, true,100, false,this),0,
                 moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
                 null,0,null);
         robot.resetDrivePosition();
@@ -44,7 +44,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         //step 5:pickup block from the floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 3",
                 driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0),0,
-                moveIntakeTimedAction (true, false,600, this),0,
+                moveIntakeTimedAction (true, false,1200, true,this),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
@@ -65,7 +65,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
             //step 6: drop off the sample
             performActionsWithDelays("DROP OFF SAMPLE - STEP 3",
-                    moveIntakeTimedAction(false, true,600,this), 1500,
+                    moveIntakeTimedAction(false, true,600,false,this), 1500,
                     moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0),0,
                     null,0,null,0,null);
 

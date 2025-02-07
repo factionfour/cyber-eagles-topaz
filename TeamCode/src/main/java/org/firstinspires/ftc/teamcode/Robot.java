@@ -161,6 +161,7 @@ public class Robot {
     int tmpExtensionPositionHolder = 0;
     long tmpActionStartTime = 0;
     public RobotPositionTracker positionTracker;
+    boolean sampleCaptured = false;
 
     public void init(HardwareMap hwMap, Telemetry telem) {
         hardwareMap = hwMap;
@@ -684,7 +685,7 @@ public class Robot {
         // --- END WHEEL SERVO CONTROL ---
     }
 
-    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, LinearOpMode opMode) {
+    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
         // Create an instance of ElapsedTime to track the duration
         ElapsedTime timer = new ElapsedTime();
         boolean complete = false;
@@ -702,11 +703,17 @@ public class Robot {
 
             // Reset and start the timer
             timer.reset();
-
+            boolean isCaptured = false;
             // Continue running until the specified duration has elapsed
-            while (opMode.opModeIsActive() && timer.milliseconds() < milliseconds) {
+            while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || stopOnCapture && isCaptured)) {
                 // Optionally, include idle() or sleep() to prevent CPU overuse
                 // idle();
+                if (stopOnCapture) {
+                    checkSampleCaptured();
+                    if (isSampleCaptured()) {
+                        isCaptured = true;
+                    }
+                }
             }
 
             // Time has elapsed; stop the servos
@@ -933,6 +940,7 @@ public class Robot {
                 if (moveArmEncoder(tmpArmPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
                     tmpActionStartTime = System.currentTimeMillis();
                     samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
+                    resetSampleCaptured();
                 }
                 break;
             case INTAKE:
@@ -940,13 +948,15 @@ public class Robot {
                 boolean atPos = false;
                 telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
                 // Move the intake motor
+
                 moveIntake(true, false);
+                checkSampleCaptured();
                 driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES);
 
-                if ((intakeTime > 3500 || touchsensor.isPressed())) {
+                if ((intakeTime > 3500 || isSampleCaptured())) {
                     resetDrivePosition();
                     moveIntake(false, false);
-                    if (touchsensor.isPressed()) {
+                    if (isSampleCaptured()) {
                         if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
                             samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
                         }
@@ -983,8 +993,17 @@ public class Robot {
         return returnVal;
     }
 
+    public void checkSampleCaptured() {
+        if (touchsensor.isPressed()) {
+            sampleCaptured = true;
+        }
+    }
     public boolean isSampleCaptured() {
-        return touchsensor.isPressed();
+        return sampleCaptured;
+    }
+
+    public void resetSampleCaptured() {
+        sampleCaptured = false;
     }
 
     public enum HookState {

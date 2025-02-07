@@ -64,10 +64,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         }
         else {
             robot.samplePickupState = Robot.pickupSampleGroundState.IDLE;
-            /*if (robot.samplePickupState != Robot.pickupSampleGroundState.IDLE) {
-                robot.moveIntake(false,false);
-                robot.samplePickupState = robot.samplePickupState.IDLE;
-            }*/
+
         }
 
         if (!robot.isActionRunning()) {
