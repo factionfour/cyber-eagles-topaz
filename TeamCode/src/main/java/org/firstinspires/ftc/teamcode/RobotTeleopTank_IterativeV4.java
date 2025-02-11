@@ -15,7 +15,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
     @Override
     public void init() {
-        robot.init(hardwareMap,telemetry);
+        robot.init(hardwareMap,telemetry, false);
         telemetry.addData(">", "Charlie 3 is READY.  Press START.");    //
     }
     @Override

@@ -135,7 +135,7 @@ public class Robot {
     int PARK_LEFT_AUTO_POS_2_HEADING = -90;//ESTIMATE ONLY
     int PARK_ARM_POSITION = 700;
     int PARK_ARM_POSITION_2 = 617;
-    int PARK_EXTENSION_POSITION = 914;
+    int PARK_EXTENSION_POSITION = 935;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -164,7 +164,8 @@ public class Robot {
     public RobotPositionTracker positionTracker;
     boolean sampleCaptured = false;
 
-    public void init(HardwareMap hwMap, Telemetry telem) {
+
+    public void init(HardwareMap hwMap, Telemetry telem, boolean resetArm) {
         hardwareMap = hwMap;
         telemetry = telem;
         // Define and Initialize wheel Motors
@@ -184,7 +185,9 @@ public class Robot {
 
         // Initialize arm motor
         armMotor = hardwareMap.get(DcMotor.class, "arm_1");
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (resetArm) {
+            armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //armTargetPosition = ARM_MIN_POSITION;
@@ -192,7 +195,10 @@ public class Robot {
         // Initialize extension arm motor
         extensionArmMotor = hardwareMap.get(DcMotor.class, "arm_extendo");
         extensionArmMotor.setDirection(DcMotor.Direction.REVERSE);
-        extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (resetArm) {
+            extensionArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
+
         extensionArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Initialize wheel servos

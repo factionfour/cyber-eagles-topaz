@@ -17,9 +17,9 @@ public abstract class AutoBase4 extends LinearOpMode {
 
     public Robot robot;
 
-    public void initializeHardware(){//double startXCM, double startYCM, double startRadians) {
+    public void initializeHardware(boolean resetArm){//double startXCM, double startYCM, double startRadians) {
         robot = new Robot();
-        robot.init(hardwareMap,telemetry);
+        robot.init(hardwareMap,telemetry,resetArm);
        ;
         //robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         //robot.positionTracker.resetPosition(startYCM,startXCM,startRadians);

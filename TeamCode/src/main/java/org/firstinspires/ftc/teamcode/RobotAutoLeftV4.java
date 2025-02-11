@@ -7,7 +7,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
-        initializeHardware();
+        initializeHardware(true);
         robot.positionTracker.resetPosition(0,240,0);
         waitForStart();
         robot.positionTracker.resetPosition(0,240,0);
