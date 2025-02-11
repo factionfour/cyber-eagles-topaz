@@ -156,6 +156,7 @@ public class Robot {
     public pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
 
     public sampleHookGroundArmOnlyState sampleHookArmOnlyState = sampleHookGroundArmOnlyState.IDLE;
+    public sampleBucketGroundArmOnlyState sampleBucketArmOnlyState = sampleBucketGroundArmOnlyState.IDLE;
 
 
     public manualServoState tmpServoState = manualServoState.IDLE;
@@ -1104,6 +1105,55 @@ public class Robot {
     }
 
 
+    public void sampleBucketGroundArmOnly() {
+        telemetry.addData("CURRENT ACTION STATE",sampleBucketArmOnlyState);
+        //SAMPLE PICKUP FROM GROUND
+        if (sampleBucketArmOnlyState == sampleBucketGroundArmOnlyState.IDLE.IDLE) {
+            sampleBucketArmOnlyState = sampleBucketGroundArmOnlyState.MOVE_ARM; // Start first step
+
+        }
+        tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+        tmpArmPositionHolder = armMotor.getCurrentPosition();
+
+        // Execute multi-step process based on current state
+        switch (sampleBucketArmOnlyState) {
+            case MOVE_ARM:
+                if (moveArmEncoder(tmpArmPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
+                    tmpActionStartTime = System.currentTimeMillis();
+                    samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
+                    resetSampleCaptured();
+                }
+                break;
+            case INTAKE:
+                long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
+                boolean atPos = false;
+                telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
+                // Move the intake motor
+
+                moveIntake(true, false);
+                checkSampleCaptured();
+                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
+
+                if ((intakeTime > 3500 || isSampleCaptured())) {
+                    resetDrivePosition();
+                    moveIntake(false, false);
+                    if (isSampleCaptured()) {
+                        if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
+                            samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
+                        }
+                    } else {
+                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+                    }
+                }
+                break;
+
+            case COMPLETE:
+                setDefaultPower();
+                break;
+        }
+    }
+
+
     public boolean isActionRunning() {
         boolean returnVal = false;
         if (samplePickupState != pickupSampleGroundState.IDLE ||
@@ -1147,10 +1197,11 @@ public class Robot {
         COMPLETE      // Process complete
     }
 
-    public enum sampleHookGroundArmOnly {
-
-
-
+    public enum sampleBucketGroundArmOnlyState {
+        IDLE,          // Waiting for button press
+        MOVE_ARM,
+        INTAKE,
+        COMPLETE      // Process complete
     }
 
 //

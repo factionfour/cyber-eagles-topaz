@@ -80,12 +80,12 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.sampleHookArmOnlyState = Robot.sampleHookGroundArmOnlyState.IDLE;
         }
 
-//        if (gamepad2.a) {
-//            robot.sampleBucketGroundArmOnly
-//        }
-//        else {
-//            robot
-//        }
+        if (gamepad2.x) {
+            robot.sampleBucketGroundArmOnly();
+        }
+        else {
+            robot.sampleBucketArmOnlyState = Robot.sampleBucketGroundArmOnlyState.IDLE;
+        }
 
         if (!robot.isActionRunning()) {
             robot.driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true, false);
