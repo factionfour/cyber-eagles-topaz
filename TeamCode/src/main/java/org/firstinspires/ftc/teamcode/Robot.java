@@ -155,7 +155,7 @@ public class Robot {
     public releaseSampleFirstBucketState sampleReleaseState = releaseSampleFirstBucketState.IDLE;
     public pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
 
-    public sampleHookGroundArmOnlyState sampleHookGroundArmOnlyState = sampleHookGroundArmOnlyState.IDLE;
+    public sampleHookGroundArmOnlyState sampleHookArmOnlyState = sampleHookGroundArmOnlyState.IDLE;
 
 
     public manualServoState tmpServoState = manualServoState.IDLE;
@@ -1056,17 +1056,17 @@ public class Robot {
 
 
     public void sampleHookGroundArmOnly() {
-        telemetry.addData("CURRENT ACTION STATE",sampleHookGroundArmOnlyState);
+        telemetry.addData("CURRENT ACTION STATE",sampleHookArmOnlyState);
         //SAMPLE PICKUP FROM GROUND
-        if (sampleHookGroundArmOnlyState == sampleHookGroundArmOnlyState.IDLE.IDLE) {
-            sampleHookGroundArmOnlyState = sampleHookGroundArmOnlyState.MOVE_ARM; // Start first step
+        if (sampleHookArmOnlyState == sampleHookGroundArmOnlyState.IDLE.IDLE) {
+            sampleHookArmOnlyState = sampleHookGroundArmOnlyState.MOVE_ARM; // Start first step
 
         }
         tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
         tmpArmPositionHolder = armMotor.getCurrentPosition();
 
         // Execute multi-step process based on current state
-        switch (sampleHookGroundArmOnlyState) {
+        switch (sampleHookArmOnlyState) {
             case MOVE_ARM:
                 if (moveArmEncoder(tmpArmPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
                     tmpActionStartTime = System.currentTimeMillis();
