@@ -66,6 +66,26 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.samplePickupState = Robot.pickupSampleGroundState.IDLE;
 
         }
+        if (gamepad2.a) {
+            robot.samplePickupGroundArmOnly();
+        }
+        else {
+            robot.samplePickupArmOnlyState = Robot.pickupSampleGroundArmOnlyState.IDLE;
+        }
+
+        if (gamepad2.y) {
+            robot.sampleHookGroundArmOnly();
+        }
+        else {
+            robot.sampleHookGroundArmOnlyState = Robot.sampleHookGroundArmOnlyState.IDLE;
+        }
+
+//        if (gamepad2.a) {
+//            robot.sampleBucketGroundArmOnly
+//        }
+//        else {
+//            robot
+//        }
 
         if (!robot.isActionRunning()) {
             robot.driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true, false);
