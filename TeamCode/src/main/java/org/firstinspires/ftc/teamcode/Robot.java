@@ -46,7 +46,7 @@ public class Robot {
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
-    int EXTENSION_MAX_POSITION = 2200; // Maximum height (fully raised)
+    int EXTENSION_MAX_POSITION = 2650; // Maximum height (fully raised)
     double EXTENSION_BASE_POWER = 0.3;
     double EXTENSION_EXTRA_FORCE = 0.6;
 
@@ -75,6 +75,31 @@ public class Robot {
     double TURN_MAX_POWER = 0.5; // Maximum turning power
     double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(15.0); // Angle threshold for starting to slow down
+
+    // PID variables for forwards
+    double Drive_Kd = 0.5;
+    double Drive_Ki = 5;
+    double Drive_Kp = 0.5;
+
+    double Drive_integral = 0;
+    double Drive_previousError = 0;
+
+    double Drive_integralY = 0;
+    double Drive_integralX = 0;
+    double INTEGRAL_CAP = 100;
+    double Drive_previousErrorY = 0;
+    double Drive_previousErrorX = 0;
+
+
+    // PID variables for turning
+    double Drive_KdTurn = 0.5;
+    double Drive_KiTurn = 0.5;
+    double Drive_KpTurn = 0.5;
+
+    double Drive_integralTurn = 0;
+    double Drive_previousErrorTurn = 0;
+
+
 
     //pre-defined positions
     int DRIVE_ARM_POSITION = 200;
@@ -247,8 +272,14 @@ public class Robot {
         //telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
         //telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
 
+        telemetry.addData("Integral", Drive_integral);
+        telemetry.addData("Error", Drive_previousError);
+        telemetry.addData("Y Last Error", Drive_previousErrorY);
+        telemetry.addData("X Last Error", Drive_previousErrorX);
 
-        //telemetry.update();
+
+
+        telemetry.update();
     }
 
     public void updateTelemetry() {
@@ -388,10 +419,18 @@ public class Robot {
             //double drivePower = calculateDrivePower(distanceToTarget);
 
             // Calculate forward and strafe powers based on the relative angle
-            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+//            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+//            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
             //double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
             //double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
+            // Use PID controller for forward power
+            //double forwardPower = Math.cos(relativeAngleToTarget) * calculateDrivePower(distanceToTarget);
+            //double strafePower = Math.sin(relativeAngleToTarget) * calculateDrivePower(distanceToTarget);
+            double[] calculatedPowers = calculateDrivePower(deltaX, deltaY, relativeAngleToTarget);
+
+            double forwardPower = calculatedPowers[0];  // X direction power
+            double strafePower = calculatedPowers[1];   // Y direction power
+
 
 
             // Normalize power values to prevent exceeding max power
@@ -409,66 +448,69 @@ public class Robot {
         } else {
             if (tmpDriveState == driveToPositionState.DRIVE) {
 
-                tmpDriveState = driveToPositionState.TURN;
-                //tmpDriveState = driveToPositionState.COMPLETE;
-                driveWheels(0, 0, 0, false, driveSlow); // Stop movement
-            }
-        }
-
-        // Step 2: Adjust heading if needed
-        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
-            double turnPower = calculateTurnPower(deltaHeading);
-
-            // Ensure turnPower is applied in the correct direction
-            turnPower *= Math.signum(deltaHeading);
-
-            // Apply turn power
-            driveWheels(0, -turnPower, 0, false, false);
-
-            //telemetry.addData("Turn Power", -turnPower);
-        } else {
-            if (tmpDriveState == driveToPositionState.TURN) {
-                driveWheels(0, 0, 0, false, driveSlow);
-                tmpDriveState = driveToPositionState.ADJUST;
-                //tmpDriveState = driveToPositionState.COMPLETE;
-                //tmpDriveState = driveToPositionState.DRIVE;
-            }
-        }
-
-
-        // Step 3: Adjust position if needed (after a turn)
-        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
-            // Calculate the angle to the target relative to the robot's position
-            double angleToTarget = Math.atan2(deltaY, deltaX);
-            double relativeAngleToTarget = angleToTarget - currentHeading;
-
-            // Normalize the relative angle to the range [-π, π]
-            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
-            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
-
-            //double drivePower = calculateDrivePower(distanceToTarget);
-            // Calculate forward and strafe powers based on the relative angle
-            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
-            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
-            //double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
-            //double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
-
-            // Normalize power values to prevent exceeding max power
-            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-            if (maxPower > 1.0) {
-                forwardPower /= maxPower;
-                strafePower /= maxPower;
-            }
-
-            // Send adjusted power to the drive system
-            driveWheels(forwardPower, 0, -strafePower, false, driveSlow);
-
-        } else {
-            if (tmpDriveState == driveToPositionState.ADJUST) {
+                //tmpDriveState = driveToPositionState.TURN;
                 tmpDriveState = driveToPositionState.COMPLETE;
                 driveWheels(0, 0, 0, false, driveSlow); // Stop movement
             }
         }
+//
+//        // Step 2: Adjust heading if needed
+//        if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES) && tmpDriveState == driveToPositionState.TURN) {
+//            double turnPower = calculateTurnPower(deltaHeading);
+//
+//            // Ensure turnPower is applied in the correct direction
+//            turnPower *= Math.signum(deltaHeading);
+//
+//            // Apply turn power
+//            driveWheels(0, -turnPower, 0, false, false);
+//
+//            //telemetry.addData("Turn Power", -turnPower);
+//        } else {
+//            if (tmpDriveState == driveToPositionState.TURN) {
+//                driveWheels(0, 0, 0, false, driveSlow);
+//                tmpDriveState = driveToPositionState.ADJUST;
+//            }
+//        }
+//
+//
+//
+//        // Step 3: Adjust position if needed (after a turn)
+//        if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.ADJUST) {
+//            // Calculate the angle to the target relative to the robot's position
+//            double angleToTarget = Math.atan2(deltaY, deltaX);
+//            double relativeAngleToTarget = angleToTarget - currentHeading;
+//
+//            // Normalize the relative angle to the range [-π, π]
+//            if (relativeAngleToTarget > Math.PI) relativeAngleToTarget -= 2 * Math.PI;
+//            if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
+//
+//            //double drivePower = calculateDrivePower(distanceToTarget);
+//            // Calculate forward and strafe powers based on the relative angle
+////            double forwardPower = Math.cos(relativeAngleToTarget) * distanceToTarget;
+////            double strafePower = Math.sin(relativeAngleToTarget) * distanceToTarget;
+//            //double forwardPower = Math.cos(relativeAngleToTarget) * drivePower;
+//            //double strafePower = Math.sin(relativeAngleToTarget) * drivePower;
+//            // Use PID controller for forward power
+//            double forwardPower = Math.cos(relativeAngleToTarget) * calculateDrivePower(distanceToTarget);
+//            double strafePower = Math.sin(relativeAngleToTarget) * calculateDrivePower(distanceToTarget);
+//
+//
+//            // Normalize power values to prevent exceeding max power
+//            double maxPower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+//            if (maxPower > 1.0) {
+//                forwardPower /= maxPower;
+//                strafePower /= maxPower;
+//            }
+//
+//            // Send adjusted power to the drive system
+//            driveWheels(forwardPower, 0, -strafePower, false, driveSlow);
+//
+//        } else {
+//            if (tmpDriveState == driveToPositionState.ADJUST) {
+//                tmpDriveState = driveToPositionState.COMPLETE;
+//                driveWheels(0, 0, 0, false, driveSlow); // Stop movement
+//            }
+//        }
 
         return tmpDriveState == driveToPositionState.COMPLETE;
     }
@@ -495,46 +537,114 @@ public class Robot {
 //        return (distance < 0) ? -power : power;
 //    }
 
-    private double calculateTurnPower(double deltaHeading) {
-        // If within the final tolerance range, stop turning
-        if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
-            telemetry.addData("TURN ","STOP");
-            return 0.0; // Stop turning when within tolerance range
+    private double[] calculateDrivePower(double errorX, double errorY, double errorHeading) {
+
+        // Calculate the proportional, integral, and derivative terms for both X and Y
+        double proportionalX = Drive_Kp * errorX;
+        double proportionalY = Drive_Kp * errorY;
+
+        Drive_integralX += errorX;
+        Drive_integralY += errorY;
+
+        // Ensure integral terms do not exceed a limit to avoid windup
+        Drive_integralX = Math.max(-INTEGRAL_CAP, Math.min(INTEGRAL_CAP, Drive_integralX));
+        Drive_integralY = Math.max(-INTEGRAL_CAP, Math.min(INTEGRAL_CAP, Drive_integralY));
+
+        double integralTermX = Drive_Ki * Drive_integralX;
+        double integralTermY = Drive_Ki * Drive_integralY;
+
+        double derivativeTermX = Drive_Kd * (errorX - Drive_previousErrorX);
+        double derivativeTermY = Drive_Kd * (errorY - Drive_previousErrorY);
+
+        // Update the previous errors for the next cycle
+        Drive_previousErrorX = errorX;
+        Drive_previousErrorY = errorY;
+
+        // Calculate the PID output for both X and Y
+        double pidOutputX = proportionalX + integralTermX + derivativeTermX;
+        double pidOutputY = proportionalY + integralTermY + derivativeTermY;
+
+        // If the robot is very close to the target, reduce the power to prevent overshooting
+        if (Math.abs(errorX) <= DRIVE_CRAWL_THRESHOLD) {
+            pidOutputX = Math.signum(errorX) * DRIVE_MIN_POWER;
+        }
+        if (Math.abs(errorY) <= DRIVE_CRAWL_THRESHOLD) {
+            pidOutputY = Math.signum(errorY) * DRIVE_MIN_POWER;
         }
 
-        // If the robot is within the slow down threshold, apply the slow turn power
-        if (Math.abs(deltaHeading) <= TURN_SLOWDOWN_THRESHOLD) {
-            telemetry.addData("TURN ","SLOW");
-            return TURN_MIN_POWER;// * Math.signum(deltaHeading); // Slow down the turn
-        }
-        telemetry.addData("TURN ","FULL");
-        // Apply full turn power for larger heading differences
-        return TURN_MAX_POWER;//maxTurnPower * Math.signum(deltaHeading); // Apply max turn power
+        // Ensure the power doesn't exceed maximum limits
+        pidOutputX = Math.max(-DRIVE_MAX_POWER, Math.min(DRIVE_MAX_POWER, pidOutputX));
+        pidOutputY = Math.max(-DRIVE_MAX_POWER, Math.min(DRIVE_MAX_POWER, pidOutputY));
+
+        // Now we need to apply rotation adjustments based on the robot's heading
+        double forwardPower = Math.cos(errorHeading) * pidOutputX + Math.sin(errorHeading) * pidOutputY;
+        double strafePower = -Math.sin(errorHeading) * pidOutputX + Math.cos(errorHeading) * pidOutputY;
+
+        // Return the adjusted power for forward (X) and strafe (Y) movement
+        return new double[] {forwardPower, strafePower};
     }
-//
-//    private double calculateTurnPower(double deltaHeading) {
+
+
+
+    //    private double calculateTurnPower(double deltaHeading) {
 //        // If within the final tolerance range, stop turning
 //        if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
-//            telemetry.addData("TURN", "STOP");
+//            telemetry.addData("TURN ","STOP");
 //            return 0.0; // Stop turning when within tolerance range
 //        }
 //
-//        // Scale deltaHeading to a power value
-//        double turnPower = deltaHeading / Math.toRadians(TURN_SLOWDOWN_THRESHOLD);
-//
-//        // Ensure the turn power is at least TURN_MIN_POWER
-//        if (Math.abs(turnPower) < TURN_MIN_POWER) {
-//            turnPower = TURN_MIN_POWER * Math.signum(deltaHeading); // Apply minimum power
+//        // If the robot is within the slow down threshold, apply the slow turn power
+//        if (Math.abs(deltaHeading) <= TURN_SLOWDOWN_THRESHOLD) {
+//            telemetry.addData("TURN ","SLOW");
+//            return TURN_MIN_POWER;// * Math.signum(deltaHeading); // Slow down the turn
 //        }
-//
-//        // Clamp the turn power to the maximum allowed value
-//        if (Math.abs(turnPower) > TURN_MAX_POWER) {
-//            turnPower = TURN_MAX_POWER * Math.signum(deltaHeading); // Ensure power does not exceed maximum
-//        }
-//
-//        telemetry.addData("TURN", "POWER: " + turnPower);
-//        return turnPower;
+//        telemetry.addData("TURN ","FULL");
+//        // Apply full turn power for larger heading differences
+//        return TURN_MAX_POWER;//maxTurnPower * Math.signum(deltaHeading); // Apply max turn power
 //    }
+//
+private double calculateTurnPower(double deltaHeading) {
+    // If within the final tolerance range, stop turning
+    if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
+        telemetry.addData("TURN", "STOP");
+        return 0.0; // Stop turning when within tolerance range
+    }
+
+    // Calculate the error (deltaHeading)
+    double error = deltaHeading;
+
+    // Calculate the proportional term (Kp * error)
+    double proportional = Drive_KpTurn * error;
+
+    // Calculate the integral term (Ki * accumulated error)
+    Drive_integralTurn += error;
+    double integralTerm = Drive_KiTurn * Drive_integralTurn;
+
+    // Calculate the derivative term (Kd * change in error)
+    double derivative = error - Drive_previousErrorTurn;
+    double derivativeTerm = Drive_KdTurn * derivative;
+
+    // Update the previous error for the next cycle
+    Drive_previousErrorTurn = error;
+
+    // Calculate the total PID output
+    double pidOutput = proportional + integralTerm + derivativeTerm;
+
+    // If within the slow down threshold, apply the minimum turn power
+    if (Math.abs(deltaHeading) <= TURN_SLOWDOWN_THRESHOLD) {
+        telemetry.addData("TURN", "SLOW");
+        pidOutput = Math.signum(deltaHeading) * TURN_MIN_POWER; // Slow down the turn
+    } else {
+        telemetry.addData("TURN", "FULL");
+    }
+
+    // Clamp the turn power to the maximum allowed value
+    pidOutput = Math.max(-TURN_MAX_POWER, Math.min(TURN_MAX_POWER, pidOutput));
+
+    telemetry.addData("TURN", "PID Power: " + pidOutput); // Show the PID output for debugging
+    return pidOutput;
+}
+
 
 
     public void moveArm( float leftStickY) {
