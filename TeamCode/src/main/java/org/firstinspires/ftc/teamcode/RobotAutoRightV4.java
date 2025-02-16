@@ -2,16 +2,24 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Topaz: Auto Drive Position Right V4", group="Robot")
+@Autonomous(name="Topaz: Auto Drive Position Right V5", group="Robot")
 public class RobotAutoRightV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
         initializeHardware(true);
-        robot.positionTracker.resetPosition(0,120,0);
+        while (!isStopRequested() && robot.positionTracker.resetPositionCheck(0,120,0)) {
+            telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
+            telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
+            telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
+            telemetry.addData(">", "CHARLIE v5 - *NOT READY*.");
+            telemetry.update();
+            sleep(100);
+        }
+        telemetry.addData(">", "CHARLIE v5 *READY* - RIGHT AUTO.  Press START.");    //
+        telemetry.update();
         waitForStart();
-        robot.positionTracker.resetPosition(0,120,0);
-        sleep(1000);
+
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays("DRIVE TO POSITION",

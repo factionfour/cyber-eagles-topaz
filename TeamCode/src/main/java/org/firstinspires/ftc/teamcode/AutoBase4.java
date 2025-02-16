@@ -20,11 +20,7 @@ public abstract class AutoBase4 extends LinearOpMode {
     public void initializeHardware(boolean resetArm){//double startXCM, double startYCM, double startRadians) {
         robot = new Robot();
         robot.init(hardwareMap,telemetry,resetArm);
-        telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
-        telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
-        telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
 
-        telemetry.addData(">", "Charlie 5 is READY.  Press START.");    //
 
     }
 

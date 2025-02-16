@@ -100,16 +100,22 @@ public class RobotPositionTracker {
     public double getHeadingDegrees() {
         return currentHeadingDegrees;
     }
-//
-//    // Reset the robot's position
-//    public void resetPosition(double startXCM, double startYCM) {
-//        initXPositionCM = startXCM;
-//        initYPositionCM = startYCM;
-//        currentPositionXCM = startXCM;
-//        currentPositionYCM = startYCM;
-//        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-//        odo.setPosition(pos);
-//    }
+
+    public boolean resetPositionCheck(double startXCM, double startYCM, double startRadians) {
+        initXPositionCM = startXCM;
+        initYPositionCM = startYCM;
+        //currentPositionXCM = startXCM;
+        //currentPositionYCM = startYCM;
+        Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,startRadians);
+        odo.setPosition(pos);
+        boolean isCorrect = false;
+        updatePosition();
+        if (startXCM == currentPositionXCM && startYCM == currentPositionYCM && startRadians == currentHeading) {
+            isCorrect = true;
+        }
+
+        return isCorrect;
+    }
 
     public void resetPosition(double startXCM, double startYCM, double startRadians) {
         initXPositionCM = startXCM;
@@ -119,6 +125,7 @@ public class RobotPositionTracker {
         Pose2D pos = new Pose2D(DistanceUnit.CM,startXCM,startYCM,AngleUnit.RADIANS,startRadians);
         odo.setPosition(pos);
     }
+
 
     public void saveRobotPosition(android.content.Context appContext) {
         SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);

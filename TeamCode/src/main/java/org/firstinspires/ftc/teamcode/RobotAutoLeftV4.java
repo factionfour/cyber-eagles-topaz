@@ -2,16 +2,23 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Topaz: Auto Drive Position Left V4", group="Robot")
+@Autonomous(name="Topaz: Auto Drive Position Left V5", group="Robot")
 public class RobotAutoLeftV4 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
         initializeHardware(true);
-        robot.positionTracker.resetPosition(0,240,0);
+        while (!isStopRequested() && robot.positionTracker.resetPositionCheck(0,240,0)) {
+            telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
+            telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
+            telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
+            telemetry.addData(">", "CHARLIE v5 - *NOT READY*.");
+            telemetry.update();
+            sleep(100);
+        }
+        telemetry.addData(">", "CHARLIE v5 *READY* - LEFT AUTO.  Press START.");    //
+        telemetry.update();
         waitForStart();
-        robot.positionTracker.resetPosition(0,240,0);
-        sleep(1000);
 
         // Step 1:  position to hook specimen
         performActionsWithDelays("DRIVE TO POSITION",
@@ -42,7 +49,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 null,0,null,0,null,0,null);
 
         //step 5:pickup block from the floor
-        performActionsWithDelays("PICKUP BLOCK GROUND - STEP 3",
+        performActionsWithDelays("PICKUP BLOCK GROUND - STEP 2",
                 driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0,true),0,
                 moveIntakeTimedAction (true, false,2500, true,this),0,
                 null,0,null,0,null);
@@ -55,7 +62,6 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                     moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
                     driveToPositionAction(robot.RELEASE_SAMPLE_POS_X,robot.RELEASE_SAMPLE_POS_Y,robot.RELEASE_SAMPLE_DEGREES,false),0,
                     null,0,null);
-            robot.resetDrivePosition();
 
             //step 6: drop off the sample arm position
             performActionsWithDelays("DROP OFF SAMPLE - STEP 2",
@@ -73,27 +79,28 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         else {
             //did not pickup the sample
             performActionsWithDelays("RESET FAILED SAMPLE PICKUP",
-                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0),0,
-                    null,0,null,0,null,0,null);
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0),0,
+                null,0,null,0,null,0,null);
         }
+        robot.resetDrivePosition();
 
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
-                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
-                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
-                null,0,null,0,null);
+            moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
+            driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
+            null,0,null,0,null);
         robot.resetDrivePosition();
 
         performActionsWithDelays("PARK - STEP 2",
-                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING,false),0,
-                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,
-                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PARK_EXTENSION_POSITION),0,
-                null,0,null);
+            driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING,false),0,
+            moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,
+            moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PARK_EXTENSION_POSITION),0,
+            null,0,null);
         robot.resetDrivePosition();
 
         performActionsWithDelays("PARK - STEP 3",
-                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION_2), 500,
-                null,0,null,0,null,0,null);
+            moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION_2), 500,
+            null,0,null,0,null,0,null);
 
         robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();

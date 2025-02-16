@@ -26,7 +26,7 @@ public class RobotTeleopTank_IterativeV4TESTPID extends OpMode {
     @Override
     public void loop() {
         long currentTime = System.currentTimeMillis();
-
+boolean actionRunning = false;
         robot.addTelemetry();
 
         // --- STOP & EMERGENCY ACTIONS
@@ -83,27 +83,36 @@ public class RobotTeleopTank_IterativeV4TESTPID extends OpMode {
 //        }
 
         if (gamepad1.dpad_left) {
-            robot.driveToPosition(0,200,0,false);
+            actionRunning = true;
+            robot.driveToPosition(0,100,0,false);
         }
 
         if (gamepad1.dpad_right) {
+            actionRunning = true;
             robot.driveToPosition(0,0,0,false);
         }
 
         if (gamepad1.dpad_up) {
-            robot.driveToPosition(200,0,0,false);
+            actionRunning = true;
+            robot.driveToPosition(100,0,0,false);
         }
 
         if (gamepad1.dpad_down) {
+            actionRunning = true;
             robot.driveToPosition(0,0,0,false);
         }
 
+        if (actionRunning) {
+            robot.forceActionRunning(true);
+        }
+        else {
+            robot.forceActionRunning(false);
+        }
         if (!robot.isActionRunning()) {
             robot.driveWheels(-gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.left_stick_x, true, false);
             robot.moveIntake(gamepad2.left_bumper, gamepad2.right_bumper);
             robot.moveArm(gamepad2.left_stick_y);
             robot.moveExtension(gamepad2.right_stick_y);
-//            robot.moveWrist(gamepad2.left_bumper,gamepad2.right_bumper);
         }
         robot.updateTelemetry();
     }

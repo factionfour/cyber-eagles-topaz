@@ -16,7 +16,10 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
     @Override
     public void init() {
         robot.init(hardwareMap,telemetry, false);
-        telemetry.addData(">", "Charlie 3 is READY.  Press START.");    //
+        telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
+        telemetry.addData(">", "Charlie v5 is READY.  Press START.");    //
     }
     @Override
     public void init_loop() {
