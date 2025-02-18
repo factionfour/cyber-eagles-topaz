@@ -65,7 +65,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
 
             //step 6: drop off the sample arm position
             performActionsWithDelays("DROP OFF SAMPLE - STEP 2",
-                    moveArmEncoderAction(robot.getCurrentArmPosition(), robot.RELEASE_SAMPLE_ARM_HEIGHT), 300,
+                    moveArmEncoderAction(robot.getCurrentArmPosition(), robot.RELEASE_SAMPLE_ARM_HEIGHT), 1500,
                     moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.RELEASE_SAMPLE_EXTENSION_POSITION),500,
                     null,0,null,0,null);
 

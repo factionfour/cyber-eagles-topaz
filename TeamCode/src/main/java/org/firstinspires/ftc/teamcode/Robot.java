@@ -32,7 +32,7 @@ public class Robot {
     double DRIVING_SPEEDFACTOR_HUMAN =0.7;
     double DRIVING_SPEEDFACTOR_AUTO = 0.9;
     double TURNING_SPEEDFACTOR_AUTO = 0.9;
-    double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.4;
+    double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
@@ -68,7 +68,7 @@ public class Robot {
 
     //drive speeds
     double DRIVE_MAX_POWER = 0.8; // Maximum power
-    double DRIVE_MIN_POWER = 0.15; // Minimum power to prevent stalling
+    double DRIVE_MIN_POWER = 0.25; // Minimum power to prevent stalling
     double DRIVE_SLOW_THRESHOLD = 20.0; // Distance (CM) where slowdown begins
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
 
@@ -93,7 +93,7 @@ public class Robot {
     int DRIVE_ARM_POSITION = 200;
 
     int HOOK_EXTENSION_POSITION = 1651;
-    int HOOK_ARM_HEIGHT = 750;
+    int HOOK_ARM_HEIGHT = 730;
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
@@ -101,20 +101,20 @@ public class Robot {
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
-    int PICKUP_SAMPLE_ARM_HEIGHT = 245;//286;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 160;//286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
     int PICKUP_SAMPLE_DEGREES = 180;
 
     int PICKUP_SAMPLE_POS_X = 50;
-    int PICKUP_SAMPLE_POS_INTAKE_X = 40;
+    int PICKUP_SAMPLE_POS_INTAKE_X = 38;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
-    int PICKUP_SAMPLE_POS_Y = 37;
+    int PICKUP_SAMPLE_POS_Y = 40;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 760;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 1840;
-    int RELEASE_SAMPLE_DEGREES = 133;
-    int RELEASE_SAMPLE_POS_X = 35;
-    int RELEASE_SAMPLE_POS_Y = 284;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 830;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2650;
+    int RELEASE_SAMPLE_DEGREES = 138;
+    int RELEASE_SAMPLE_POS_X = 27;
+    int RELEASE_SAMPLE_POS_Y = 295;
 
     int PUSH_FIRST_BLOCK_POS_X_0 = 68;
     int PUSH_FIRST_BLOCK_POS_Y_0 = 64;
@@ -242,17 +242,16 @@ public class Robot {
 ////        telemetry.addData("front",  "%.2f", currentForward);
 ////        telemetry.addData("turn", "%.2f", currentTurn);
 ////        telemetry.addData("strafe", "%.2f", currentStrafe);
+        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
 //
-//        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
-//        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
-//        telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
-//
-//        telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
+        telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
 //        telemetry.addData("EXTENSION - Target Position", extensionTargetPosition);
 //        //telemetry.addData("Extension Calculated Power", currentExtensionPower);
 //        //telemetry.addData("Extension Motor Busy", extensionArmMotor.isBusy());
 //
-//        telemetry.addData("ARM - Current Position", armMotor.getCurrentPosition());
+        telemetry.addData("ARM - Current Position", armMotor.getCurrentPosition());
 //        telemetry.addData("ARM - Target Position", armTargetPosition);
 //        //telemetry.addData("Arm Calculated Min Position", dynamicArmMinPosition);
 //        //telemetry.addData("Arm Calculated Power", currentArmPower);
@@ -983,25 +982,23 @@ int settlingCycles=0;
             boolean keepRunning = true;
             //while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || (stopOnCapture && !isSampleCaptured()))) {
             while (opMode.opModeIsActive() && keepRunning) {
-                keepRunning = false;
-                if (timer.milliseconds() < milliseconds) {
-                    keepRunning = true;
+
+                if (timer.milliseconds() >= milliseconds) {
+                    keepRunning = false;
                 }
-                if (stopOnCapture && !keepRunning) {
-                    if (!isSampleCaptured()) {
-                        keepRunning = true;
-                    }
+                if (stopOnCapture && isSampleCaptured()) {
+                    keepRunning = false;
                 }
-                // Optionally, include idle() or sleep() to prevent CPU overuse
-                // idle();
                 checkSampleCaptured();
             }
+            if (!keepRunning) {
+                // Time has elapsed; stop the servos
+                tmpServoState = manualServoState.IDLE;
+                leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
+                rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
+                complete = true;
+            }
 
-            // Time has elapsed; stop the servos
-            tmpServoState = manualServoState.IDLE;
-            leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
-            rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
-            complete = true;
         }
         return complete;
     }
@@ -1175,7 +1172,14 @@ int settlingCycles=0;
                 }
                 break;
             case MOVE_ARM:
-                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
+                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT) ) {
+                    sampleReleaseState = releaseSampleFirstBucketState.EXTEND; // Transition to next step
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    tmpActionStartTime = System.currentTimeMillis();
+                }
+                break;
+            case EXTEND:
+                if (moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
                     sampleReleaseState = releaseSampleFirstBucketState.OUTTAKE; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
@@ -1491,6 +1495,7 @@ int settlingCycles=0;
         IDLE,          // Waiting for button press
         POSITION_ROBOT,
         MOVE_ARM,
+        EXTEND,
         OUTTAKE,
         COMPLETE       // Process complete
     }
