@@ -36,7 +36,7 @@ public class Robot {
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
-    int ARM_MAX_POSITION = 1300; // Maximum encoder position (fully Raised)
+    int ARM_MAX_POSITION = 1000; // Maximum encoder position (fully Raised)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
     double ARM_MAX_SPEED = 0.9;
@@ -93,28 +93,29 @@ public class Robot {
     int DRIVE_ARM_POSITION = 200;
 
     int HOOK_EXTENSION_POSITION = 1651;
-    int HOOK_ARM_HEIGHT = 730;
+    int HOOK_ARM_HEIGHT = 700;
     int HOOK_DEGREES = 0;
     int HOOK_POS_X = 58;
     int HOOK_POS_Y = 158;
-    int HOOK_ARM_HEIGHT_2 = 650;
+    int HOOK_ARM_HEIGHT_2 = 595;//620;
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
 
-    int PICKUP_SAMPLE_ARM_HEIGHT = 160;//286;
+    int PICKUP_SAMPLE_ARM_HEIGHT = 125;//135;//286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
     int PICKUP_SAMPLE_DEGREES = 180;
 
     int PICKUP_SAMPLE_POS_X = 50;
     int PICKUP_SAMPLE_POS_INTAKE_X = 38;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
-    int PICKUP_SAMPLE_POS_Y = 40;
+    int PICKUP_SAMPLE_POS_Y = 37;
 
-    int RELEASE_SAMPLE_ARM_HEIGHT = 830;
+    int RELEASE_SAMPLE_ARM_HEIGHT = 950;
+    int RELEASE_SAMPLE_ARM_HEIGHT_2 = 885;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 2650;
     int RELEASE_SAMPLE_DEGREES = 138;
-    int RELEASE_SAMPLE_POS_X = 27;
-    int RELEASE_SAMPLE_POS_Y = 295;
+    int RELEASE_SAMPLE_POS_X = 22;
+    int RELEASE_SAMPLE_POS_Y = 300;
 
     int PUSH_FIRST_BLOCK_POS_X_0 = 68;
     int PUSH_FIRST_BLOCK_POS_Y_0 = 64;
@@ -181,6 +182,7 @@ public class Robot {
     long tmpActionStartTime = 0;
     public RobotPositionTracker positionTracker;
     boolean sampleCaptured = false;
+    private ElapsedTime intakeTimer = null;
 
 
     public void init(HardwareMap hwMap, Telemetry telem, boolean resetArm) {
@@ -959,49 +961,89 @@ int settlingCycles=0;
         // --- END WHEEL SERVO CONTROL ---
     }
 
-    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
-        // Create an instance of ElapsedTime to track the duration
-        ElapsedTime timer = new ElapsedTime();
-        boolean complete = false;
-        // --- WHEEL SERVO CONTROL ---
-        if (inward || outward) {
-            if (inward) {
-                tmpServoState = manualServoState.INPUT;
-                leftWheelServo.setPosition(SERVO_BACKWARD);  // Spin inward
-                rightWheelServo.setPosition(SERVO_FORWARD);  // Spin inward
-            } else if (outward) {
-                tmpServoState = manualServoState.OUTPUT;
-                leftWheelServo.setPosition(SERVO_FORWARD);   // Spin outward
-                rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
-            }
-
-            // Reset and start the timer
-            timer.reset();
-            resetSampleCaptured();
-            // Continue running until the specified duration has elapsed
-            boolean keepRunning = true;
-            //while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || (stopOnCapture && !isSampleCaptured()))) {
-            while (opMode.opModeIsActive() && keepRunning) {
-
-                if (timer.milliseconds() >= milliseconds) {
-                    keepRunning = false;
+    public boolean moveIntakeTimed(boolean inward, boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
+        // If this is the first call, initialize the timer and start the servos
+        if (intakeTimer == null) {  // Add this as a class field: private ElapsedTime intakeTimer;
+            intakeTimer = new ElapsedTime();
+            if (inward || outward) {
+                if (inward) {
+                    tmpServoState = manualServoState.INPUT;
+                    leftWheelServo.setPosition(SERVO_BACKWARD);  // Spin inward
+                    rightWheelServo.setPosition(SERVO_FORWARD);  // Spin inward
+                } else if (outward) {
+                    tmpServoState = manualServoState.OUTPUT;
+                    leftWheelServo.setPosition(SERVO_FORWARD);   // Spin outward
+                    rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
                 }
-                if (stopOnCapture && isSampleCaptured()) {
-                    keepRunning = false;
-                }
-                checkSampleCaptured();
+                resetSampleCaptured();
             }
-            if (!keepRunning) {
-                // Time has elapsed; stop the servos
-                tmpServoState = manualServoState.IDLE;
-                leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
-                rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
-                complete = true;
-            }
-
         }
-        return complete;
+
+        // Check if we should stop
+        boolean shouldStop = false;
+
+        if (intakeTimer.milliseconds() >= milliseconds) {
+            shouldStop = true;
+        }
+        if (stopOnCapture && isSampleCaptured()) {
+            shouldStop = true;
+        }
+        checkSampleCaptured();
+
+        // If we should stop, clean up and return true
+        if (shouldStop) {
+            tmpServoState = manualServoState.IDLE;
+            leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
+            rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
+            intakeTimer = null;  // Reset timer for next use
+            return true;
+        }
+
+        return false;  // Not done yet
     }
+//    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
+//        // Create an instance of ElapsedTime to track the duration
+//        ElapsedTime timer = new ElapsedTime();
+//        boolean complete = false;
+//        // --- WHEEL SERVO CONTROL ---
+//        if (inward || outward) {
+//            if (inward) {
+//                tmpServoState = manualServoState.INPUT;
+//                leftWheelServo.setPosition(SERVO_BACKWARD);  // Spin inward
+//                rightWheelServo.setPosition(SERVO_FORWARD);  // Spin inward
+//            } else if (outward) {
+//                tmpServoState = manualServoState.OUTPUT;
+//                leftWheelServo.setPosition(SERVO_FORWARD);   // Spin outward
+//                rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
+//            }
+//
+//            // Reset and start the timer
+//            timer.reset();
+//            resetSampleCaptured();
+//            // Continue running until the specified duration has elapsed
+//            boolean keepRunning = true;
+//            //while (opMode.opModeIsActive() && (timer.milliseconds() < milliseconds || (stopOnCapture && !isSampleCaptured()))) {
+//            while (opMode.opModeIsActive() && keepRunning) {
+//
+//                if (timer.milliseconds() >= milliseconds) {
+//                    keepRunning = false;
+//                }
+//                if (stopOnCapture && isSampleCaptured()) {
+//                    keepRunning = false;
+//                }
+//                checkSampleCaptured();
+//            }
+//            if (!keepRunning) {
+//                // Time has elapsed; stop the servos
+//                tmpServoState = manualServoState.IDLE;
+//                leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
+//                rightWheelServo.setPosition(SERVO_STOPPED); // Neutral
+//                complete = true;
+//            }
+//
+//        }
+//        return complete;
+//    }
 //
     public void moveWrist(boolean up,boolean down) {
         if (up || down) {
@@ -1180,6 +1222,13 @@ int settlingCycles=0;
                 break;
             case EXTEND:
                 if (moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
+                    sampleReleaseState = releaseSampleFirstBucketState.DROP_ARM; // Transition to next step
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    tmpActionStartTime = System.currentTimeMillis();
+                }
+                break;
+            case DROP_ARM:
+                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT_2) ) {
                     sampleReleaseState = releaseSampleFirstBucketState.OUTTAKE; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
@@ -1496,6 +1545,7 @@ int settlingCycles=0;
         POSITION_ROBOT,
         MOVE_ARM,
         EXTEND,
+        DROP_ARM,
         OUTTAKE,
         COMPLETE       // Process complete
     }

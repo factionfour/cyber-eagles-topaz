@@ -72,37 +72,49 @@ public abstract class AutoBase4 extends LinearOpMode {
         };
     }
 
-
-
     public boolean performActionsWithDelays(String actionTitle,
                                             Callable<Boolean> firstAction, long delay1,
                                             Callable<Boolean> secondAction, long delay2,
                                             Callable<Boolean> thirdAction, long delay3,
                                             Callable<Boolean> fourthAction, long delay4,
                                             Callable<Boolean> fifthAction) {
-
         Callable<Boolean>[] actions = new Callable[]{firstAction, secondAction, thirdAction, fourthAction, fifthAction};
-        long[] delays = new long[]{0, delay1, delay2, delay3, delay4}; // Include initial delay as 0
-        boolean[] actionCompleted = new boolean[5]; // Track completion of actions
-        long startTime = System.currentTimeMillis(); // Start timer for delays
+        long[] delays = new long[]{0, delay1, delay2, delay3, delay4};
+        boolean[] actionStarted = new boolean[5]; // Track if action has been started
+        boolean[] actionCompleted = new boolean[5];
+        long startTime = System.currentTimeMillis();
 
         while (opModeIsActive()) {
             long elapsedTime = System.currentTimeMillis() - startTime;
 
+            // Check each action
             for (int i = 0; i < actions.length; i++) {
-                // Check if delay has passed and action is not yet completed
-                if (!actionCompleted[i] && elapsedTime >= sumDelays(delays, i)) {
+                // If action hasn't started and its delay time has been reached
+                if (!actionStarted[i] && elapsedTime >= delays[i]) {
+                    if (actions[i] == null) {
+                        actionCompleted[i] = true;
+                    } else {
+                        try {
+                            // Start the action and check if it completed
+                            boolean result = actions[i].call();
+                            actionCompleted[i] = result;
+                        } catch (Exception e) {
+                            telemetry.addData("Error", "Exception in action " + (i + 1));
+                            e.printStackTrace();
+                            actionCompleted[i] = true;
+                        }
+                    }
+                    actionStarted[i] = true;
+                }
+                // If action has started but not completed, check if it's done
+                else if (actionStarted[i] && !actionCompleted[i] && actions[i] != null) {
                     try {
-                        if (actions[i] == null) {
-                            actionCompleted[i] = true; // Mark as complete if call() returns true
-                        }
-                        else if (actions[i] != null && actions[i].call()) {
-                            actionCompleted[i] = true; // Mark as complete if call() returns true
-                        }
+                        boolean result = actions[i].call();
+                        actionCompleted[i] = result;
                     } catch (Exception e) {
-                        telemetry.addData("Error", "Exception occurred while executing action " + (i + 1));
+                        telemetry.addData("Error", "Exception in action " + (i + 1));
                         e.printStackTrace();
-                        actionCompleted[i] = true; // Treat it as complete to avoid blocking
+                        actionCompleted[i] = true;
                     }
                 }
             }
@@ -116,28 +128,86 @@ public abstract class AutoBase4 extends LinearOpMode {
                 }
             }
             if (allActionsCompleted) {
-                return true; // Exit when all actions have been completed
+                return true;
             }
 
-            // Update telemetry for debugging
+            // Update telemetry
             telemetry.addData("RUNNING ACTION", actionTitle);
             telemetry.addData("Elapsed Time", elapsedTime);
             for (int i = 0; i < actionCompleted.length; i++) {
+                telemetry.addData("Action " + (i + 1) + " Started", actionStarted[i]);
                 telemetry.addData("Action " + (i + 1) + " Complete", actionCompleted[i]);
             }
             telemetry.update();
         }
 
-        return false; // Return false if opMode ends prematurely
+        return false;
     }
-
-    private long sumDelays(long[] delays, int index) {
-        long total = 0;
-        for (int i = 0; i <= index; i++) {
-            total += delays[i];
-        }
-        return total;
-    }
+//
+//    public boolean performActionsWithDelays(String actionTitle,
+//                                            Callable<Boolean> firstAction, long delay1,
+//                                            Callable<Boolean> secondAction, long delay2,
+//                                            Callable<Boolean> thirdAction, long delay3,
+//                                            Callable<Boolean> fourthAction, long delay4,
+//                                            Callable<Boolean> fifthAction) {
+//
+//        Callable<Boolean>[] actions = new Callable[]{firstAction, secondAction, thirdAction, fourthAction, fifthAction};
+//        long[] delays = new long[]{0, delay1, delay2, delay3, delay4}; // Include initial delay as 0
+//        boolean[] actionCompleted = new boolean[5]; // Track completion of actions
+//        long startTime = System.currentTimeMillis(); // Start timer for delays
+//
+//        while (opModeIsActive()) {
+//            long elapsedTime = System.currentTimeMillis() - startTime;
+//
+//            for (int i = 0; i < actions.length; i++) {
+//                // Check if delay has passed and action is not yet completed
+//                if (!actionCompleted[i] && elapsedTime >= sumDelays(delays, i)) {
+//                    try {
+//                        if (actions[i] == null) {
+//                            actionCompleted[i] = true; // Mark as complete if call() returns true
+//                        }
+//                        else if (actions[i] != null && actions[i].call()) {
+//                            actionCompleted[i] = true; // Mark as complete if call() returns true
+//                        }
+//                    } catch (Exception e) {
+//                        telemetry.addData("Error", "Exception occurred while executing action " + (i + 1));
+//                        e.printStackTrace();
+//                        actionCompleted[i] = true; // Treat it as complete to avoid blocking
+//                    }
+//                }
+//            }
+//
+//            // Check if all actions are complete
+//            boolean allActionsCompleted = true;
+//            for (boolean completed : actionCompleted) {
+//                if (!completed) {
+//                    allActionsCompleted = false;
+//                    break;
+//                }
+//            }
+//            if (allActionsCompleted) {
+//                return true; // Exit when all actions have been completed
+//            }
+//
+//            // Update telemetry for debugging
+//            telemetry.addData("RUNNING ACTION", actionTitle);
+//            telemetry.addData("Elapsed Time", elapsedTime);
+//            for (int i = 0; i < actionCompleted.length; i++) {
+//                telemetry.addData("Action " + (i + 1) + " Complete", actionCompleted[i]);
+//            }
+//            telemetry.update();
+//        }
+//
+//        return false; // Return false if opMode ends prematurely
+//    }
+//
+//    private long sumDelays(long[] delays, int index) {
+//        long total = 0;
+//        for (int i = 0; i <= index; i++) {
+//            total += delays[i];
+//        }
+//        return total;
+//    }
 
 //
 //    public boolean performActionsWithDelays( String actionTitle,
