@@ -43,9 +43,8 @@ public class RobotAutoRightV4 extends AutoBase4 {
         robot.resetDrivePosition();
 //        //step 3:start the push of the blocks
         performActionsWithDelays("PUSH 1 - STEP 1",
-                moveArmEncoderAction(robot.getCurrentArmPosition(),0), 0,
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_1,robot.PUSH_FIRST_BLOCK_POS_Y_1,0,false),0,
-                null,0,null,0,null);
+                null,0,null,0,null,0,null);
         robot.resetDrivePosition();
         performActionsWithDelays("PUSH 1 - STEP 2",
                 driveToPositionAction(robot.PUSH_FIRST_BLOCK_POS_X_2,robot.PUSH_FIRST_BLOCK_POS_Y_2,0, false),0,
@@ -66,20 +65,116 @@ public class RobotAutoRightV4 extends AutoBase4 {
         performActionsWithDelays("PUSH 2 - STEP 2",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_2,robot.PUSH_SECOND_BLOCK_POS_Y_2,0, false),0,
                 null,0,null,0,null,0,null);
+//        robot.resetDrivePosition();
+//        performActionsWithDelays("PUSH 2 - STEP 3",
+//                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0,false),0,
+//                null,0,null,0,null,0,null);
+//        robot.resetDrivePosition();
+//        performActionsWithDelays("PUSH 2 - STEP 4",
+//                driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_4,robot.PUSH_SECOND_BLOCK_POS_Y_2,0,false),0,
+//                null,0,null,0,null,0,null);
+
+        performActionsWithDelays("PICKUP 2 - STEP 1",
+            driveToPositionAction(robot.PICKUP_SAMPLE_POS_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
+            null,0,null,0,null,0,null);
+        sleep(1500);
         robot.resetDrivePosition();
-        performActionsWithDelays("PUSH 2 - STEP 3",
+
+        robot.resetSampleCaptured();
+        performActionsWithDelays("PICKUP 2 - STEP 2",
+            moveArmEncoderAction(robot.getCurrentArmPosition(),robot.PICKUP_SAMPLE_ARM_HEIGHT),0,
+            moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.PICKUP_SAMPLE_EXTENSION_POSITION),0,
+                null,0,null,0,null);
+
+        performActionsWithDelays("PICKUP 2 - STEP 3",
+                driveToPositionAction(robot.PICKUP_SAMPLE_POS_INTAKE_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,true),0,
+                moveIntakeTimedAction (true, false,2500, true,this),0,
+                null,0,null,0,null);
+        robot.resetDrivePosition();
+
+        if (robot.isSampleCaptured()) {
+            //pickup success
+            robot.resetSampleCaptured();
+            performActionsWithDelays("HOOK 2 - STEP 1",
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.EXTENSION_MIN_POSITION),200,
+                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION),0,
+                    null,0,null,0,null);
+
+            performActionsWithDelays("HOOK 2 - STEP 2",
+                    driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y,robot.HOOK_DEGREES,false),0,
+                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
+                    null,0,null);
+            robot.resetDrivePosition();
+
+            performActionsWithDelays("HOOK 2 - RELEASE HOOK",
+                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT_2), 300,
+                    moveIntakeTimedAction (false, true,100, false,this),0,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),500,
+                    null,0,null);
+
+        }
+        else
+        {
+            //backup and try again
+            performActionsWithDelays("PICKUP 2 - STEP 1",
+                    driveToPositionAction(robot.PICKUP_SAMPLE_POS_NOPICKUP_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
+                    null,0,null,0,null,0,null);
+            robot.resetDrivePosition();
+            sleep(1500);
+
+            robot.resetSampleCaptured();
+            performActionsWithDelays("PICKUP 2 - STEP 2",
+                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.PICKUP_SAMPLE_ARM_HEIGHT),0,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.PICKUP_SAMPLE_EXTENSION_POSITION),0,
+                    null,0,null,0,null);
+
+            performActionsWithDelays("PICKUP 2 - STEP 3",
+                    driveToPositionAction(robot.PICKUP_SAMPLE_POS_INTAKE_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,true),0,
+                    moveIntakeTimedAction (true, false,2500, true,this),0,
+                    null,0,null,0,null);
+            robot.resetDrivePosition();
+
+            if (robot.isSampleCaptured()) {
+                //pickup success
+                robot.resetSampleCaptured();
+                performActionsWithDelays("HOOK 2 - STEP 1",
+                        moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.EXTENSION_MIN_POSITION), 200,
+                        moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
+                        null, 0, null, 0, null);
+
+                performActionsWithDelays("HOOK 2 - STEP 2",
+                        driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y, robot.HOOK_DEGREES, false), 0,
+                        moveArmEncoderAction(robot.getCurrentArmPosition(), robot.HOOK_ARM_HEIGHT), 300,
+                        moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.HOOK_EXTENSION_POSITION), 0,
+                        null, 0, null);
+                robot.resetDrivePosition();
+
+                performActionsWithDelays("HOOK 2 - RELEASE HOOK",
+                        moveArmEncoderAction(robot.getCurrentArmPosition(), robot.HOOK_ARM_HEIGHT_2), 300,
+                        moveIntakeTimedAction(false, true, 100, false, this), 0,
+                        moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 500,
+                        null, 0, null);
+
+            }
+
+        }
+        //park the robot
+        performActionsWithDelays("PARK - STEP 1",
+                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
+                null, 0, null,0,null);
+
+        robot.resetDrivePosition();
+        performActionsWithDelays("PARK - STEP 2",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_3,robot.PUSH_SECOND_BLOCK_POS_Y_3,0,false),0,
                 null,0,null,0,null,0,null);
         robot.resetDrivePosition();
-        performActionsWithDelays("PUSH 2 - STEP 4",
+        performActionsWithDelays("PARK - STEP 3",
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_4,robot.PUSH_SECOND_BLOCK_POS_Y_2,0,false),0,
                 null,0,null,0,null,0,null);
 
-        //TODO: IF THERE IS TIME, HOOK ANOTHER BLOCK?
-
-        //park the robot
-
-        robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
+        robot.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();

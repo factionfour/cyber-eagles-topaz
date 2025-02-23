@@ -127,22 +127,4 @@ public class RobotPositionTracker {
     }
 
 
-    public void saveRobotPosition(android.content.Context appContext) {
-        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putFloat("robot_x", (float) currentPositionXCM);
-        editor.putFloat("robot_y", (float) currentPositionYCM);
-        editor.putFloat("robot_heading", (float) currentHeading);
-        editor.apply(); // Commit changes asynchronously
-    }
-
-    public void loadRobotPosition(android.content.Context appContext) {
-        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
-        double x = prefs.getFloat("robot_x", 0); // Default to 0 if not set
-        double y = prefs.getFloat("robot_y", 0);
-        double heading = prefs.getFloat("robot_heading", 0);
-
-        resetPosition(x,y,heading);
-
-    }
 }

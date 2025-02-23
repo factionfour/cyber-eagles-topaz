@@ -1,6 +1,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.content.SharedPreferences;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -1581,5 +1583,31 @@ int settlingCycles=0;
         COMPLETE
     }
 
+
+    public void saveRobotPosition(android.content.Context appContext) {
+        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putFloat("robot_x", (float) positionTracker.getXPositionCM());
+        editor.putFloat("robot_y", (float) positionTracker.getYPositionCM());
+        editor.putFloat("robot_heading", (float) positionTracker.getHeading());
+        editor.putFloat("robot_arm", (float) getCurrentArmPosition());
+        editor.putFloat("robot_extension", (float) getCurrentExtensionPosition());
+        editor.apply(); // Commit changes asynchronously
+    }
+
+    public void loadRobotPosition(android.content.Context appContext) {
+        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+        double x = prefs.getFloat("robot_x", 0);
+        double y = prefs.getFloat("robot_y", 0);
+        double heading = prefs.getFloat("robot_heading", 0);
+//        double armPos = prefs.getFloat("robot_arm", 0);
+//        double extPos = prefs.getFloat("robot_extension", 0);
+
+
+        positionTracker.resetPosition(x,y,heading);
+
+//        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        armMotor.setTargetPosition(armPos);
+    }
 }
 

@@ -44,12 +44,13 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         robot.resetDrivePosition();
 
         //step 4:move extension to pickup block from floor
-        performActionsWithDelays("PICKUP BLOCK GROUND - STEP 1",
-                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PICKUP_SAMPLE_EXTENSION_POSITION),0,
-                null,0,null,0,null,0,null);
-
-        //step 5:pickup block from the floor
         performActionsWithDelays("PICKUP BLOCK GROUND - STEP 2",
+                moveArmEncoderAction(robot.getCurrentArmPosition(),robot.PICKUP_SAMPLE_ARM_HEIGHT), 0,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), robot.PICKUP_SAMPLE_EXTENSION_POSITION),0,
+                null,0,null,0,null);
+        robot.resetSampleCaptured();
+        //step 5:pickup block from the floor
+        performActionsWithDelays("PICKUP BLOCK GROUND - STEP 3",
                 driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X,robot.PICKUP_BLOCK_POS_Y,0,true),0,
                 moveIntakeTimedAction (true, false,2500, true,this),0,
                 null,0,null,0,null);
@@ -84,6 +85,10 @@ public class RobotAutoLeftV4 extends AutoBase4 {
         }
         robot.resetDrivePosition();
 
+        //TODO:ADD CODE TO PICKUP SECOND SAMPLE AND HOOK IT
+
+
+
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
@@ -102,7 +107,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION_2), 500,
             null,0,null,0,null,0,null);
 
-        robot.positionTracker.saveRobotPosition(robot.hardwareMap.appContext);
+        robot.saveRobotPosition(robot.hardwareMap.appContext);
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();
