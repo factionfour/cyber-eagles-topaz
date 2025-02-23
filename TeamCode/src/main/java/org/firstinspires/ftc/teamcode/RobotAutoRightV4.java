@@ -77,7 +77,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
         performActionsWithDelays("PICKUP 2 - STEP 1",
             driveToPositionAction(robot.PICKUP_SAMPLE_POS_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
             null,0,null,0,null,0,null);
-        sleep(1500);
+        sleep(2000);
         robot.resetDrivePosition();
 
         robot.resetSampleCaptured();
@@ -88,7 +88,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
 
         performActionsWithDelays("PICKUP 2 - STEP 3",
                 driveToPositionAction(robot.PICKUP_SAMPLE_POS_INTAKE_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,true),0,
-                moveIntakeTimedAction (true, false,2500, true,this),0,
+                moveIntakeTimedAction (true, false,1500, true,this),0,
                 null,0,null,0,null);
         robot.resetDrivePosition();
 
@@ -121,7 +121,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
                     driveToPositionAction(robot.PICKUP_SAMPLE_POS_NOPICKUP_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
                     null,0,null,0,null,0,null);
             robot.resetDrivePosition();
-            sleep(1500);
+            sleep(2000);
 
             robot.resetSampleCaptured();
             performActionsWithDelays("PICKUP 2 - STEP 2",
@@ -131,7 +131,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
 
             performActionsWithDelays("PICKUP 2 - STEP 3",
                     driveToPositionAction(robot.PICKUP_SAMPLE_POS_INTAKE_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,true),0,
-                    moveIntakeTimedAction (true, false,2500, true,this),0,
+                    moveIntakeTimedAction (true, false,1500, true,this),0,
                     null,0,null,0,null);
             robot.resetDrivePosition();
 
