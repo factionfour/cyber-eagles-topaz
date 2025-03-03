@@ -32,8 +32,8 @@ public class Robot {
     public TouchSensor touchsensor;
 
     double DRIVING_SPEEDFACTOR_HUMAN =0.7;
-    double DRIVING_SPEEDFACTOR_AUTO = 0.9;
-    double TURNING_SPEEDFACTOR_AUTO = 0.9;
+    double DRIVING_SPEEDFACTOR_AUTO = 1;
+    double TURNING_SPEEDFACTOR_AUTO = 1;
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
@@ -114,7 +114,7 @@ public class Robot {
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
     int RELEASE_SAMPLE_ARM_HEIGHT_2 = 850;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2650;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2660;
     int RELEASE_SAMPLE_DEGREES = 138;
     int RELEASE_SAMPLE_POS_X = 22;
     int RELEASE_SAMPLE_POS_Y = 300;
@@ -141,18 +141,18 @@ public class Robot {
 
     int PICKUP_BLOCK_POS_X = 30;
     int PICKUP_BLOCK_POS_Y = 276;
-    int PICKUP_BLOCK_2_POS_Y = 296;//ESTIMATE ONLY
+    int PICKUP_BLOCK_2_POS_Y = 303;
     int PICKUP_BLOCK_POS_INTAKE_X = 42;
 
     int PARK_LEFT_AUTO_POS_1_X = 125;
     int PARK_LEFT_AUTO_POS_1_Y = 257;
 
-    int PARK_LEFT_AUTO_POS_2_X = 125;
-    int PARK_LEFT_AUTO_POS_2_Y = 240;
+    int PARK_LEFT_AUTO_POS_2_X = 130;
+    int PARK_LEFT_AUTO_POS_2_Y = 230;
     int PARK_LEFT_AUTO_POS_2_HEADING = -90;
     int PARK_ARM_POSITION = 700;
     int PARK_ARM_POSITION_2 = 617;
-    int PARK_EXTENSION_POSITION = 935;
+    int PARK_EXTENSION_POSITION = 950;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
