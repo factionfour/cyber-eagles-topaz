@@ -115,6 +115,7 @@ public class RobotAutoRightV4 extends AutoBase4 {
                     null,0,null);
 
         }
+        robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park.
 //        else
 //        {
 //            //backup and try again

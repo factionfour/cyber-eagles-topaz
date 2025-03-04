@@ -37,7 +37,7 @@ public class Robot {
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
-    int ARM_MIN_POSITION =100;    // Minimum encoder position (fully Lowered// )
+    int ARM_MIN_POSITION =140;//100;    // Minimum encoder position (fully Lowered// )
     int ARM_MAX_POSITION = 1000; // Maximum encoder position (fully Raised)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
@@ -812,20 +812,21 @@ int settlingCycles=0;
             armTargetPosition += (leftStickY * ARM_MANUAL_MAX_SPEED);
             // Calculate dynamicArmMinPosition based on extensionPosition (to ensure the arm does not move too low)
             int extensionPosition = extensionArmMotor.getCurrentPosition();
-            if (extensionPosition == EXTENSION_MAX_POSITION) {
-                dynamicArmMinPosition = 200;
-            } else if (extensionPosition >= 900) {
-                // Linearly interpolate between 900 and 2200 for the range [100, 200]
-                //this code may not work correctly
-                dynamicArmMinPosition = (int) (100 + (extensionPosition - 900) * (200 - 100) / (EXTENSION_MAX_POSITION - 900));
-            } else if (extensionPosition < 900 && extensionPosition > EXTENSION_MIN_POSITION) {
-                dynamicArmMinPosition = ARM_MIN_POSITION;
-            } else {
-                dynamicArmMinPosition = 0;
-            }
+//            if (extensionPosition == EXTENSION_MAX_POSITION) {
+//                dynamicArmMinPosition = 200;
+//            } else if (extensionPosition >= 900) {
+//                // Linearly interpolate between 900 and 2200 for the range [100, 200]
+//                //this code may not work correctly
+//                dynamicArmMinPosition = (int) (100 + (extensionPosition - 900) * (200 - 100) / (EXTENSION_MAX_POSITION - 900));
+//            } else if (extensionPosition < 900 && extensionPosition > EXTENSION_MIN_POSITION) {
+//                dynamicArmMinPosition = ARM_MIN_POSITION;
+//            } else {
+//                dynamicArmMinPosition = 0;
+//            }
 
             // Clamp the target position to ensure the arm doesn't exceed the boundaries
-            armTargetPosition = Range.clip(armTargetPosition, dynamicArmMinPosition, ARM_MAX_POSITION);
+            //armTargetPosition = Range.clip(armTargetPosition, dynamicArmMinPosition, ARM_MAX_POSITION);
+            armTargetPosition = Range.clip(armTargetPosition, ARM_MIN_POSITION, ARM_MAX_POSITION);
             // Set the arm motor's target position
             armMotor.setTargetPosition(armTargetPosition);
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -1590,7 +1591,7 @@ int settlingCycles=0;
     }
 
 
-    public void saveRobotPosition(android.content.Context appContext) {
+    public boolean saveRobotPosition(android.content.Context appContext) {
         SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putFloat("robot_x", (float) positionTracker.getXPositionCM());
@@ -1598,7 +1599,11 @@ int settlingCycles=0;
         editor.putFloat("robot_heading", (float) positionTracker.getHeading());
         editor.putFloat("robot_arm", (float) getCurrentArmPosition());
         editor.putFloat("robot_extension", (float) getCurrentExtensionPosition());
-        editor.apply(); // Commit changes asynchronously
+        //editor.apply(); // Commit changes asynchronously
+
+        // Force synchronous write to ensure data is saved immediately
+        boolean result = editor.commit();
+        return result && prefs.contains("robot_x");
     }
 
     public void loadRobotPosition(android.content.Context appContext) {

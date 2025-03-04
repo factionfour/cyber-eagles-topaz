@@ -144,7 +144,7 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 null,0,null,0,null,0,null);
         }
         robot.resetDrivePosition();
-
+        robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
