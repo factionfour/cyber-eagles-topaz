@@ -78,17 +78,17 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         }
 
         if (gamepad2.y) {
-            robot.sampleHookGroundArmOnly();
+            robot.specimenHookArmOnly();
         }
         else {
-            robot.sampleHookArmOnlyState = Robot.sampleHookGroundArmOnlyState.IDLE;
+            robot.specHookArmOnlyState = Robot.specimenHookArmOnlyState.IDLE;
         }
 
         if (gamepad2.x) {
-            robot.sampleBucketGroundArmOnly();
+            robot.sampleBucketArmOnly();
         }
         else {
-            robot.sampleBucketArmOnlyState = Robot.sampleBucketGroundArmOnlyState.IDLE;
+            robot.sampleBucketArmOnlyState = Robot.releaseSampleFirstBucketArmOnlyState.IDLE;
         }
 
         if (!robot.isActionRunning()) {

@@ -172,8 +172,8 @@ public class Robot {
     public releaseSampleFirstBucketState sampleReleaseState = releaseSampleFirstBucketState.IDLE;
     public pickupSampleGroundState samplePickupState = pickupSampleGroundState.IDLE;
 
-    public sampleHookGroundArmOnlyState sampleHookArmOnlyState = sampleHookGroundArmOnlyState.IDLE;
-    public sampleBucketGroundArmOnlyState sampleBucketArmOnlyState = sampleBucketGroundArmOnlyState.IDLE;
+    public specimenHookArmOnlyState specHookArmOnlyState = specimenHookArmOnlyState.IDLE;
+    public releaseSampleFirstBucketArmOnlyState sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.IDLE;
 
 
     public manualServoState tmpServoState = manualServoState.IDLE;
@@ -1322,7 +1322,7 @@ int settlingCycles=0;
     public void samplePickupGroundArmOnly() {
         telemetry.addData("CURRENT ACTION STATE",samplePickupArmOnlyState);
         //SAMPLE PICKUP FROM GROUND
-        if (samplePickupArmOnlyState == pickupSampleGroundArmOnlyState.IDLE.IDLE) {
+        if (samplePickupArmOnlyState == pickupSampleGroundArmOnlyState.IDLE) {
             samplePickupArmOnlyState = pickupSampleGroundArmOnlyState.MOVE_ARM; // Start first step
 
         }
@@ -1346,17 +1346,17 @@ int settlingCycles=0;
 
                 moveIntake(true, false);
                 checkSampleCaptured();
-                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
+                //driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
 
-                if ((intakeTime > 3500 || isSampleCaptured())) {
+                if ((intakeTime > 10000 || isSampleCaptured())) {
                     resetDrivePosition();
                     moveIntake(false, false);
                     if (isSampleCaptured()) {
                         if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
-                            samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
+                            samplePickupArmOnlyState = samplePickupArmOnlyState.COMPLETE; // Transition to complete step
                         }
-                    } else {
-                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+//                    } else {
+//                        samplePickupArmOnlyState = samplePickupArmOnlyState.NOPICKUP; // Transition to the nopickup state
                     }
                 }
                 break;
@@ -1368,60 +1368,57 @@ int settlingCycles=0;
     }
 
 
-    public void sampleHookGroundArmOnly() {
-        telemetry.addData("CURRENT ACTION STATE",sampleHookArmOnlyState);
-        //SAMPLE PICKUP FROM GROUND
-        if (sampleHookArmOnlyState == sampleHookGroundArmOnlyState.IDLE.IDLE) {
-            sampleHookArmOnlyState = sampleHookGroundArmOnlyState.MOVE_ARM; // Start first step
+    public void specimenHookArmOnly() {
+        telemetry.addData("CURRENT ACTION STATE",specHookArmOnlyState);
+        //SPECIMEN HOOK
+        if (specHookArmOnlyState == specimenHookArmOnlyState.IDLE) {
+            specHookArmOnlyState = specimenHookArmOnlyState.PLACE_ARM; // Start first step
 
         }
         tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
         tmpArmPositionHolder = armMotor.getCurrentPosition();
 
         // Execute multi-step process based on current state
-        switch (sampleHookArmOnlyState) {
-            case MOVE_ARM:
-                if (moveArmEncoder(tmpArmPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
+        switch (specHookArmOnlyState) {
+
+            case PLACE_ARM:
+                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
+                    specHookArmOnlyState = specimenHookArmOnlyState.DROP_ARM; // Transition to next step
+                }
+                break;
+            case DROP_ARM:
+                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT_2)) {
+                    specHookArmOnlyState = specimenHookArmOnlyState.MOVE_OUT; // Transition to next step
                     tmpActionStartTime = System.currentTimeMillis();
-                    samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
-                    resetSampleCaptured();
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                 }
                 break;
-            case INTAKE:
-                long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
-                boolean atPos = false;
-                telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
-                // Move the intake motor
-
-                moveIntake(true, false);
-                checkSampleCaptured();
-                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
-
-                if ((intakeTime > 3500 || isSampleCaptured())) {
-                    resetDrivePosition();
-                    moveIntake(false, false);
-                    if (isSampleCaptured()) {
-                        if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
-                            samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
-                        }
-                    } else {
-                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
-                    }
+            case MOVE_OUT:
+                long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
+                moveIntake(false, true);
+                if (elapsedTime > 100) {
+                    specHookArmOnlyState = specimenHookArmOnlyState.HOOK_ARM; // Transition to next step
                 }
                 break;
-
+            case HOOK_ARM:
+                moveIntake(false,false);
+                if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
+                    specHookArmOnlyState = specimenHookArmOnlyState.COMPLETE; // Transition to next step
+                }
+                break;
             case COMPLETE:
                 setDefaultPower();
                 break;
         }
+
     }
 
 
-    public void sampleBucketGroundArmOnly() {
+    public void sampleBucketArmOnly() {
         telemetry.addData("CURRENT ACTION STATE",sampleBucketArmOnlyState);
-        //SAMPLE PICKUP FROM GROUND
-        if (sampleBucketArmOnlyState == sampleBucketGroundArmOnlyState.IDLE.IDLE) {
-            sampleBucketArmOnlyState = sampleBucketGroundArmOnlyState.MOVE_ARM; // Start first step
+        //SAMPLE RELEASE TO FIRST BUCKET
+        if (sampleBucketArmOnlyState == releaseSampleFirstBucketArmOnlyState.IDLE) {
+            sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.MOVE_ARM; // Start first step
 
         }
         tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
@@ -1430,35 +1427,38 @@ int settlingCycles=0;
         // Execute multi-step process based on current state
         switch (sampleBucketArmOnlyState) {
             case MOVE_ARM:
-                if (moveArmEncoder(tmpArmPositionHolder, PICKUP_SAMPLE_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder, PICKUP_SAMPLE_EXTENSION_POSITION)) { // && moveWrist) {
+                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT) ) {
+                    sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.EXTEND; // Transition to next step
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
-                    samplePickupState = pickupSampleGroundState.INTAKE; // Transition to next step
-                    resetSampleCaptured();
                 }
                 break;
-            case INTAKE:
-                long intakeTime = System.currentTimeMillis() - tmpActionStartTime;
-                boolean atPos = false;
-                telemetry.addData("INTAKE", "Elapsed Time: " + intakeTime + " ms");
+            case EXTEND:
+                if (moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
+                    sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.DROP_ARM; // Transition to next step
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    tmpActionStartTime = System.currentTimeMillis();
+                }
+                break;
+            case DROP_ARM:
+                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT_2) ) {
+                    sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.OUTTAKE; // Transition to next step
+                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+                    tmpActionStartTime = System.currentTimeMillis();
+                }
+                break;
+            case OUTTAKE:
+                long outtakeTime = System.currentTimeMillis() - tmpActionStartTime;
+                telemetry.addData("OUTTAKE", "Elapsed Time: " + outtakeTime + " ms");
                 // Move the intake motor
-
-                moveIntake(true, false);
-                checkSampleCaptured();
-                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
-
-                if ((intakeTime > 3500 || isSampleCaptured())) {
-                    resetDrivePosition();
+                moveIntake(false, true);
+                if (outtakeTime > 1500) {
                     moveIntake(false, false);
-                    if (isSampleCaptured()) {
-                        if (moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION) && moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
-                            samplePickupState = pickupSampleGroundState.COMPLETE; // Transition to complete step
-                        }
-                    } else {
-                        samplePickupState = pickupSampleGroundState.NOPICKUP; // Transition to the nopickup state
+                    if (moveExtensionEncoder(tmpExtensionPositionHolder, EXTENSION_MIN_POSITION)) {
+                        sampleBucketArmOnlyState = releaseSampleFirstBucketArmOnlyState.COMPLETE; // Transition to complete step
                     }
                 }
                 break;
-
             case COMPLETE:
                 setDefaultPower();
                 break;
@@ -1506,18 +1506,23 @@ int settlingCycles=0;
         COMPLETE       // Process complete
     }
 
-    public enum sampleHookGroundArmOnlyState {
+    public enum specimenHookArmOnlyState {
         IDLE,          // Waiting for button press
-        MOVE_ARM,
-        INTAKE,
-        COMPLETE      // Process complete
+        PLACE_ARM,         // Second movement
+        MOVE_OUT,
+        DROP_ARM,
+        HOOK_ARM,
+        COMPLETE   // Process complete
     }
 
-    public enum sampleBucketGroundArmOnlyState {
+    public enum releaseSampleFirstBucketArmOnlyState {
         IDLE,          // Waiting for button press
+        POSITION_ROBOT,
         MOVE_ARM,
-        INTAKE,
-        COMPLETE      // Process complete
+        EXTEND,
+        DROP_ARM,
+        OUTTAKE,
+        COMPLETE       // Process complete
     }
 
 //
