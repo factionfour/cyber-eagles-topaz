@@ -38,7 +38,7 @@ public class Robot {
     double DRIVING_SPEEDFACTOR_HUMAN =0.7;
     double DRIVING_SPEEDFACTOR_AUTO = 1;
     double TURNING_SPEEDFACTOR_AUTO = 1;
-    double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.8;
+    double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
     int ARM_MIN_POSITION =140;//100;    // Minimum encoder position (fully Lowered// )
@@ -73,7 +73,7 @@ public class Robot {
     double SERVO_BACKWARD = 0;
 
     //drive speeds
-    double DRIVE_MAX_POWER = 0.9; // Maximum power
+    double DRIVE_MAX_POWER = 0.8; // Maximum power
     double DRIVE_MIN_POWER = 0.25; // Minimum power to prevent stalling
     double DRIVE_SLOW_THRESHOLD = 20.0; // Distance (CM) where slowdown begins
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
