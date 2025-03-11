@@ -86,9 +86,9 @@ public class RobotAutoLeftV5 extends AutoBase4 {
             robot.resetDrivePosition();
 
             performActionsWithDelays("PICKUP BLOCK 2 GROUND - STEP 1",
-                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
                     driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X, robot.PICKUP_BLOCK_2_POS_Y, 0, true), 0,
-                    moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 500,
+                    moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 500,
                     null, 0, null);
             robot.resetDrivePosition();
 
@@ -127,8 +127,8 @@ public class RobotAutoLeftV5 extends AutoBase4 {
                 //step 6: drop off the sample
                 performActionsWithDelays("DROP OFF SAMPLE - STEP 3",
                         moveIntakeTimedAction(false, true, 800, false, this), 900,
-                        moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
-                        null, 0, null, 0, null);
+                        //moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
+                        null, 0, null, 0, null,0,null);
 
             }
             else {
@@ -149,11 +149,12 @@ public class RobotAutoLeftV5 extends AutoBase4 {
         robot.saveRobotPosition();//just in case we don't have time to park
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
-            moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
-            driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
-            null,0,null,0,null);
+                driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
+                moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 500,
+                moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 500,
+            null,0,null);
         robot.resetDrivePosition();
-
+        robot.saveRobotPosition();//just in case we don't have time to park
         performActionsWithDelays("PARK - STEP 2",
             driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING,false),0,
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,

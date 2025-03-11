@@ -35,9 +35,9 @@ public class Robot {
     public Servo Wrist = null;
     public TouchSensor touchsensor;
 
-    double DRIVING_SPEEDFACTOR_HUMAN =0.65;
+    double DRIVING_SPEEDFACTOR_HUMAN =0.7;
     double DRIVING_SPEEDFACTOR_AUTO = 1;
-    double TURNING_SPEEDFACTOR_AUTO = 0.9;
+    double TURNING_SPEEDFACTOR_AUTO = 1;
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.8;
 
     // Arm motor limits and power
@@ -52,7 +52,7 @@ public class Robot {
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
-    int EXTENSION_MAX_POSITION = 2730; // Maximum height (fully raised)
+    int EXTENSION_MAX_POSITION = 2700; // Maximum height (fully raised)
     double EXTENSION_BASE_POWER = 0.3;
     double EXTENSION_EXTRA_FORCE = 0.6;
 
@@ -118,7 +118,7 @@ public class Robot {
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
     int RELEASE_SAMPLE_ARM_HEIGHT_2 = 860;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2750;//2700;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2780;//2700;
     int RELEASE_SAMPLE_DEGREES = 138;
     int RELEASE_SAMPLE_POS_X = 24;
     int RELEASE_SAMPLE_POS_Y = 298;
