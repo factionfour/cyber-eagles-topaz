@@ -16,7 +16,8 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
     @Override
     public void init() {
         robot.init(hardwareMap,telemetry, false);
-        robot.loadRobotPosition(robot.hardwareMap.appContext);
+        //robot.loadRobotPosition(robot.hardwareMap.appContext);
+        robot.loadRobotPosition();
         telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
         telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
@@ -29,7 +30,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
     @Override
     public void start() {
-
+        robot.loadRobotPosition();
     }
 
     @Override
@@ -46,7 +47,8 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         //RESET THE POSITION (DO IN THE CORNER)
         if (gamepad1.back) {
             robot.positionTracker.resetPosition(0,0,0);
-            robot.saveRobotPosition(robot.hardwareMap.appContext);
+            //robot.saveRobotPosition(robot.hardwareMap.appContext);
+            robot.saveRobotPosition();
         }
 
         if (gamepad1.y) {

@@ -14,6 +14,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class Robot {
     // define each motor, servo, imu and touch sensor
@@ -33,7 +37,7 @@ public class Robot {
 
     double DRIVING_SPEEDFACTOR_HUMAN =0.65;
     double DRIVING_SPEEDFACTOR_AUTO = 1;
-    double TURNING_SPEEDFACTOR_AUTO = 1;
+    double TURNING_SPEEDFACTOR_AUTO = 0.9;
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.8;
 
     // Arm motor limits and power
@@ -48,7 +52,7 @@ public class Robot {
 
     // Extension limits and power
     int EXTENSION_MIN_POSITION = 0;    // Minimum height (fully lowered)
-    int EXTENSION_MAX_POSITION = 2650; // Maximum height (fully raised)
+    int EXTENSION_MAX_POSITION = 2730; // Maximum height (fully raised)
     double EXTENSION_BASE_POWER = 0.3;
     double EXTENSION_EXTRA_FORCE = 0.6;
 
@@ -76,7 +80,7 @@ public class Robot {
 
     //turn speeds
     double TURN_MAX_POWER = 0.8; // Maximum turning power
-    double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
+    double TURN_MIN_POWER = 0.25; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(10.0); // Angle threshold for starting to slow down
 
     // PID variables for forwards
@@ -113,11 +117,11 @@ public class Robot {
     int PICKUP_SAMPLE_POS_Y = 37;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
-    int RELEASE_SAMPLE_ARM_HEIGHT_2 = 850;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2660;
+    int RELEASE_SAMPLE_ARM_HEIGHT_2 = 860;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2750;//2700;
     int RELEASE_SAMPLE_DEGREES = 138;
-    int RELEASE_SAMPLE_POS_X = 22;
-    int RELEASE_SAMPLE_POS_Y = 300;
+    int RELEASE_SAMPLE_POS_X = 24;
+    int RELEASE_SAMPLE_POS_Y = 298;
 
     int PUSH_FIRST_BLOCK_POS_X_0 = 68;
     int PUSH_FIRST_BLOCK_POS_Y_0 = 64;
@@ -152,7 +156,7 @@ public class Robot {
     int PARK_LEFT_AUTO_POS_2_HEADING = -90;
     int PARK_ARM_POSITION = 700;
     int PARK_ARM_POSITION_2 = 617;
-    int PARK_EXTENSION_POSITION = 950;
+    int PARK_EXTENSION_POSITION = 1000;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -878,6 +882,7 @@ int settlingCycles=0;
         if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
             complete = true;
             extensionArmMotor.setPower(0);
+            //extensionArmMotor.setPower();
         }
         else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
@@ -1590,35 +1595,133 @@ int settlingCycles=0;
         COMPLETE
     }
 
+//
+//    public boolean saveRobotPosition(android.content.Context appContext) {
+//        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = prefs.edit();
+//        editor.putFloat("robot_x", (float) positionTracker.getXPositionCM());
+//        editor.putFloat("robot_y", (float) positionTracker.getYPositionCM());
+//        editor.putFloat("robot_heading", (float) positionTracker.getHeading());
+//        editor.putFloat("robot_arm", (float) getCurrentArmPosition());
+//        editor.putFloat("robot_extension", (float) getCurrentExtensionPosition());
+//        //editor.apply(); // Commit changes asynchronously
+//
+//        // Force synchronous write to ensure data is saved immediately
+//        boolean result = editor.commit();
+//        return result && prefs.contains("robot_x");
+//    }
+//
+//    public void loadRobotPosition(android.content.Context appContext) {
+//        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
+//        double x = prefs.getFloat("robot_x", 0);
+//        double y = prefs.getFloat("robot_y", 0);
+//        double heading = prefs.getFloat("robot_heading", 0);
+////        double armPos = prefs.getFloat("robot_arm", 0);
+////        double extPos = prefs.getFloat("robot_extension", 0);
+//
+//
+//        positionTracker.resetPosition(x,y,heading);
+//
+////        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+////        armMotor.setTargetPosition(armPos);
+//    }
 
-    public boolean saveRobotPosition(android.content.Context appContext) {
-        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putFloat("robot_x", (float) positionTracker.getXPositionCM());
-        editor.putFloat("robot_y", (float) positionTracker.getYPositionCM());
-        editor.putFloat("robot_heading", (float) positionTracker.getHeading());
-        editor.putFloat("robot_arm", (float) getCurrentArmPosition());
-        editor.putFloat("robot_extension", (float) getCurrentExtensionPosition());
-        //editor.apply(); // Commit changes asynchronously
 
-        // Force synchronous write to ensure data is saved immediately
-        boolean result = editor.commit();
-        return result && prefs.contains("robot_x");
+
+    /**
+     * Saves robot position directly to a file instead of using SharedPreferences
+     */
+    public boolean saveRobotPosition() {
+        try {
+            // Get the file path in the app's internal storage
+            File file = new File(hardwareMap.appContext.getFilesDir(), "robot_position.txt");
+
+            // Create the data string with position values
+            String positionData =
+                    String.valueOf(positionTracker.getXPositionCM()) + "," +
+                            String.valueOf(positionTracker.getYPositionCM()) + "," +
+                            String.valueOf(positionTracker.getHeading()) + "," +
+                            String.valueOf(getCurrentArmPosition()) + "," +
+                            String.valueOf(getCurrentExtensionPosition());
+
+            // Write the data to the file
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(positionData.getBytes());
+            fos.flush(); // Force the data to be written immediately
+            fos.close();
+
+            // Verify file exists and has content
+            boolean success = file.exists() && file.length() > 0;
+
+            telemetry.addData("Position Saved", success ? "Success" : "Failed");
+            telemetry.addData("File Path", file.getAbsolutePath());
+            telemetry.addData("Data Saved", positionData);
+            telemetry.update();
+
+            return success;
+        } catch (Exception e) {
+            telemetry.addData("Save Error", e.getMessage());
+            telemetry.update();
+            return false;
+        }
     }
 
-    public void loadRobotPosition(android.content.Context appContext) {
-        SharedPreferences prefs = appContext.getSharedPreferences("RobotPrefs", appContext.MODE_PRIVATE);
-        double x = prefs.getFloat("robot_x", 0);
-        double y = prefs.getFloat("robot_y", 0);
-        double heading = prefs.getFloat("robot_heading", 0);
-//        double armPos = prefs.getFloat("robot_arm", 0);
-//        double extPos = prefs.getFloat("robot_extension", 0);
+    /**
+     * Loads robot position from a file
+     */
+    public boolean loadRobotPosition() {
+        try {
+            // Get the file path in the app's internal storage
+            File file = new File(hardwareMap.appContext.getFilesDir(), "robot_position.txt");
 
+            // Check if file exists
+            if (!file.exists() || file.length() == 0) {
+                telemetry.addData("Position Load", "No file found or empty file");
+                telemetry.update();
+                return false;
+            }
 
-        positionTracker.resetPosition(x,y,heading);
+            // Read the data from the file
+            FileInputStream fis = new FileInputStream(file);
+            byte[] buffer = new byte[1024];
+            int length = fis.read(buffer);
+            String positionData = new String(buffer, 0, length);
+            fis.close();
 
-//        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//        armMotor.setTargetPosition(armPos);
+            // Split the data into parts
+            String[] parts = positionData.split(",");
+            if (parts.length >= 3) {
+                double x = Double.parseDouble(parts[0]);
+                double y = Double.parseDouble(parts[1]);
+                double heading = Double.parseDouble(parts[2]);
+
+                // Optional arm and extension positions
+                // double armPos = (parts.length > 3) ? Double.parseDouble(parts[3]) : 0;
+                // double extPos = (parts.length > 4) ? Double.parseDouble(parts[4]) : 0;
+
+                // Log the values
+                telemetry.addData("Loaded Position", "X=%.2f, Y=%.2f, H=%.2f", x, y, heading);
+                telemetry.addData("Raw Data", positionData);
+                telemetry.update();
+
+                // Set the position
+                positionTracker.resetPosition(x, y, heading);
+
+                // Optional arm position setting
+                // armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                // armMotor.setTargetPosition((int)armPos);
+
+                return true;
+            } else {
+                telemetry.addData("Position Load", "Invalid data format");
+                telemetry.update();
+                return false;
+            }
+        } catch (Exception e) {
+            telemetry.addData("Load Error", e.getMessage());
+            telemetry.update();
+            return false;
+        }
     }
 }
 

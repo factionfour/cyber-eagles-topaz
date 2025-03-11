@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name="Topaz: Auto Drive Position Right V5", group="Robot")
-public class RobotAutoRightV4 extends AutoBase4 {
+public class RobotAutoRightV5 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
@@ -115,7 +115,8 @@ public class RobotAutoRightV4 extends AutoBase4 {
                     null,0,null);
 
         }
-        robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park.
+        //robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park.
+        robot.saveRobotPosition();//just in case we don't have time to park
 //        else
 //        {
 //            //backup and try again
@@ -176,7 +177,8 @@ public class RobotAutoRightV4 extends AutoBase4 {
                 driveToPositionAction(robot.PUSH_SECOND_BLOCK_POS_X_4,robot.PUSH_SECOND_BLOCK_POS_Y_2,0,false),0,
                 null,0,null,0,null,0,null);
 
-        robot.saveRobotPosition(robot.hardwareMap.appContext);
+        //robot.saveRobotPosition(robot.hardwareMap.appContext);
+        robot.saveRobotPosition();//just in case we don't have time to park
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();

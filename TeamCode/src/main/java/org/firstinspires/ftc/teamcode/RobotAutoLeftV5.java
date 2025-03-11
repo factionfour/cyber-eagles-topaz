@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name="Topaz: Auto Drive Position Left V5", group="Robot")
-public class RobotAutoLeftV4 extends AutoBase4 {
+public class RobotAutoLeftV5 extends AutoBase4 {
 
     @Override
     public void runOpMode() {
@@ -79,16 +79,17 @@ public class RobotAutoLeftV4 extends AutoBase4 {
             //step 6: drop off the sample
             performActionsWithDelays("DROP OFF SAMPLE - STEP 3",
                     moveIntakeTimedAction(false, true, 800, false, this), 900,
-                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
-                    null, 0, null, 0, null);
+//                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
+                    null, 0, null, 0, null, 0,null);
 
             //step 7:pickup second block from the floor
             robot.resetDrivePosition();
 
             performActionsWithDelays("PICKUP BLOCK 2 GROUND - STEP 1",
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 0,
                     driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X, robot.PICKUP_BLOCK_2_POS_Y, 0, true), 0,
                     moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
-                    null, 0, null, 0, null);
+                    null, 0, null);
             robot.resetDrivePosition();
 
             performActionsWithDelays("PICKUP BLOCK 2 GROUND - STEP 2",
@@ -144,7 +145,8 @@ public class RobotAutoLeftV4 extends AutoBase4 {
                 null,0,null,0,null,0,null);
         }
         robot.resetDrivePosition();
-        robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park
+        //robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park
+        robot.saveRobotPosition();//just in case we don't have time to park
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 0,
@@ -163,7 +165,8 @@ public class RobotAutoLeftV4 extends AutoBase4 {
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION_2), 500,
             null,0,null,0,null,0,null);
 
-        robot.saveRobotPosition(robot.hardwareMap.appContext);
+        //robot.saveRobotPosition(robot.hardwareMap.appContext);
+        robot.saveRobotPosition();//just in case we don't have time to park
         closeRobot();
         telemetry.addData("Path", "Complete");
         telemetry.update();
