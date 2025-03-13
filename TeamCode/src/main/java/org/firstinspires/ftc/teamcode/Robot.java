@@ -118,7 +118,7 @@ public class Robot {
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
     int RELEASE_SAMPLE_ARM_HEIGHT_2 = 860;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2780;//2700;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2810;//2700;
     int RELEASE_SAMPLE_DEGREES = 138;
     int RELEASE_SAMPLE_POS_X = 24;
     int RELEASE_SAMPLE_POS_Y = 298;
@@ -156,7 +156,7 @@ public class Robot {
     int PARK_LEFT_AUTO_POS_2_HEADING = -90;
     int PARK_ARM_POSITION = 700;
     int PARK_ARM_POSITION_2 = 617;
-    int PARK_EXTENSION_POSITION = 1000;
+    int PARK_EXTENSION_POSITION = 1050;
 
     int dynamicArmMinPosition = 0;
     double currentExtensionPower = 0;
@@ -1172,31 +1172,32 @@ int settlingCycles=0;
                     specimenHookState = HookState.PLACE_ARM; // Transition to next step
                 }
                 break;
-            case PLACE_ARM:
-                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
-                    specimenHookState = HookState.DROP_ARM; // Transition to next step
-                }
-                break;
-            case DROP_ARM:
-                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT_2)) {
-                    specimenHookState = HookState.MOVE_OUT; // Transition to next step
-                    tmpActionStartTime = System.currentTimeMillis();
-                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
-                }
-                break;
-            case MOVE_OUT:
-                long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
-                moveIntake(false, true);
-                if (elapsedTime > 100) {
-                    specimenHookState = HookState.HOOK_ARM; // Transition to next step
-                }
-                break;
-            case HOOK_ARM:
-                moveIntake(false,false);
-                if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
-                    specimenHookState = HookState.COMPLETE; // Transition to next step
-                }
-                break;
+//              Gamepad 1 y hook (without 2nd gamempad!!!!!!!!
+//            case PLACE_ARM:
+//                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT) && moveExtensionEncoder(tmpExtensionPositionHolder,HOOK_EXTENSION_POSITION)) {
+//                    specimenHookState = HookState.DROP_ARM; // Transition to next step
+//                }
+//                break;
+//            case DROP_ARM:
+//                if (moveArmEncoder(tmpArmPositionHolder,HOOK_ARM_HEIGHT_2)) {
+//                    specimenHookState = HookState.MOVE_OUT; // Transition to next step
+//                    tmpActionStartTime = System.currentTimeMillis();
+//                    tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
+//                }
+//                break;
+//            case MOVE_OUT:
+//                long elapsedTime = System.currentTimeMillis() - tmpActionStartTime;
+//                moveIntake(false, true);
+//                if (elapsedTime > 100) {
+//                    specimenHookState = HookState.HOOK_ARM; // Transition to next step
+//                }
+//                break;
+//            case HOOK_ARM:
+//                moveIntake(false,false);
+//                if (moveExtensionEncoder(tmpExtensionPositionHolder,0)) {
+//                    specimenHookState = HookState.COMPLETE; // Transition to next step
+//                }
+//                break;
             case COMPLETE:
                 setDefaultPower();
                 break;

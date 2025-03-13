@@ -146,7 +146,7 @@ public class RobotAutoLeftV5 extends AutoBase4 {
         }
         robot.resetDrivePosition();
         //robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park
-        robot.saveRobotPosition();//just in case we don't have time to park
+        //robot.saveRobotPosition();//just in case we don't have time to park
         //step 7: move to park position
         performActionsWithDelays("PARK - STEP 1",
                 driveToPositionAction(robot.PARK_LEFT_AUTO_POS_1_X,robot.PARK_LEFT_AUTO_POS_1_Y,0,false),0,
@@ -154,7 +154,7 @@ public class RobotAutoLeftV5 extends AutoBase4 {
                 moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 500,
             null,0,null);
         robot.resetDrivePosition();
-        robot.saveRobotPosition();//just in case we don't have time to park
+        //robot.saveRobotPosition();//just in case we don't have time to park
         performActionsWithDelays("PARK - STEP 2",
             driveToPositionAction(robot.PARK_LEFT_AUTO_POS_2_X,robot.PARK_LEFT_AUTO_POS_2_Y,robot.PARK_LEFT_AUTO_POS_2_HEADING,false),0,
             moveArmEncoderAction(robot.getCurrentArmPosition(), robot.PARK_ARM_POSITION), 500,

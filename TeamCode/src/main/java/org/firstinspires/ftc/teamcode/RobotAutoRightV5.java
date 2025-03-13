@@ -78,7 +78,7 @@ public class RobotAutoRightV5 extends AutoBase4 {
         performActionsWithDelays("PICKUP 2 - STEP 1",
             driveToPositionAction(robot.PICKUP_SAMPLE_POS_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
             null,0,null,0,null,0,null);
-        sleep(1650);
+        sleep(2500);
         robot.resetDrivePosition();
 
         robot.resetSampleCaptured();
@@ -116,7 +116,7 @@ public class RobotAutoRightV5 extends AutoBase4 {
 
         }
         //robot.saveRobotPosition(robot.hardwareMap.appContext);//just in case we don't have time to park.
-        robot.saveRobotPosition();//just in case we don't have time to park
+        //robot.saveRobotPosition();//just in case we don't have time to park
 //        else
 //        {
 //            //backup and try again
