@@ -145,8 +145,8 @@ public class Robot {
 
     int PICKUP_BLOCK_POS_X = 35;
     int PICKUP_BLOCK_POS_Y = 276;
-    int PICKUP_BLOCK_2_POS_Y = 303;
-    int PICKUP_BLOCK_POS_INTAKE_X = 45;
+    int PICKUP_BLOCK_2_POS_Y = 300;
+    int PICKUP_BLOCK_POS_INTAKE_X = 50;
 
     int PARK_LEFT_AUTO_POS_1_X = 125;
     int PARK_LEFT_AUTO_POS_1_Y = 257;
