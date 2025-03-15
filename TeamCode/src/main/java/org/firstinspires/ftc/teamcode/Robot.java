@@ -37,7 +37,7 @@ public class Robot {
 
     double DRIVING_SPEEDFACTOR_HUMAN =0.7;
     double DRIVING_SPEEDFACTOR_AUTO = 1;
-    double TURNING_SPEEDFACTOR_AUTO = 1;
+    double TURNING_SPEEDFACTOR_AUTO = 0.9;
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
@@ -80,7 +80,7 @@ public class Robot {
 
     //turn speeds
     double TURN_MAX_POWER = 0.8; // Maximum turning power
-    double TURN_MIN_POWER = 0.25; // Minimum turning power for precision
+    double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(10.0); // Angle threshold for starting to slow down
 
     // PID variables for forwards
@@ -117,8 +117,8 @@ public class Robot {
     int PICKUP_SAMPLE_POS_Y = 37;
 
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
-    int RELEASE_SAMPLE_ARM_HEIGHT_2 = 860;
-    int RELEASE_SAMPLE_EXTENSION_POSITION = 2810;//2700;
+    int RELEASE_SAMPLE_ARM_HEIGHT_2 = 850;
+    int RELEASE_SAMPLE_EXTENSION_POSITION = 2820;//2700;
     int RELEASE_SAMPLE_DEGREES = 138;
     int RELEASE_SAMPLE_POS_X = 24;
     int RELEASE_SAMPLE_POS_Y = 298;
@@ -143,10 +143,10 @@ public class Robot {
     int PUSH_SECOND_BLOCK_POS_Y_3 = 15;
     int PUSH_SECOND_BLOCK_POS_X_4 = 10;
 
-    int PICKUP_BLOCK_POS_X = 30;
+    int PICKUP_BLOCK_POS_X = 35;
     int PICKUP_BLOCK_POS_Y = 276;
     int PICKUP_BLOCK_2_POS_Y = 303;
-    int PICKUP_BLOCK_POS_INTAKE_X = 42;
+    int PICKUP_BLOCK_POS_INTAKE_X = 45;
 
     int PARK_LEFT_AUTO_POS_1_X = 125;
     int PARK_LEFT_AUTO_POS_1_Y = 257;

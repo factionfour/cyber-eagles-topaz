@@ -114,7 +114,7 @@ public class RobotAutoLeftBucketONLYV5 extends AutoBase4 {
             robot.resetDrivePosition();
 
             performActionsWithDelays("PICKUP BLOCK 2 GROUND - STEP 1",
-                    driveToPositionAction(robot.PICKUP_BLOCK_POS_INTAKE_X, robot.PICKUP_BLOCK_2_POS_Y, 0, true), 0,
+                    driveToPositionAction(robot.PICKUP_BLOCK_POS_X, robot.PICKUP_BLOCK_2_POS_Y, 0, true), 0,
                     moveExtensionEncoderAction(robot.getCurrentExtensionPosition(), 0), 500,
                     moveArmEncoderAction(robot.getCurrentArmPosition(), robot.DRIVE_ARM_POSITION), 500,
                     null, 0, null);

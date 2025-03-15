@@ -78,7 +78,7 @@ public class RobotAutoRightV5 extends AutoBase4 {
         performActionsWithDelays("PICKUP 2 - STEP 1",
             driveToPositionAction(robot.PICKUP_SAMPLE_POS_X,robot.PICKUP_SAMPLE_POS_Y,robot.PICKUP_SAMPLE_DEGREES,false),0,
             null,0,null,0,null,0,null);
-        sleep(2500);
+        sleep(2000);
         robot.resetDrivePosition();
 
         robot.resetSampleCaptured();
@@ -97,14 +97,14 @@ public class RobotAutoRightV5 extends AutoBase4 {
             //pickup success
             robot.resetSampleCaptured();
             performActionsWithDelays("HOOK 2 - STEP 1",
-                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.EXTENSION_MIN_POSITION),200,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.EXTENSION_MIN_POSITION),50,
                     moveArmEncoderAction(robot.getCurrentArmPosition(),robot.DRIVE_ARM_POSITION),0,
                     null,0,null,0,null);
 
             performActionsWithDelays("HOOK 2 - STEP 2",
                     driveToPositionAction(robot.HOOK_POS_X, robot.HOOK_POS_Y - 10,robot.HOOK_DEGREES,false),0,
-                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 300,
-                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),0,
+                    moveArmEncoderAction(robot.getCurrentArmPosition(),robot.HOOK_ARM_HEIGHT), 2000,
+                    moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),robot.HOOK_EXTENSION_POSITION),3000,
                     null,0,null);
             robot.resetDrivePosition();
 
