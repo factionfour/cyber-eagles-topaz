@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Robot {
     // define each motor, servo, imu and touch sensor
@@ -73,7 +75,7 @@ public class Robot {
     double SERVO_BACKWARD = 0;
 
     //drive speeds
-    double DRIVE_MAX_POWER = 0.8; // Maximum power
+    double DRIVE_MAX_POWER = 1; // Maximum power
     double DRIVE_MIN_POWER = 0.25; // Minimum power to prevent stalling
     double DRIVE_SLOW_THRESHOLD = 20.0; // Distance (CM) where slowdown begins
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
@@ -93,7 +95,7 @@ public class Robot {
     double TURN_KD = 0.3;
     double TURN_KP = 0.5;
     double Turn_PrevDelta = 0;
-
+    private int settlingCycles = 0;
 
     //pre-defined positions
     int DRIVE_ARM_POSITION = 200;
@@ -343,10 +345,20 @@ public class Robot {
         long currentTime = System.currentTimeMillis();
         positionTracker.updatePosition();
     }
-int settlingCycles=0;
     public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees, boolean driveSlow) {
         if (tmpDriveState == driveToPositionState.IDLE) {
             tmpDriveState = driveToPositionState.DRIVE;
+            // Reset PID variables on start of new movement
+            Drive_previousErrorX = 0;
+            Drive_previousErrorY = 0;
+            Turn_PrevDelta = 0;
+            lastTurnVelocity = 0;
+            turnIntegralError = 0;
+            turnVelocityHistory.clear();  // Clear velocity history
+            for (int i = 0; i < VELOCITY_HISTORY_SIZE; i++) {
+                turnVelocityHistory.add(0.0);  // Initialize with zeros
+            }
+            lastUpdateTime = System.currentTimeMillis() / 1000.0; // Time in seconds
         }
 
         // Convert targetHeading from degrees to radians
@@ -357,6 +369,34 @@ int settlingCycles=0;
         double currentX = positionTracker.getXPositionCM();
         double currentY = positionTracker.getYPositionCM();
         double currentHeading = positionTracker.getHeading();
+
+        // Calculate current time and delta time since last update
+        double currentTime = System.currentTimeMillis() / 1000.0; // Time in seconds
+        double deltaTime = currentTime - lastUpdateTime;
+        lastUpdateTime = currentTime;
+
+        // Calculate heading velocity (how fast we're turning)
+        double currentTurnVelocity = 0;
+        if (deltaTime > 0) {
+            currentTurnVelocity = (currentHeading - previousHeading) / deltaTime;
+        }
+        previousHeading = currentHeading;
+
+        // Store velocity in history buffer for smoothing
+        turnVelocityHistory.add(0, currentTurnVelocity);  // Add to front
+        if (turnVelocityHistory.size() > VELOCITY_HISTORY_SIZE) {
+            turnVelocityHistory.remove(turnVelocityHistory.size() - 1);  // Remove oldest
+        }
+
+        // Calculate smoothed velocity (moving average)
+        double smoothedVelocity = 0;
+        for (Double v : turnVelocityHistory) {
+            smoothedVelocity += v;
+        }
+        smoothedVelocity /= turnVelocityHistory.size();
+
+        // Use the smoothed velocity for control
+        double turnVelocity = smoothedVelocity;
 
         // Calculate differences to target
         double deltaX = targetXCM - currentX;
@@ -377,9 +417,10 @@ int settlingCycles=0;
         telemetry.addData("TARGET POS - Y", targetYCM);
         telemetry.addData("DISTANCE TO TARGET", distanceToTarget);
         telemetry.addData("TARGET HEADING DELTA", Math.toDegrees(deltaHeading));
+        telemetry.addData("TURN VELOCITY (deg/s)", Math.toDegrees(currentTurnVelocity));
+        telemetry.addData("SMOOTHED VELOCITY (deg/s)", Math.toDegrees(turnVelocity));
 
         // Step 1: Combined drive and turn movement
-        //if (distanceToTarget > POSITION_TOLERANCE_CM && tmpDriveState == driveToPositionState.DRIVE) {
         if ((distanceToTarget > POSITION_TOLERANCE_CM || Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES)) && tmpDriveState == driveToPositionState.DRIVE) {
             // Calculate angle to target in global coordinates
             double angleToTarget = Math.atan2(deltaY, deltaX);
@@ -403,51 +444,150 @@ int settlingCycles=0;
             Drive_previousErrorX = robotRelativeX;
             Drive_previousErrorY = robotRelativeY;
 
-            // Calculate turn power using PID
-            double turnDerivative = deltaHeading - Turn_PrevDelta;
-            double turnPower = (TURN_KP * deltaHeading) + (TURN_KD * turnDerivative);
+            // *** IMPROVED TURNING CONTROL WITH LOOK-AHEAD PREDICTION ***
+
+            // Calculate current angular velocity (how fast we're turning)
+            turnVelocity = currentTurnVelocity;
+
+            // Get typical loop time (this is the time between calls to this function)
+            double typicalLoopTime = deltaTime > 0 ? deltaTime : 0.02; // Default to 20ms if unknown
+
+            // Log the current angular velocity for debugging
+            telemetry.addData("Angular Velocity (deg/s)", Math.toDegrees(turnVelocity));
+
+            // PREDICTIVE COMPONENT: Look ahead to predict where we'll be in the next cycle
+            // Estimate how far we'll turn in the next cycle with current velocity
+            double predictedAngleChange = turnVelocity * typicalLoopTime;
+
+            // Predict our heading after one more cycle
+            double predictedHeading = currentHeading + predictedAngleChange;
+
+            // Calculate the predicted error after one cycle
+            double predictedDeltaHeading = targetHeadingRadians - predictedHeading;
+            if (predictedDeltaHeading > Math.PI) predictedDeltaHeading -= 2 * Math.PI;
+            if (predictedDeltaHeading < -Math.PI) predictedDeltaHeading += 2 * Math.PI;
+
+            telemetry.addData("Predicted Heading Error (deg)", Math.toDegrees(predictedDeltaHeading));
+
+            // ADVANCED LOOKAHEAD: Calculate stopping distance based on current velocity
+            // Using physics: stopping distance = v²/(2*a) where v is velocity and a is deceleration
+            double maxDeceleration = MAX_TURN_DECELERATION; // Maximum deceleration in rad/s²
+            double stoppingDistance = Math.pow(Math.abs(turnVelocity), 2) / (2 * maxDeceleration);
+
+            // If we're going to overshoot, start braking now
+            boolean needsBraking = Math.abs(stoppingDistance) >= Math.abs(deltaHeading) &&
+                    Math.signum(turnVelocity) == Math.signum(deltaHeading);
+
+            // Store predicted overshoot for telemetry
+            double predictedOvershoot = Math.abs(stoppingDistance) - Math.abs(deltaHeading);
+            if (predictedOvershoot > 0 && needsBraking) {
+                telemetry.addData("PREDICTED OVERSHOOT (deg)", Math.toDegrees(predictedOvershoot));
+            }
+
+            // Apply PID with anti-windup (small integral term to eliminate steady-state error)
+            double TURN_KI = 0.01;
+            if (Math.abs(deltaHeading) < Math.toRadians(5.0)) {
+                // Only apply integral term when very close to target to prevent windup
+                turnIntegralError += deltaHeading * deltaTime;
+                // Anti-windup: limit integral term
+                turnIntegralError = Math.max(Math.min(turnIntegralError, MAX_INTEGRAL_ERROR), -MAX_INTEGRAL_ERROR);
+            } else {
+                turnIntegralError = 0; // Reset integral when far from target
+            }
+
+            // Calculate turn derivative (rate of change of error)
+            double turnDerivative = 0;
+            if (deltaTime > 0) {
+                turnDerivative = (deltaHeading - Turn_PrevDelta) / deltaTime;
+            }
             Turn_PrevDelta = deltaHeading;
 
-            // Apply slowdown for turning when within threshold
-            if (Math.abs(deltaHeading) < TURN_SLOWDOWN_THRESHOLD) {
-                double slowDownFactor = Math.sqrt(Math.abs(deltaHeading) / TURN_SLOWDOWN_THRESHOLD);
-                slowDownFactor = Math.max(slowDownFactor, 0.4); // Never reduce power below 40%
-                turnPower *= slowDownFactor;
-            }
-            // Normalize drive powers
-            double maxDrivePower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
-            if (maxDrivePower > DRIVE_MAX_POWER) {  // Check against DRIVE_MAX_POWER instead of 1.0
-                forwardPower = (forwardPower / maxDrivePower) * DRIVE_MAX_POWER;
-                strafePower = (strafePower / maxDrivePower) * DRIVE_MAX_POWER;
+            // Calculate turn power using enhanced PID + predictive component
+            double turnPower;
+
+            if (needsBraking) {
+                // ACTIVE BRAKING: If we're going to overshoot, apply braking power in the opposite direction
+                // Scale braking power based on both velocity and predicted overshoot
+                double velocityComponent = Math.min(1.0, Math.abs(turnVelocity) / Math.toRadians(30.0));
+                double overshootComponent = Math.min(1.0, Math.abs(predictedOvershoot) / Math.toRadians(5.0));
+
+                // Blend velocity and overshoot factors for smoother braking
+                double brakingStrength = 0.6 * velocityComponent + 0.4 * overshootComponent;
+
+                // Ensure minimum braking force to counteract inertia
+                brakingStrength = Math.max(brakingStrength, 0.15);
+
+                turnPower = -brakingStrength * Math.signum(turnVelocity);
+                telemetry.addData("BRAKING", String.format("STRENGTH: %.2f", brakingStrength));
+            } else {
+                // Normal PID control with feedforward component
+                // Use a weighted blend of current error and predicted error
+                double blendedError = 0.7 * deltaHeading + 0.3 * predictedDeltaHeading;
+
+                // Add a feedforward term based on the sign of the error to overcome static friction
+                double feedforward = Math.signum(blendedError) * 0.05;
+
+                turnPower = (TURN_KP * blendedError) +
+                        (TURN_KD * turnDerivative) +
+                        (TURN_KI * turnIntegralError) +
+                        feedforward;
+
+                // Apply progressive slowdown curve as we approach target
+                if (Math.abs(deltaHeading) < TURN_SLOWDOWN_THRESHOLD) {
+                    // Use a modified sigmoid function for deceleration profile
+                    // This provides a smoother transition from full power to low power
+                    double normError = Math.abs(deltaHeading) / TURN_SLOWDOWN_THRESHOLD;
+                    double sigmoidFactor = 1.0 / (1.0 + Math.exp((0.5 - normError) * 10)); // Sharper sigmoid
+
+                    // Ensure we maintain precision control with minimum power
+                    double minPowerFactor = 0.25; // 25% minimum power
+                    double slowDownFactor = minPowerFactor + (1.0 - minPowerFactor) * sigmoidFactor;
+
+                    turnPower *= slowDownFactor;
+                    telemetry.addData("SLOWDOWN FACTOR", slowDownFactor);
+                }
             }
 
             // Limit turn power
             turnPower = Math.min(Math.max(-TURN_MAX_POWER, turnPower), TURN_MAX_POWER);
-            if (Math.abs(turnPower) < TURN_MIN_POWER && Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
+
+            // Set minimum power threshold only when we're not close to target or not in braking mode
+            if (!needsBraking && Math.abs(turnPower) < TURN_MIN_POWER &&
+                    Math.abs(deltaHeading) > Math.toRadians(3.0)) {
                 turnPower = TURN_MIN_POWER * Math.signum(turnPower);
             }
+
+            // DEADBAND CONTROL: Only use a very tight deadband to prevent micro-oscillations
+            double VELOCITY_TOLERANCE = Math.toRadians(2.0); // 2 degrees per second - very low threshold
+            if (Math.abs(deltaHeading) < Math.toRadians(HEADING_TOLERANCE_DEGREES * 0.5) &&
+                    Math.abs(turnVelocity) < VELOCITY_TOLERANCE) {
+                turnPower = 0; // Stop only when very close and nearly stationary
+                telemetry.addData("TURN STATUS", "PRECISION HOLD");
+            } else {
+                // When extremely close to target but still moving, use precision control
+                if (Math.abs(deltaHeading) < Math.toRadians(1.0) && Math.abs(turnVelocity) > VELOCITY_TOLERANCE) {
+                    // Damping force proportional to velocity (acts like electronic braking)
+                    turnPower = -0.3 * Math.signum(turnVelocity);
+                    telemetry.addData("TURN STATUS", "PRECISION DAMPING");
+                }
+            }
+
+            // Log the final turn power
+            telemetry.addData("Final Turn Power", turnPower);
+
+            // Normalize drive powers
+            double maxDrivePower = Math.max(Math.abs(forwardPower), Math.abs(strafePower));
+            if (maxDrivePower > DRIVE_MAX_POWER) {
+                forwardPower = (forwardPower / maxDrivePower) * DRIVE_MAX_POWER;
+                strafePower = (strafePower / maxDrivePower) * DRIVE_MAX_POWER;
+            }
+
             // Send powers to the drive system
             driveWheels(forwardPower, -turnPower, -strafePower, false, driveSlow);
 
         } else if (tmpDriveState == driveToPositionState.DRIVE) {
             driveWheels(0, 0, 0, false, driveSlow);
-            // Update position after stopping
-//            positionTracker.updatePosition();
-//            deltaX = targetXCM - positionTracker.getXPositionCM();
-//            deltaY = targetYCM - positionTracker.getYPositionCM();
-//            telemetry.clearAll();
-//            telemetry.addData("TRANSITION - deltaX", "%.2f", deltaX);
-//            telemetry.addData("TRANSITION - deltaY", "%.2f", deltaY);
-//            telemetry.addData("TRANSITION - Current X", "%.2f", positionTracker.getXPositionCM());
-//            telemetry.addData("TRANSITION - Target X", targetXCM);
-//            telemetry.addData("TRANSITION - Adjustment Needed", (Math.abs(deltaX) > POSITION_ADJUST_TOLERANCE_CM || Math.abs(deltaY) > POSITION_ADJUST_TOLERANCE_CM));
-//            //telemetry.update();
-            // Only transition to ADJUST if we actually need adjustment
-//            if (Math.abs(deltaX) > POSITION_ADJUST_TOLERANCE_CM || Math.abs(deltaY) > POSITION_ADJUST_TOLERANCE_CM) {
-//                tmpDriveState = driveToPositionState.ADJUST;
-//            } else {
-//                tmpDriveState = driveToPositionState.COMPLETE;
-//            }
+
             tmpDriveState = driveToPositionState.SETTLING;
             settlingCycles = 0;  // Reset settling counter
         }
@@ -485,9 +625,44 @@ int settlingCycles=0;
             if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
             if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
 
+            // Calculate current angular velocity
+            double adjustTurnVelocity = 0;
+            if (deltaTime > 0) {
+                adjustTurnVelocity = (currentHeading - previousHeading) / deltaTime;
+            }
+
             if (Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
-                // Need to adjust heading first
-                double turnPower = TURN_MIN_POWER * Math.signum(deltaHeading);
+                // Use a more sophisticated approach for final heading adjustment
+                double headingErrorPercentage = Math.abs(deltaHeading) / Math.toRadians(5.0); // Normalize to 5 degrees
+                headingErrorPercentage = Math.min(headingErrorPercentage, 1.0); // Cap at 100%
+
+                // Base power that varies with error - more precise as we get closer
+                double baseTurnPower = 0.5 * TURN_MIN_POWER * headingErrorPercentage + 0.2 * TURN_MIN_POWER;
+
+                // Apply damping based on velocity to prevent overshooting in adjustment phase
+                double dampingFactor = 0;
+                if (Math.abs(adjustTurnVelocity) > Math.toRadians(5.0)) {
+                    // If we're moving too fast, apply proportional damping
+                    dampingFactor = 0.3 * Math.min(1.0, Math.abs(adjustTurnVelocity) / Math.toRadians(20.0));
+
+                    // If we're moving quickly toward the target, increase damping
+                    if (Math.signum(adjustTurnVelocity) != Math.signum(deltaHeading)) {
+                        dampingFactor *= 1.5; // Increased damping when approaching target
+                    }
+                }
+
+                // Combine proportional control with damping
+                double dampingComponent = -dampingFactor * Math.signum(adjustTurnVelocity);
+                double errorComponent = Math.signum(deltaHeading) * baseTurnPower;
+
+                // Final power blends error correction with velocity damping
+                double turnPower = errorComponent + dampingComponent;
+
+                // Log detailed adjustment info
+                telemetry.addData("ADJUST - Error", String.format("%.2f°", Math.toDegrees(deltaHeading)));
+                telemetry.addData("ADJUST - Velocity", String.format("%.2f°/s", Math.toDegrees(adjustTurnVelocity)));
+                telemetry.addData("ADJUST - Damping", String.format("%.2f", dampingFactor));
+
                 driveWheels(0, -turnPower, 0, false, false);
             }
             // Only proceed with X/Y adjustments if heading is correct
@@ -501,6 +676,7 @@ int settlingCycles=0;
                 if (relativeAngleToTarget < -Math.PI) relativeAngleToTarget += 2 * Math.PI;
 
                 // Transform into robot's coordinate frame
+                distanceToTarget = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 double robotRelativeX = distanceToTarget * Math.cos(relativeAngleToTarget);
                 double robotRelativeY = distanceToTarget * Math.sin(relativeAngleToTarget);
 
@@ -521,6 +697,16 @@ int settlingCycles=0;
         telemetry.addData("Drive State", tmpDriveState);
         return tmpDriveState == driveToPositionState.COMPLETE;
     }
+
+    // You'll need to add these class variables:
+    private double lastUpdateTime = 0;
+    private double previousHeading = 0;
+    private double lastTurnVelocity = 0;
+    private double turnIntegralError = 0;
+    private static final double MAX_INTEGRAL_ERROR = Math.toRadians(20.0); // Limit integral windup
+    private static final double MAX_TURN_DECELERATION = Math.toRadians(90.0); // radians/sec^2
+    private static final int VELOCITY_HISTORY_SIZE = 5;  // Store last 5 velocity measurements
+    private ArrayList<Double> turnVelocityHistory = new ArrayList<>(VELOCITY_HISTORY_SIZE);
 //
 //    public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees, boolean driveSlow) {
 //        if (tmpDriveState == driveToPositionState.IDLE) {
