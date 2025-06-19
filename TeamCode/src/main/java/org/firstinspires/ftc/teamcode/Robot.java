@@ -13,6 +13,11 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,6 +25,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+
 
 public class Robot {
     // define each motor, servo, imu and touch sensor
@@ -170,6 +177,10 @@ public class Robot {
     double currentTurn;
     double currentStrafe;
 
+    //limelight
+    private Limelight3A limelight;
+
+
     public manualArmState tmpArmState = manualArmState.IDLE;
     public manualExtensionState tmpExtensionState = manualExtensionState.IDLE;
     public HookState specimenHookState = HookState.IDLE;
@@ -194,6 +205,7 @@ public class Robot {
     private ElapsedTime intakeTimer = null;
 
 
+
     public void init(HardwareMap hwMap, Telemetry telem, boolean resetArm) {
         hardwareMap = hwMap;
         telemetry = telem;
@@ -202,6 +214,10 @@ public class Robot {
         frontrightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backrightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
         backleftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
+
+        //limelight hardware map
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+
         // Set directions to each Motor
         frontleftDrive.setDirection(DcMotor.Direction.FORWARD);
         frontrightDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -248,7 +264,7 @@ public class Robot {
 
 //  Telemetry
     public void addTelemetry() {
-//
+        LLStatus status = limelight.getStatus();
 //        //telemetry.addData("Button pressed", touchsensor.isPressed());
 ////        telemetry.addData("front",  "%.2f", currentForward);
 ////        telemetry.addData("turn", "%.2f", currentTurn);
@@ -256,7 +272,8 @@ public class Robot {
         telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
         telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
-//
+        telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d", status.getTemp(), status.getCpu(),(int)status.getFps());
+        telemetry.addData("Pipeline", "Index: %d, Type: %s",status.getPipelineIndex(), status.getPipelineType());
         telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
 //        telemetry.addData("EXTENSION - Target Position", extensionTargetPosition);
 //        //telemetry.addData("Extension Calculated Power", currentExtensionPower);
@@ -1606,6 +1623,13 @@ public class Robot {
             sampleCaptured = true;
         }
     }
+
+//    public void limeLightBlue(){
+//        if(LimelightBlueDetect == true){
+//
+//        }
+//    }
+
     public boolean isSampleCaptured() {
         return sampleCaptured;
     }

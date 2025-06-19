@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name="Topaz: Test straight strafe", group="Robot")
+@Autonomous(name="Topaz: Test rotate", group="Robot")
 public class RotationTest extends AutoBase4 {
 
     @Override
@@ -23,7 +23,7 @@ public class RotationTest extends AutoBase4 {
         // Step 1:  position to hook specimen
        // robot.driveToPosition();
         performActionsWithDelays("DRIVE TO POSITION",
-            driveToPositionAction(10, 30,0,false),0,
+            driveToPositionAction(0, 0,90,false),0,
             moveArmEncoderAction(robot.getCurrentArmPosition(),0), 300,
             moveExtensionEncoderAction(robot.getCurrentExtensionPosition(),0),0,
             null,0,null);
