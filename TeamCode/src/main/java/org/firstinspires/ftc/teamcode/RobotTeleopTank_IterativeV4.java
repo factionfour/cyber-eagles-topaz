@@ -1,5 +1,6 @@
 
 package org.firstinspires.ftc.teamcode;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -7,6 +8,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+
+import java.util.List;
 
 @TeleOp(name="Topaz Teleop V4", group="Robot")
 public class RobotTeleopTank_IterativeV4 extends OpMode {
@@ -18,6 +21,9 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         robot.init(hardwareMap,telemetry, false);
         //robot.loadRobotPosition(robot.hardwareMap.appContext);
         robot.loadRobotPosition();
+        List<LLResultTypes.ColorResult> colorResults = result.getColorResults();
+        for (LLResultTypes.ColorResult cr : colorResults) {
+            telemetry.addData("Color", "X: %.2f, Y: %.2f", cr.getTargetXDegrees(), cr.getTargetYDegrees());
         telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
         telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
