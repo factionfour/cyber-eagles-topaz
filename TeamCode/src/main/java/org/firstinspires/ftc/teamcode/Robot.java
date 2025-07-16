@@ -104,6 +104,10 @@ public class Robot {
     double Turn_PrevDelta = 0;
     private int settlingCycles = 0;
 
+
+    //Variables for lime pipelines
+    int CURRENT_PIPELINE = 0;
+
 //pre-defined positions
     int DRIVE_ARM_POSITION = 200;
 //Hook
@@ -260,11 +264,16 @@ public class Robot {
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
         positionTracker = new RobotPositionTracker(hardwareMap.get(GoBildaPinpointDriver.class,"odo"),hardwareMap.get(IMU.class, "imu"));
+
+
     }
 
 //  Telemetry
     public void addTelemetry() {
         LLStatus status = limelight.getStatus();
+        LLResult result = limelight.getLatestResult();
+        CURRENT_PIPELINE = limelight.getLatestResult().getPipelineIndex();
+
 //        //telemetry.addData("Button pressed", touchsensor.isPressed());
 ////        telemetry.addData("front",  "%.2f", currentForward);
 ////        telemetry.addData("turn", "%.2f", currentTurn);
@@ -286,6 +295,11 @@ public class Robot {
 //
 //        //telemetry.addData("Left Servo Position", leftWheelServo.getPosition());
 //        //telemetry.addData("Right Servo Position", rightWheelServo.getPosition());*/
+
+        List<LLResultTypes.ColorResult> colorResults = result.getColorResults();
+        for (LLResultTypes.ColorResult cr : colorResults) {
+            telemetry.addData("Color", "X: %.2f, Y: %.2f", cr.getTargetXDegrees(), cr.getTargetYDegrees());
+        }
 //
     }
 
@@ -457,6 +471,7 @@ public class Robot {
         telemetry.addData("TARGET HEADING DELTA", Math.toDegrees(deltaHeading));
         telemetry.addData("TURN VELOCITY (deg/s)", Math.toDegrees(currentTurnVelocity));
         telemetry.addData("SMOOTHED VELOCITY (deg/s)", Math.toDegrees(turnVelocity));
+
 
         // Step 1: Combined drive and turn movement
         if ((distanceToTarget > POSITION_TOLERANCE_CM || Math.abs(deltaHeading) > Math.toRadians(HEADING_TOLERANCE_DEGREES)) && tmpDriveState == driveToPositionState.DRIVE) {

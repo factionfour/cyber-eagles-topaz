@@ -18,12 +18,12 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
     @Override
     public void init() {
+
         robot.init(hardwareMap,telemetry, false);
+
         //robot.loadRobotPosition(robot.hardwareMap.appContext);
         robot.loadRobotPosition();
-        List<LLResultTypes.ColorResult> colorResults = result.getColorResults();
-        for (LLResultTypes.ColorResult cr : colorResults) {
-            telemetry.addData("Color", "X: %.2f, Y: %.2f", cr.getTargetXDegrees(), cr.getTargetYDegrees());
+        telemetry.addData("CURRENT PIPELINE", robot.CURRENT_PIPELINE);
         telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
         telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
