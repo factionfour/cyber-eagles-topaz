@@ -23,7 +23,7 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
 
         //robot.loadRobotPosition(robot.hardwareMap.appContext);
         robot.loadRobotPosition();
-        telemetry.addData("CURRENT PIPELINE", robot.CURRENT_PIPELINE);
+        telemetry.addData("Pipeline", "Index: %d, Type: %s");
         telemetry.addData("POSITION - Current X",  "%.2f", robot.positionTracker.getXPositionCM());
         telemetry.addData("POSITION - Current Y",  "%.2f", robot.positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", robot.positionTracker.getHeadingDegrees());
@@ -44,6 +44,8 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
         long currentTime = System.currentTimeMillis();
 
         robot.addTelemetry();
+        robot.LimeLightDetect();
+        robot.LimePipeCycle();
 
         // --- STOP & EMERGENCY ACTIONS
         if (gamepad2.back) {
@@ -55,6 +57,10 @@ public class RobotTeleopTank_IterativeV4 extends OpMode {
             robot.positionTracker.resetPosition(0,0,0);
             //robot.saveRobotPosition(robot.hardwareMap.appContext);
             robot.saveRobotPosition();
+        }
+        //limelight button
+        if (gamepad1.left_bumper){
+            robot.LimeLightDrive();
         }
 
         if (gamepad1.y) {

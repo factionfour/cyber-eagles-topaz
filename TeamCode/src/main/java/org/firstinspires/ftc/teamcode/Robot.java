@@ -1,11 +1,16 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.linearOpMode;
+
 import android.content.SharedPreferences;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -23,9 +28,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.processing.Completion;
 
 
 public class Robot {
@@ -44,13 +51,13 @@ public class Robot {
     public Servo Wrist = null;
     public TouchSensor touchsensor;
 
-    double DRIVING_SPEEDFACTOR_HUMAN =0.7;
+    double DRIVING_SPEEDFACTOR_HUMAN = 0.7;
     double DRIVING_SPEEDFACTOR_AUTO = 1;
     double TURNING_SPEEDFACTOR_AUTO = 0.9;
     double DRIVING_SPEEDFACTOR_SLOW_AUTO = 0.9;
 
     // Arm motor limits and power
-    int ARM_MIN_POSITION =140;//100;    // Minimum encoder position (fully Lowered// )
+    int ARM_MIN_POSITION = 140;//100;    // Minimum encoder position (fully Lowered// )
     int ARM_MAX_POSITION = 400; // Maximum encoder position (fully Raised)
     double ARM_BASE_POWER = 0.2;
     double ARM_EXTRA_FORCE = 0.01;
@@ -81,24 +88,24 @@ public class Robot {
     double SERVO_FORWARD = 1;
     double SERVO_BACKWARD = 0;
 
-//drive speeds
+    //drive speeds
     double DRIVE_MAX_POWER = 1; // Maximum power
     double DRIVE_MIN_POWER = 0.3; // Minimum power to prevent stalling
     double DRIVE_SLOW_THRESHOLD = 20.0; // Distance (CM) where slowdown begins
     double DRIVE_CRAWL_THRESHOLD = 2.0; // Distance (CM) where slow crawl is enforced
 
-//turn speeds
+    //turn speeds
     double TURN_MAX_POWER = 0.8; // Maximum turning power
     double TURN_MIN_POWER = 0.2; // Minimum turning power for precision
     double TURN_SLOWDOWN_THRESHOLD = Math.toRadians(10.0); // Angle threshold for starting to slow down
 
-// PID variables for forwards
-    double Drive_Kd = 0.05 ; // Add some damping
+    // PID variables for forwards
+    double Drive_Kd = 0.05; // Add some damping
     double Drive_Kp = 0.05; // Keep proportional gain
     double Drive_previousErrorY = 0;
     double Drive_previousErrorX = 0;
 
-// PID variables for turning
+    // PID variables for turning
     double TURN_KD = 0.02;
     double TURN_KP = 0.9;
     double Turn_PrevDelta = 0;
@@ -106,11 +113,11 @@ public class Robot {
 
 
     //Variables for lime pipelines
-    int CURRENT_PIPELINE = 0;
 
-//pre-defined positions
+
+    //pre-defined positions
     int DRIVE_ARM_POSITION = 200;
-//Hook
+    //Hook
     int HOOK_EXTENSION_POSITION = 1651;
     int HOOK_ARM_HEIGHT = 700;
     int HOOK_DEGREES = 0;
@@ -119,7 +126,7 @@ public class Robot {
     int HOOK_ARM_HEIGHT_2 = 565;//620;
     int POST_HOOK_POS_X = 40;
     int POST_HOOK_POS_Y = 158;
-//Pickup
+    //Pickup
     int PICKUP_SAMPLE_ARM_HEIGHT = 140;//135;//286;
     int PICKUP_SAMPLE_EXTENSION_POSITION = 1630;
     int PICKUP_SAMPLE_DEGREES = 180;
@@ -128,14 +135,14 @@ public class Robot {
     int PICKUP_SAMPLE_POS_INTAKE_X = 38;
     int PICKUP_SAMPLE_POS_NOPICKUP_X = 70;
     int PICKUP_SAMPLE_POS_Y = 37;
-//release
+    //release
     int RELEASE_SAMPLE_ARM_HEIGHT = 950;
     int RELEASE_SAMPLE_ARM_HEIGHT_2 = 850;
     int RELEASE_SAMPLE_EXTENSION_POSITION = 2820;//2700;
     int RELEASE_SAMPLE_DEGREES = 138;
     int RELEASE_SAMPLE_POS_X = 24;
     int RELEASE_SAMPLE_POS_Y = 298;
-//first block
+    //first block
     int PUSH_FIRST_BLOCK_POS_X_0 = 68;
     int PUSH_FIRST_BLOCK_POS_Y_0 = 64;
 
@@ -147,7 +154,7 @@ public class Robot {
     int PUSH_FIRST_BLOCK_POS_Y_3 = 40;
     int PUSH_FIRST_BLOCK_POS_X_4 = 132;
     int PUSH_FIRST_BLOCK_POS_Y_4 = 40;
-//second block
+    //second block
     int PUSH_SECOND_BLOCK_POS_X_1 = 132;
     int PUSH_SECOND_BLOCK_POS_Y_1 = 15;
     int PUSH_SECOND_BLOCK_POS_X_2 = 22;
@@ -181,9 +188,6 @@ public class Robot {
     double currentTurn;
     double currentStrafe;
 
-    //limelight
-    private Limelight3A limelight;
-
 
     public manualArmState tmpArmState = manualArmState.IDLE;
     public manualExtensionState tmpExtensionState = manualExtensionState.IDLE;
@@ -208,6 +212,17 @@ public class Robot {
     boolean sampleCaptured = false;
     private ElapsedTime intakeTimer = null;
 
+    //Limelight var
+    boolean autoDriveOn = false;
+    private Limelight3A limelight;
+    LLResult result = limelight.getLatestResult();
+
+    double LimeX = result.getTx();
+    double LimeY = result.getTy();
+    double LimeA = result.getTa();
+    int CURRENT_PIPELINE = 0;
+    private long lastSeenTimeLime = 0;
+    int LimeStep = 0;
 
 
     public void init(HardwareMap hwMap, Telemetry telem, boolean resetArm) {
@@ -221,6 +236,9 @@ public class Robot {
 
         //limelight hardware map
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.setPollRateHz(100);
+        limelight.start();
+        LLResult result = limelight.getLatestResult();
 
         // Set directions to each Motor
         frontleftDrive.setDirection(DcMotor.Direction.FORWARD);
@@ -260,15 +278,15 @@ public class Robot {
         Wrist.setPosition(0.5);
 
         touchsensor = hardwareMap.get(TouchSensor.class, "touch sensor");
-        imu = hardwareMap.get(IMU.class,"imu");
+        imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize((new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.LEFT))));
 
-        positionTracker = new RobotPositionTracker(hardwareMap.get(GoBildaPinpointDriver.class,"odo"),hardwareMap.get(IMU.class, "imu"));
+        positionTracker = new RobotPositionTracker(hardwareMap.get(GoBildaPinpointDriver.class, "odo"), hardwareMap.get(IMU.class, "imu"));
 
 
     }
 
-//  Telemetry
+    //  Telemetry
     public void addTelemetry() {
         LLStatus status = limelight.getStatus();
         LLResult result = limelight.getLatestResult();
@@ -278,11 +296,11 @@ public class Robot {
 ////        telemetry.addData("front",  "%.2f", currentForward);
 ////        telemetry.addData("turn", "%.2f", currentTurn);
 ////        telemetry.addData("strafe", "%.2f", currentStrafe);
-        telemetry.addData("POSITION - Current X",  "%.2f", positionTracker.getXPositionCM());
-        telemetry.addData("POSITION - Current Y",  "%.2f", positionTracker.getYPositionCM());
+        telemetry.addData("POSITION - Current X", "%.2f", positionTracker.getXPositionCM());
+        telemetry.addData("POSITION - Current Y", "%.2f", positionTracker.getYPositionCM());
         telemetry.addData("POSITION - Current heading", positionTracker.getHeadingDegrees());
-        telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d", status.getTemp(), status.getCpu(),(int)status.getFps());
-        telemetry.addData("Pipeline", "Index: %d, Type: %s",status.getPipelineIndex(), status.getPipelineType());
+        telemetry.addData("LL", "Temp: %.1fC, CPU: %.1f%%, FPS: %d", status.getTemp(), status.getCpu(), (int) status.getFps());
+        telemetry.addData("Pipeline", "Index: %d, Type: %s", status.getPipelineIndex(), status.getPipelineType());
         telemetry.addData("EXTENSION - Current Position", extensionArmMotor.getCurrentPosition());
 //        telemetry.addData("EXTENSION - Target Position", extensionTargetPosition);
 //        //telemetry.addData("Extension Calculated Power", currentExtensionPower);
@@ -376,6 +394,7 @@ public class Robot {
         long currentTime = System.currentTimeMillis();
         positionTracker.updatePosition();
     }
+
     public boolean driveToPosition(double targetXCM, double targetYCM, double targetHeadingDegrees, boolean driveSlow) {
         if (tmpDriveState == driveToPositionState.IDLE) {
             tmpDriveState = driveToPositionState.DRIVE;
@@ -924,8 +943,6 @@ public class Robot {
 //    }
 
 
-
-
     //    private double calculateTurnPower(double deltaHeading) {
 //        // If within the final tolerance range, stop turning
 //        if (Math.abs(deltaHeading) <= Math.toRadians(HEADING_TOLERANCE_DEGREES)) {
@@ -944,7 +961,7 @@ public class Robot {
 //    }
 //
 
-    public void moveArm( float leftStickY) {
+    public void moveArm(float leftStickY) {
         if (leftStickY != 0) {
             tmpArmState = manualArmState.MOVE_ARM;
             telemetry.addData("ACTION", "gamepad2.left_stick_y");
@@ -980,8 +997,7 @@ public class Robot {
             currentArmPower = calcArmPower();
             // Set motor power based on your control system logic
             armMotor.setPower(currentArmPower);
-        }
-        else {
+        } else {
             if (tmpArmState == manualArmState.MOVE_ARM) {
                 tmpArmState = manualArmState.IDLE;
                 //armMotor.setPower(calcArmPower());
@@ -1007,8 +1023,7 @@ public class Robot {
 
             currentExtensionPower = calcExtensionPower();
             extensionArmMotor.setPower(currentExtensionPower);
-        }
-        else {
+        } else {
             if (tmpExtensionState == manualExtensionState.MOVE_EXTENSION) {
                 tmpExtensionState = manualExtensionState.IDLE;
                 extensionArmMotor.setPower(0);
@@ -1026,8 +1041,7 @@ public class Robot {
             complete = true;
             extensionArmMotor.setPower(0);
             //extensionArmMotor.setPower();
-        }
-        else {
+        } else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
             if (distanceFromStart <= EXTENSION_RAMP_TICKS) {
                 currentSpeed = EXTENSION_MAX_SPEED + (EXTENSION_MAX_SPEED - EXTENSION_MIN_SPEED) * ((float) distanceFromStart / EXTENSION_RAMP_TICKS);
@@ -1057,6 +1071,7 @@ public class Robot {
     public int getCurrentArmPosition() {
         return armMotor.getCurrentPosition();
     }
+
     //raise or lower the robot's arm to a specific height
     public Boolean moveArmEncoder(int startPosition, int targetPosition) {
         Boolean complete = false;
@@ -1067,8 +1082,7 @@ public class Robot {
         if (currentPos >= (targetPosition - MOTOR_TOLERANCE) && currentPos <= (targetPosition + MOTOR_TOLERANCE)) {
             complete = true;
             armMotor.setPower(ARM_BASE_POWER);
-        }
-        else {
+        } else {
             // State 1: Ramp-Up (when within the first XXX ticks of movement)
             if (distanceFromStart <= ARM_RAMP_TICKS) {
                 currentSpeed = ARM_MIN_SPEED + (ARM_MAX_SPEED - ARM_MIN_SPEED) * ((float) distanceFromStart / ARM_RAMP_TICKS);
@@ -1091,7 +1105,7 @@ public class Robot {
         return complete;
     }
 
-    public void moveIntake(boolean inward,boolean outward) {
+    public void moveIntake(boolean inward, boolean outward) {
         // --- WHEEL SERVO CONTROL ---
         if (inward || outward) {
             if (inward) {
@@ -1103,7 +1117,7 @@ public class Robot {
                 leftWheelServo.setPosition(SERVO_FORWARD);  // Spin outward
                 rightWheelServo.setPosition(SERVO_BACKWARD); // Spin outward
             }
-        }else {
+        } else {
             if (tmpServoState == manualServoState.INPUT || tmpServoState == manualServoState.OUTPUT) {
                 tmpServoState = manualServoState.IDLE;
                 leftWheelServo.setPosition(SERVO_STOPPED);  // Neutral
@@ -1153,7 +1167,8 @@ public class Robot {
 
         return false;  // Not done yet
     }
-//    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
+
+    //    public boolean moveIntakeTimed(boolean inward,boolean outward, int milliseconds, boolean stopOnCapture, LinearOpMode opMode) {
 //        // Create an instance of ElapsedTime to track the duration
 //        ElapsedTime timer = new ElapsedTime();
 //        boolean complete = false;
@@ -1197,17 +1212,17 @@ public class Robot {
 //        return complete;
 //    }
 //
-    public void moveWrist(boolean up,boolean down) {
+    public void moveWrist(boolean up, boolean down) {
         if (up || down) {
             if (up) {
                 tempServoState = wristServoState.INPUT;
                 Wrist.setPosition(0.7);
             }
-        if (down) {
+            if (down) {
                 tempServoState = wristServoState.OUTPUT;
                 Wrist.setPosition(0.3);
             }
-        }else {
+        } else {
             if (tempServoState == wristServoState.INPUT || tempServoState == wristServoState.OUTPUT) {
                 tempServoState = wristServoState.IDLE;
                 Wrist.setPosition(SERVO_STOPPED);  // Neutral
@@ -1268,14 +1283,14 @@ public class Robot {
 
         extensionArmMotor.setTargetPosition(extensionTargetPosition);
         extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        currentExtensionPower =0;
+        currentExtensionPower = 0;
         extensionArmMotor.setPower(currentExtensionPower);
 
         moveIntake(false, false);
     }
 
 
-        //EMERGENCY RESET BUTTON (BOTTOM)
+    //EMERGENCY RESET BUTTON (BOTTOM)
     public void emergencyReset() {
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armTargetPosition = 0;
@@ -1294,11 +1309,10 @@ public class Robot {
         extensionArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
 
-
     }
 
     public void specimenHook() {
-        telemetry.addData("CURRENT ACTION STATE",specimenHookState);
+        telemetry.addData("CURRENT ACTION STATE", specimenHookState);
         //SPECIMEN HOOK
         if (specimenHookState == HookState.IDLE) {
             specimenHookState = HookState.POSITION_ROBOT; // Start first step
@@ -1310,7 +1324,7 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (specimenHookState) {
             case POSITION_ROBOT:
-                if (driveToPosition(HOOK_POS_X,HOOK_POS_Y,HOOK_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(HOOK_POS_X, HOOK_POS_Y, HOOK_DEGREES, false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     resetDrivePosition();
                     specimenHookState = HookState.PLACE_ARM; // Transition to next step
                 }
@@ -1349,7 +1363,7 @@ public class Robot {
     }
 
     public void sampleRelease() {
-        telemetry.addData("CURRENT ACTION STATE",sampleReleaseState);
+        telemetry.addData("CURRENT ACTION STATE", sampleReleaseState);
         //SAMPLE RELEASE TO FIRST BUCKET
         if (sampleReleaseState == releaseSampleFirstBucketState.IDLE) {
             sampleReleaseState = releaseSampleFirstBucketState.POSITION_ROBOT; // Start first step
@@ -1361,27 +1375,27 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (sampleReleaseState) {
             case POSITION_ROBOT:
-                if (driveToPosition(RELEASE_SAMPLE_POS_X,RELEASE_SAMPLE_POS_Y,RELEASE_SAMPLE_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(RELEASE_SAMPLE_POS_X, RELEASE_SAMPLE_POS_Y, RELEASE_SAMPLE_DEGREES, false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     resetDrivePosition();
                     sampleReleaseState = releaseSampleFirstBucketState.MOVE_ARM; // Transition to next step
                 }
                 break;
             case MOVE_ARM:
-                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT) ) {
+                if (moveArmEncoder(tmpExtensionPositionHolder, RELEASE_SAMPLE_ARM_HEIGHT)) {
                     sampleReleaseState = releaseSampleFirstBucketState.EXTEND; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
                 }
                 break;
             case EXTEND:
-                if (moveExtensionEncoder(tmpArmPositionHolder,RELEASE_SAMPLE_EXTENSION_POSITION)) {
+                if (moveExtensionEncoder(tmpArmPositionHolder, RELEASE_SAMPLE_EXTENSION_POSITION)) {
                     sampleReleaseState = releaseSampleFirstBucketState.DROP_ARM; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
                 }
                 break;
             case DROP_ARM:
-                if (moveArmEncoder(tmpExtensionPositionHolder,RELEASE_SAMPLE_ARM_HEIGHT_2) ) {
+                if (moveArmEncoder(tmpExtensionPositionHolder, RELEASE_SAMPLE_ARM_HEIGHT_2)) {
                     sampleReleaseState = releaseSampleFirstBucketState.OUTTAKE; // Transition to next step
                     tmpExtensionPositionHolder = extensionArmMotor.getCurrentPosition();
                     tmpActionStartTime = System.currentTimeMillis();
@@ -1406,7 +1420,7 @@ public class Robot {
     }
 
     public void samplePickupGround() {
-        telemetry.addData("CURRENT ACTION STATE",samplePickupState);
+        telemetry.addData("CURRENT ACTION STATE", samplePickupState);
         //SAMPLE PICKUP FROM GROUND
         if (samplePickupState == pickupSampleGroundState.IDLE.IDLE) {
             samplePickupState = pickupSampleGroundState.POSITION_ROBOT; // Start first step
@@ -1418,7 +1432,7 @@ public class Robot {
         // Execute multi-step process based on current state
         switch (samplePickupState) {
             case POSITION_ROBOT:
-                if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES,false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES, false) && moveArmEncoder(tmpArmPositionHolder, DRIVE_ARM_POSITION)) {
                     samplePickupState = pickupSampleGroundState.MOVE_ARM; // Transition to next step
                     resetDrivePosition();
                 }
@@ -1438,7 +1452,7 @@ public class Robot {
 
                 moveIntake(true, false);
                 checkSampleCaptured();
-                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X,PICKUP_SAMPLE_POS_Y,PICKUP_SAMPLE_DEGREES,true);
+                driveToPosition(PICKUP_SAMPLE_POS_INTAKE_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES, true);
 
                 if ((intakeTime > 3500 || isSampleCaptured())) {
                     resetDrivePosition();
@@ -1453,7 +1467,7 @@ public class Robot {
                 }
                 break;
             case NOPICKUP:
-                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES,false)) {
+                if (driveToPosition(PICKUP_SAMPLE_POS_NOPICKUP_X, PICKUP_SAMPLE_POS_Y, PICKUP_SAMPLE_DEGREES, false)) {
                     resetDrivePosition();
                     long noPickupTime = System.currentTimeMillis() - tmpActionStartTime;
                     if (noPickupTime > 2000) {
@@ -1467,6 +1481,81 @@ public class Robot {
         }
     }
 
+
+    //:) PART THAT DOES THE DRIVING case step later with if statemtns for more control step 1 align the rotation in radians with center of robot and next step
+    public void LimeLightDrive() {
+
+    switch (LimeStep) {
+        case 0:
+            if (LimeLightDetect()) {
+
+                loadRobotPosition();
+                if (LimeX > 0.5) {
+                    driveToPosition(positionTracker.currentPositionXCM, positionTracker.currentPositionYCM, positionTracker.getHeading() + Math.toRadians(5), false);
+                } else if (LimeX < -0.5) {
+                    driveToPosition(positionTracker.currentPositionXCM, positionTracker.getYPositionCM(), positionTracker.getHeading() + Math.toRadians(5), false);
+                }else {
+                    LimeStep = 1;
+                }
+
+        break;
+            }
+        case 1:
+            moveArmEncoder(getCurrentArmPosition(),PICKUP_SAMPLE_ARM_HEIGHT);
+            moveExtensionEncoder(getCurrentExtensionPosition(), PICKUP_SAMPLE_EXTENSION_POSITION);
+            LimeStep = 2;
+        break;
+        case 2:
+                driveWheels(1, 0, 0, true, true);
+                moveIntakeTimed(true,false,2000,true, linearOpMode);
+                if (isSampleCaptured() == true);{
+                    LimeStep = 3;
+                }
+        break;
+        case 3:
+            moveExtensionEncoder(getCurrentExtensionPosition(), EXTENSION_MIN_POSITION);
+        break;
+      }
+    }
+
+    public void LimePipeCycle() {
+        if (CURRENT_PIPELINE == 1) {
+            limelight.pipelineSwitch(0);
+            CURRENT_PIPELINE = 0;
+
+
+        } else {
+            limelight.pipelineSwitch(1);
+            CURRENT_PIPELINE = 1;
+
+        }
+    }
+
+    //I put in last seen time for limelight to reduce error in case of sudden interuption from pipeline config so it will be more consistent also this detects a specimen and plots it as well as how much area it takes up
+    public boolean LimeLightDetect() {
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            LimeX = result.getTx();
+            LimeY = result.getTy();
+            LimeA = result.getTa();
+            gamepad1.rumble(500, 500, 100);
+            lastSeenTimeLime = 0;
+
+            return true;
+        } else {
+            lastSeenTimeLime++;
+            if (lastSeenTimeLime > 50) {
+                LimeX = 0;
+                LimeY = 0;
+                LimeA = 0;
+                return false;
+            }else{
+                return true;
+
+            }
+        }
+
+    }
 
 
     public void samplePickupGroundArmOnly() {
